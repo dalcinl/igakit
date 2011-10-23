@@ -93,7 +93,7 @@ class NURBS(object):
 
     def copy(self):
         nrb = NURBS.__new__(type(self))
-        nrb._cntrl = nrb.control.copy()
+        nrb._cntrl = self.control.copy()
         nrb._knots = tuple([k.copy() for k in self.knots])
 
     def clone(self):

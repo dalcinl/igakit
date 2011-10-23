@@ -310,7 +310,7 @@ class NURBS(object):
 
         Parameters
         ----------
-        uvw : list of array_like
+        uvw : array_like
               a list of knots to insert in each parameter direction
 
         Examples
@@ -348,7 +348,47 @@ class NURBS(object):
         self._knots = knots
         return self
 
-    def elevate(self, *rst):
+    def elevate(self, *rst):  
+        """
+        Degree elevate a NURBS object.
+
+        Given a list of polynomial degrees to elevate in each
+        parameter direction, refine the curve. The routine both
+        refines the NURBS object in place and returns the object.
+
+        Parameters
+        ----------
+        rst : int
+              polynomial orders to elevate by in each parametric direction
+
+        Examples
+        --------
+
+        Create a random curve, copy the curve, degree elevate the
+        copy, check maximum error at 100 points
+
+        >>> c1 = NURBS(np.random.rand(3,3),[ [0,0,0,1,1,1] ])
+        >>> c2 = c1.copy()
+        >>> c2 = c2.elevate(1)
+        >>> u = np.linspace(0.0,1.0,100,endpoint=True)
+        >>> (abs(c1.evaluate(u)-c2.evaluate(u))).max() < 1.0e-15
+        True
+
+        Create a random surface, copy the surface, degree elevate the
+        copy, check maximum error at 10000 points
+
+        >>> s1 = NURBS(np.random.rand(3,3,3),[ [0,0,0,1,1,1], [0,0,0.5,1,1] ])
+        >>> s2 = s1.copy()
+        >>> s2 = s2.elevate(1,1)
+        >>> u = np.linspace(0.0,1.0,100,endpoint=True)
+        >>> (abs(s1.evaluate(u,u)-s2.evaluate(u,u))).max() < 1.0e-15
+        True
+
+        .. note: Lisandro, this is strange to me that the curves and
+        surfaces have pointwise error on the order of 10^-9 after
+        degree elevation.
+
+        """
         assert len(rst) == self.dim
         def arg(t):
             if t is None: t = 0

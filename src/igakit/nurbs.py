@@ -12,8 +12,104 @@ _api = {
 __all__ = ['NURBS', 'transform']
 
 class NURBS(object):
+    """
+    An abstract NURBS object class.
 
+    This NURBS class allows for the definition of B-spline or NURBS
+    curves/surfaces/volumes by specifying a control point array and a
+    list of knot vectors.
+
+    Attributes
+    ----------
+    control : numpy.ndarray
+          control point array in 4D space (includes rational weights)
+    degree : array of int
+          array of polynomial degrees
+    dim : int
+          parametric dimension of NURBS object {1,2,3}
+    knots : array of numpy.ndarray
+          array of knot vectors, one for each parametric dim
+    points : numpy.ndarray
+         control point array projected into 3D space
+    shape : array of int
+          array of number of control points in each parametric dimension
+
+    """
     def __init__(self, control, knots, weights=None):
+        """
+        Creates a NURBS object
+        
+        Given a control point array and a list of knot vectors,
+        creates a NURBS curve/surface/volume. The parametric dimension
+        will be inferred from the number of knot vectors specified. If
+        weights are omitted, the object will be polynomial (B-spline).
+
+        Parameters
+        ----------
+        control : array_like
+              two dimensional array of control points. The first 
+              dimension is the number of control points. The second 
+              dimension is the spatial dimension of the object (could be 
+              4D where the last dimension is the weight)
+        knots : list of array_like
+              list of knot vectors. Number of knot vectors will define 
+              what kind of NURBS object is created (1=curve,2=surface,
+              3=volume)
+        weights :
+              optional weights
+
+
+        Examples
+        --------
+
+        Initialize a random B-spline curve
+
+        >>> U = [0,0,0, 1,1,1]
+        >>> XYZ = np.random.rand(3,3)
+        >>> crv = NURBS(XYZ,[U])
+
+        Initialize a quarter circle NURBS curve and check maximum error at
+        1000 points
+
+        >>> XYZ[0,:] = [0.0, 1.0, 0.0]
+        >>> XYZ[1,:] = [1.0, 1.0, 0.0]
+        >>> XYZ[2,:] = [1.0, 0.0, 0.0]
+        >>> W = np.asarray([1.0,0.5*np.sqrt(2.0),1.0])
+        >>> crv = NURBS(XYZ,[U],W)
+        >>> u = np.linspace(0,1.0,1000,endpoint=True)
+        >>> xy = crv.evaluate(u)
+        >>> xy[:,2] = abs(1.0-np.sqrt(xy[:,0]**2+xy[:,1]**2))
+        >>> xy[:,2].max() < 1.0e-15
+        True
+
+        Initialize a quarter circle NURBS curve with projected control points
+        and check maximum error of 1000 points
+
+        >>> wgt = 0.5*np.sqrt(2.0)
+        >>> XYZW = np.zeros((3,4))
+        >>> XYZW[0,:] = [0.0, 1.0, 0.0, 1.0]
+        >>> XYZW[1,:] = [wgt, wgt, 0.0, wgt]
+        >>> XYZW[2,:] = [1.0, 0.0, 0.0, 1.0]
+        >>> crv = NURBS(XYZW,[U])
+        >>> u = np.linspace(0,1.0,1000,endpoint=True)
+        >>> xy = crv.evaluate(u)
+        >>> xy[:,2] = abs(1.0-np.sqrt(xy[:,0]**2+xy[:,1]**2))
+        >>> xy[:,2].max() < 1.0e-15
+        True
+
+        Initialize a random B-spline surface 
+
+        >>> V = [0,0, 1,1]
+        >>> XYZ = np.random.rand(3,2,3)
+        >>> srf = NURBS(XYZ,[U,V])
+
+        Initialize a random B-spline volume
+
+        >>> W = [0,0,0,0, 0.25, 0.5,0.5, 1,1,1,1]
+        >>> XYZ = np.random.rand(3,2,7,3)
+        >>> vol = NURBS(XYZ,[U,V,W])
+
+        """
         #
         if (isinstance(control, (list, tuple))
             and len(control) == 2):
@@ -92,17 +188,75 @@ class NURBS(object):
     #
 
     def copy(self):
+        """
+        Copies a NURBS object.
+
+        Returns a new instace of the NURBS objects with copies of the
+        control points and knot vectors. Modifying the knot vector or
+        control points of the returned object WILL NOT affect this
+        object.
+
+        Examples
+        --------
+
+        Create a random curve, copy the curve, change the control points,
+        demonstrate that now c1 and c2 are different
+
+        >>> c1 = NURBS(np.random.rand(5,2),[[0,0,1,2,3,4,4]])
+        >>> c2 = c1.copy()
+        >>> c2.control[2,:] = [1.0,1.0,0.0,1.0]
+        >>> (abs(c2.control-c1.control)).max() < 1.0e-15
+        False
+       
+        """
         nrb = NURBS.__new__(type(self))
         nrb._cntrl = self.control.copy()
         nrb._knots = tuple([k.copy() for k in self.knots])
+        return nrb
 
     def clone(self):
+        """
+        Clones a NURBS object.
+
+        Returns a new instace of the NURBS objects with references to
+        the control points and knot vectors of this NURBS
+        object. Modifying the knot vector or control points of the
+        returned object WILL affect this object.
+
+        Examples
+        --------
+
+        Create a random curve, copy the curve, change the control points,
+        demonstrate that changing c2 changes c1
+
+        >>> c1 = NURBS(np.random.rand(5,2),[[0,0,1,2,3,4,4]])
+        >>> c2 = c1.clone()
+        >>> c2.control[2,:] = [1.0,1.0,0.0,1.0]
+        >>> (abs(c2.control-c1.control)).max() < 1.0e-15
+        True
+       
+        """
         nrb = NURBS.__new__(type(self))
         nrb._cntrl = self.control
         nrb._knots = self.knots
         return nrb
 
     def transform(self, trans):
+        """
+        Apply a scaling, rotation, or a translation to a NURBS object.
+        
+        A NURBS object can be scaled, rotated, or translated by
+        applying the tranformation to the control points. To contruct
+        composite transformations, consult the docstrings in
+        transform.py.
+
+        Parameters
+        ----------
+        trans : array_like
+              a matrix or transformation which scales, rotates, and/or 
+              translates a NURBS object.
+
+        """
         if not isinstance(trans, transform):
             trans = transform(trans)
         Cw = trans(self.control)
@@ -147,6 +301,32 @@ class NURBS(object):
         return self
 
     def refine(self, *uvw):
+        """
+        Knot refine a NURBS object.
+
+        Given a list of knots to insert in each parameter direction,
+        refine the curve by knot refinement. The routine both refines
+        the NURBS object in place and returns the object.
+
+        Parameters
+        ----------
+        uvw : list of array_like
+              a list of knots to insert in each parameter direction
+
+        Examples
+        --------
+
+        Create a random surface, copy the surface, knot refine the
+        copy, check maximum error at 100 points
+
+        >>> s1 = NURBS(np.random.rand(4,3,3),[ [0,0,0,0,1,1,1,1], [0,0,0,1,1,1] ])
+        >>> s2 = s1.copy()
+        >>> s2 = s2.refine([0.25, 0.5, 0.75, 0.75], [0.33, 0.33, 0.67, 0.67])
+        >>> u = np.linspace(0.0,1.0,10,endpoint=True)
+        >>> (abs(s1.evaluate(u,u)-s2.evaluate(u,u))).max() < 1.0e-15
+        True
+
+        """
         assert len(uvw) == self.dim
         def arg(U):
             if U is None: U = []

@@ -517,8 +517,8 @@ subroutine DegreeElevate(d,n,p,U,Pw,t,nh,Uh,Qw)
 contains
   pure function Bin(n,k) result (C)
     implicit none
-    integer (kind=4), intent(in)  :: n, k
-    integer (kind=4) :: i, C
+    integer(kind=4), intent(in)  :: n, k
+    integer(kind=4) :: i, C
     C = 1
     do i = 0, min(k,n-k) - 1
        C = C * (n - i)
@@ -579,10 +579,10 @@ end subroutine EvalBasisFuns
 subroutine EvalBasisFunsDers(p,m,U,uu,d,span,dN)
   use bspline
   implicit none
-  integer (kind=4), intent(in) :: p, m, d, span
-  real    (kind=8), intent(in) :: U(0:m), uu
-  real    (kind=8), intent(out):: dN(0:p,0:d)
-  integer (kind=4) :: i
+  integer(kind=4), intent(in) :: p, m, d, span
+  real   (kind=8), intent(in) :: U(0:m), uu
+  real   (kind=8), intent(out):: dN(0:p,0:d)
+  integer(kind=4) :: i
   if (span >= 0) then
      i = span
   else
@@ -1231,9 +1231,9 @@ subroutine Extract(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,ii,uu,n0,p0,U0,n1,p1,U1,Cw)
   real   (kind=8), intent(out) :: U0(0:n0+p0+1)
   real   (kind=8), intent(out) :: U1(0:n1+p1+1)
   real   (kind=8), intent(out) :: Cw(d,0:n1,0:n0)
-  integer(kind=4)  :: d0, d1, d2
-  real   (kind=8)  :: Pw1(d,0:nz,0:nx,0:ny)
-  real   (kind=8)  :: Pw2(d,0:ny,0:nx,0:nz)
+  integer(kind=4) :: d0, d1, d2
+  real   (kind=8) :: Pw1(d,0:nz,0:nx,0:ny)
+  real   (kind=8) :: Pw2(d,0:ny,0:nx,0:nz)
   !
   if (ii == 0) then
      d0 = d*(ny+1)*(nz+1)

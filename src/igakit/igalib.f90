@@ -403,7 +403,7 @@ subroutine DegreeElevate(d,n,p,U,Pw,t,nh,Uh,Qw)
   bezalfs(ph,p) = 1.0
   do i = 1, ph/2
      do j = max(0,i-t), min(p,i)
-        bezalfs(i,j) = Bin(p,j)*Bin(t,i-j)*(1.0/Bin(ph,i))
+        bezalfs(i,j) = Bin(p,j)*Bin(t,i-j)*(1.0d+0/Bin(ph,i))
      end do
   end do
   do i = ph/2+1, ph-1

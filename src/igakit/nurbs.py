@@ -135,13 +135,12 @@ class NURBS(object):
             assert weights is None
             control = np.ascontiguousarray(control)
         #
-        knots = [np.asarray(k, dtype='d') for k in knots]
+        knots = tuple(np.asarray(k, dtype='d') for k in knots)
         assert len(knots) >= 1
         assert len(knots) <= 3
         for k in knots:
             assert k.ndim == 1
             assert k.size >= 4
-        knots = tuple(knots)
         #
         assert control.ndim - 1 == len(knots)
         N = [n-1 for n in control.shape[:-1]]
@@ -173,7 +172,7 @@ class NURBS(object):
     def degree(self):
         N = [n-1 for n in self.shape]
         M = [len(k)-1 for k in self.knots]
-        return tuple([m-n-1 for (m, n) in zip(M, N)])
+        return tuple(m-n-1 for (m, n) in zip(M, N))
 
     @property
     def points(self):
@@ -211,7 +210,7 @@ class NURBS(object):
         """
         nrb = NURBS.__new__(type(self))
         nrb._cntrl = self.control.copy()
-        nrb._knots = tuple([k.copy() for k in self.knots])
+        nrb._knots = tuple(k.copy() for k in self.knots)
         return nrb
 
     def clone(self):
@@ -298,10 +297,10 @@ class NURBS(object):
             assert len(axes) == self.dim
         caxes = list(axes)+[self.dim]
         control = self.control.transpose(caxes).copy()
-        knots = [self.knots[i] for i in axes]
+        knots = tuple(self.knots[i] for i in axes)
         #
         self._cntrl = control
-        self._knots = tuple(knots)
+        self._knots = knots
         return self
 
     def reverse(self, *axes):
@@ -323,9 +322,10 @@ class NURBS(object):
             control = CntRev(control, axis)
             knots[axis] = KntRev(degree[axis], knots[axis])
         control = control.copy()
+        knots = tuple(knots)
         #
         self._cntrl = control
-        self._knots = tuple(knots)
+        self._knots = knots
         return self
 
     def refine(self, *uvw):

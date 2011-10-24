@@ -441,42 +441,28 @@ class NURBS(object):
 
     def extract(self, axis, value):
         assert self.dim > 1
-        bsp = _api[0]
         axis = range(self.dim)[axis]
-
+        value = float(value)
         p = self.degree[axis]
         U = self.knots[axis]
-        u = float(value)
-        assert u >= U[p]
-        assert u <= U[-1-p]
-
-        span = bsp.FindKnotSpan(p, U, u)
-        mult = bsp.Multiplicity(p, U, u, span)
-        times = p - mult
-        if mult < p:
-            times = p - mult
-            uvw = [None] * self.dim
-            uvw[axis] = [value] * times
-            nrb = self.clone().refine(*uvw)
-            control = nrb.control
-            knots = list(nrb.knots)
-            U = nrb.knots[axis]
-            span = bsp.FindKnotSpan(p, U, u)
-        else:
-            control = self.control
-            knots = list(self.knots)
-
-        offset = span - p
-        if u < U[span]: offset =  0
-        if u > U[span]: offset = -1
-        index = list(np.index_exp[:,:,:][:self.dim])
-        index[axis] = offset
-        control = control[index].copy()
-        del knots[axis]
-
-        nrb = NURBS.__new__(type(self))
+        assert value >= U[p]
+        assert value <= U[-p-1]
+        #
+        arglist = []
+        for p, U in zip(self.degree, self.knots):
+            arglist.extend([p, U])
+        arglist.append(self.control)
+        arglist.append(axis)
+        arglist.append(value)
+        #
+        Extract = _api[self.dim].Extract
+        result = Extract(*arglist)
+        control = result[-1]
+        knots = result[:-1]
+        #
+        nrb = NURBS.__new__(NURBS)
         nrb._cntrl = control
-        nrb._knots = tuple(knots)
+        nrb._knots = knots
         return nrb
 
     def boundary(self, axis, side):
@@ -488,7 +474,7 @@ class NURBS(object):
         if side == 0:
             value = U[p]
         else:
-            value = U[-1-p]
+            value = U[-p-1]
         return self.extract(axis, value)
 
     def evaluate(self, *uvw):

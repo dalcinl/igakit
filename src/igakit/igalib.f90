@@ -42,6 +42,15 @@ function Multiplicity(i,uu,p,U) result (mult)
   end do
 end function Multiplicity
 
+subroutine FindSpanMult(n,p,uu,U,k,s)
+  implicit none
+  integer(kind=4), intent(in)  :: n, p
+  real   (kind=8), intent(in)  :: uu, U(0:n+p+1)
+  integer(kind=4), intent(out) :: k, s
+  k = FindSpan(n,p,uu,U)
+  s = Multiplicity(k,uu,p,U)
+end subroutine FindSpanMult
+
 subroutine BasisFuns(i,uu,p,U,N)
   implicit none
   integer(kind=4), intent(in) :: i, p
@@ -166,6 +175,54 @@ subroutine SurfacePoint(d,n,p,U,m,q,V,Pw,uu,vv,S)
      end do
   end do
 end subroutine SurfacePoint
+
+subroutine CurvePntByCornerCut(d,n,p,U,Pw,x,Cw)
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: n, p
+  real   (kind=8), intent(in)  :: U(0:n+p+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:n)
+  real   (kind=8), intent(in)  :: x
+  real   (kind=8), intent(out) :: Cw(d)
+  integer(kind=4) :: i, j, k, s, r
+  real   (kind=8) :: uu, alpha, Rw(d,0:p)
+  if (x <= U(p)) then
+     uu = U(p)
+     k = p
+     s = Multiplicity(p,uu,p,U)
+     if (s >= p) then
+        Cw(:) = Pw(:,0)
+        return
+     end if
+  elseif (x >= U(n+1)) then
+     uu = U(n+1)
+     k = n+1
+     s = Multiplicity(n,uu,p,U)
+     if (s >= p) then
+        Cw(:) = Pw(:,n)
+        return
+     end if
+  else
+     uu = x
+     k = FindSpan(n,p,uu,U)
+     s = Multiplicity(k,uu,p,U)
+     if (s >= p) then
+        Cw(:) = Pw(:,k-p)
+        return
+     end if
+  end if
+  r = p-s
+  do i = 0, r
+     Rw(:,i) = Pw(:,k-p+i)
+  end do
+  do j = 1, r
+     do i = 0, r-j
+        alpha = (uu-U(k-p+j+i))/(U(i+k+1)-U(k-p+j+i))
+        Rw(:,i) = alpha*Rw(:,i+1)+(1-alpha)*Rw(:,i)
+     end do
+  end do
+  Cw(:) = Rw(:,0)
+end subroutine CurvePntByCornerCut
 
 subroutine RefineKnotVector(d,n,p,U,Pw,r,X,Ubar,Qw)
   implicit none
@@ -965,6 +1022,36 @@ subroutine DegreeElevate(d,n,p,U,m,q,V,Pw,r,s,nh,Uh,mh,Vh,Qw)
   !
 end subroutine DegreeElevate
 
+subroutine Extract(d,nx,px,Ux,ny,py,Uy,Pw,ii,uu,n,p,U,Cw)
+  use bspline
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx, ny
+  integer(kind=4), intent(in)  :: px, py
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Uy(0:ny+py+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:ny,0:nx)
+  integer(kind=4), intent(in)  :: ii
+  real   (kind=8), intent(in)  :: uu
+  integer(kind=4), intent(in)  :: n
+  integer(kind=4), intent(in)  :: p
+  real   (kind=8), intent(out) :: U(0:n+p+1)
+  real   (kind=8), intent(out) :: Cw(d,0:n)
+  real   (kind=8)  :: Pw1(d,0:nx,0:ny)
+  if (ii == 0) then
+     call CurvePntByCornerCut(d*(ny+1),nx,px,Ux,Pw,uu,Cw)
+     U = Uy
+     return
+  end if
+  if (ii == 1) then
+     Pw1 = reshape(Pw,shape(Pw1),order=(/1,3,2/))
+     call CurvePntByCornerCut(d*(nx+1),ny,py,Uy,Pw1,uu,Cw)
+     U = Ux
+     return
+  end if
+end subroutine Extract
+
+
 end module Srf
 
 !
@@ -1126,5 +1213,51 @@ subroutine DegreeElevate(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,tx,ty,tz,ox,Vx,oy,Vy,oz
   end if
   !
 end subroutine DegreeElevate
+
+subroutine Extract(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,ii,uu,n0,p0,U0,n1,p1,U1,Cw)
+  use bspline
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx, ny, nz
+  integer(kind=4), intent(in)  :: px, py, pz
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Uy(0:ny+py+1)
+  real   (kind=8), intent(in)  :: Uz(0:nz+pz+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:nz,0:ny,0:nx)
+  integer(kind=4), intent(in)  :: ii
+  real   (kind=8), intent(in)  :: uu
+  integer(kind=4), intent(in)  :: n0, n1
+  integer(kind=4), intent(in)  :: p0, p1
+  real   (kind=8), intent(out) :: U0(0:n0+p0+1)
+  real   (kind=8), intent(out) :: U1(0:n1+p1+1)
+  real   (kind=8), intent(out) :: Cw(d,0:n1,0:n0)
+  integer(kind=4)  :: d0, d1, d2
+  real   (kind=8)  :: Pw1(d,0:nz,0:nx,0:ny)
+  real   (kind=8)  :: Pw2(d,0:ny,0:nx,0:nz)
+  !
+  if (ii == 0) then
+     d0 = d*(ny+1)*(nz+1)
+     call CurvePntByCornerCut(d0,nx,px,Ux,Pw,uu,Cw)
+     U0 = Uy
+     U1 = Uz
+     return
+  end if
+  if (ii == 1) then
+     d1 = d*(nx+1)*(nz+1)
+     Pw1 = reshape(Pw,shape(Pw1),order=(/1,2,4,3/))
+     call CurvePntByCornerCut(d1,ny,py,Uy,Pw1,uu,Cw)
+     U0 = Ux
+     U1 = Uz
+     return
+  end if
+  if (ii == 2) then
+     d2 = d*(nx+1)*(ny+1)
+     Pw2 = reshape(Pw,shape(Pw2),order=(/1,4,2,3/))
+     call CurvePntByCornerCut(d2,nz,pz,Uz,Pw2,uu,Cw)
+     U0 = Ux
+     U1 = Uy
+     return
+  end if
+end subroutine Extract
 
 end module Vol

@@ -35,6 +35,7 @@ class NURBS(object):
           array of number of control points in each parametric dimension
 
     """
+
     def __init__(self, control, knots, weights=None):
         """
         Creates a NURBS object
@@ -57,7 +58,6 @@ class NURBS(object):
               3=volume)
         weights :
               optional weights
-
 
         Examples
         --------
@@ -411,10 +411,6 @@ class NURBS(object):
         >>> u = np.linspace(0.0,1.0,100,endpoint=True)
         >>> (abs(s1.evaluate(u,u)-s2.evaluate(u,u))).max() < 1.0e-8
         True
-
-        .. note: Lisandro, this is strange to me that the curves and
-        surfaces have pointwise error on the order of 10^-9 after
-        degree elevation.
 
         """
         assert len(rst) == self.dim

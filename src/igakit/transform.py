@@ -5,11 +5,13 @@ __all__ = ['transform']
 class transform(object):
 
     def __init__(self, matrix=None):
-        if matrix is not None:
+        if matrix is None:
+            matrix = np.identity(4, dtype='d')
+        elif isinstance(matrix, transform):
+            matrix = matrix.matrix.copy()
+        else:
             matrix = np.array(matrix, dtype='d')
             assert matrix.shape == (4, 4)
-        else:
-            matrix = np.identity(4, dtype='d')
         self.matrix = matrix
 
     def __call__(self, xyzw):

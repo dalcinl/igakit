@@ -312,7 +312,7 @@ class NURBS(object):
             return C[index]
         def KntRev(p, U):
             U0, U1 = U[p], U[-p-1]
-            return (U1+U0)-U
+            return (U1+U0)-U[::-1]
         allaxes = range(self.dim)
         if not axes: axes = allaxes
         control = self.control

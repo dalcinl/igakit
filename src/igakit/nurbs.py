@@ -264,6 +264,34 @@ class NURBS(object):
         return self
 
     def transpose(self, *axes):
+        """
+        Swap axes of a NURBS object
+
+        Given the axes to swap (or none if a NURBS surface), this
+        swaps the two given parametric axes and adjusts the control
+        points accordingly. Modified the object in place and returns a
+        reference.
+
+        Parameters
+        ----------
+        axes : int
+             new axes order separated by commas
+
+        Examples
+        --------
+        
+        Create a volume, copy the volume, swap the 2nd and 3rd axes,
+        evalute each at symmetric locations and verify the point is
+        the same.
+
+        >>> v1 = NURBS(np.random.rand(4,3,2,3),[ [0,0,0,0,1,1,1,1], [0,0,0,1,1,1], [0,0,1,1] ])
+        >>> v2 = v1.copy()
+        >>> v2 = v2.transpose(0,2,1)
+        >>> u = 0.25; v = 0.5; w = 0.75
+        >>> (abs(v1.evaluate(u,v,w)-v2.evaluate(u,w,v))).max() < 1.0e-15
+        True
+
+        """
         if not axes:
             axes = range(self.dim)[::-1]
         else:
@@ -367,7 +395,7 @@ class NURBS(object):
         Create a random curve, copy the curve, degree elevate the
         copy, check maximum error at 100 points
 
-        >>> c1 = NURBS(np.random.rand(3,3),[ [0,0,0,1,1,1] ])
+        >>> c1 = NURBS(np.random.rand(2,3),[ [0,0,1,1] ])
         >>> c2 = c1.copy()
         >>> c2 = c2.elevate(1)
         >>> u = np.linspace(0.0,1.0,100,endpoint=True)
@@ -381,7 +409,7 @@ class NURBS(object):
         >>> s2 = s1.copy()
         >>> s2 = s2.elevate(1,1)
         >>> u = np.linspace(0.0,1.0,100,endpoint=True)
-        >>> (abs(s1.evaluate(u,u)-s2.evaluate(u,u))).max() < 1.0e-15
+        >>> (abs(s1.evaluate(u,u)-s2.evaluate(u,u))).max() < 1.0e-8
         True
 
         .. note: Lisandro, this is strange to me that the curves and

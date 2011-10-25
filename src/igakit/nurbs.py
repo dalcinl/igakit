@@ -327,42 +327,52 @@ class NURBS(object):
         self._cntrl = np.ascontiguousarray(Cw)
         return self
 
-    def transpose(self, *axes):
+    def transpose(self, axes=None):
         """
-        Swap axes of a NURBS object
-
-        Given the axes to swap (or none if a NURBS surface), this
-        swaps the two given parametric axes and adjusts the control
-        points accordingly. Modified the object in place and returns a
-        reference.
+        Permute the axes of a NURBS object.
+        
+        Permute parametric axes with the given ordering and adjust the
+        control points accordingly.
 
         Parameters
         ----------
-        axes : int
-             new axes order separated by commas
+        axes : sequence of ints, optional
+           By default, reverse order of the axes, otherwise permute
+           the axes according to the values given.
 
         Examples
         --------
         
-        Create a volume, copy the volume, swap the 2nd and 3rd axes,
-        evalute each at symmetric locations and verify the point is
-        the same.
+        Create a random B-spline volume, swap the 2nd and 3rd axes,
+        evaluate and check.
 
-        >>> v1 = NURBS(np.random.rand(4,3,2,3),[ [0,0,0,0,1,1,1,1], [0,0,0,1,1,1], [0,0,1,1] ])
-        >>> v2 = v1.copy()
-        >>> v2 = v2.transpose(0,2,1)
-        >>> u = 0.25; v = 0.5; w = 0.75
-        >>> (abs(v1.evaluate(u,v,w)-v2.evaluate(u,w,v))).max() < 1.0e-15
+        >>> C = np.random.rand(4,3,2,3)
+        >>> U = [0,0,0,0,1,1,1,1]
+        >>> V = [0,0,0,1,1,1]
+        >>> W = [0,0,1,1]
+        >>> vol1 = NURBS(C, [U,V,W])
+        >>> vol2 = vol1.clone().transpose([0,2,1])
+        >>> u = 0.25; v = 0.50; w = 0.75
+        >>> xyz1 = vol1.evaluate(u,v,w)
+        >>> xyz2 = vol2.evaluate(u,w,v)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
+        True
+        >>> vol3 = vol1.clone().transpose()
+        >>> xyz3 = vol3.evaluate(w,v,u)
+        >>> np.allclose(xyz1, xyz3, rtol=0, atol=1e-15)
         True
 
         """
-        if not axes:
+        if axes is None:
             axes = range(self.dim)[::-1]
+            axes = tuple(axes)
         else:
+            axes = tuple(axes)
             assert len(axes) == self.dim
-        caxes = list(axes)+[self.dim]
+        kaxes = list(axes)
+        caxes = kaxes+[self.dim]
         control = self.control.transpose(caxes).copy()
-        knots = tuple(self.knots[i] for i in axes)
+        knots = tuple(self.knots[i] for i in kaxes)
         #
         self._cntrl = control
         self._knots = knots

@@ -28,7 +28,7 @@ class NURBS(object):
     dim : int
           parametric dimension of NURBS object {1,2,3}
     knots : array of numpy.ndarray
-          array of knot vectors, one for each parametric dim
+          array of knot vectors, one for each parametric dimension
     points : numpy.ndarray
          control point array projected into 3D space
     shape : array of int
@@ -154,41 +154,64 @@ class NURBS(object):
 
     @property
     def control(self):
+        """
+        Return the control point grid in 4D space.
+        """
         return self._cntrl
 
     @property
     def knots(self):
+        """
+        Return an array of knot vectors, one for each parametric
+        dimension.
+        """
         return self._knots
 
     @property
     def dim(self):
+        """
+        Return the parametric dimension of NURBS object {1,2,3}.
+        """
         return self.control.ndim-1
 
     @property
     def shape(self):
+        """
+        Return the shape of the control point net. Also the number of
+        basis functions in each parametric direction.
+        """
         return self.control.shape[:-1]
 
     @property
     def degree(self):
+        """
+        Return an array of polynomial degrees for each polynomial direction.
+        """
         N = [n-1 for n in self.shape]
         M = [len(k)-1 for k in self.knots]
         return tuple(m-n-1 for (m, n) in zip(M, N))
 
     @property
     def points(self):
+        """
+        Return the control point grid projected into 3D space.
+        """
         Cw = self.control
         w = self.weights
         return Cw[...,:-1] / w[...,np.newaxis]
 
     @property
     def weights(self):
+        """
+        Return the rational weights.
+        """
         return self.control[...,-1]
 
     #
 
     def copy(self):
         """
-        Copies a NURBS object.
+        Copy a NURBS object.
 
         Returns a new instace of the NURBS objects with copies of the
         control points and knot vectors. Modifying the knot vector or
@@ -215,7 +238,7 @@ class NURBS(object):
 
     def clone(self):
         """
-        Clones a NURBS object.
+        Clone a NURBS object.
 
         Returns a new instace of the NURBS objects with references to
         the control points and knot vectors of this NURBS
@@ -304,6 +327,33 @@ class NURBS(object):
         return self
 
     def reverse(self, *axes):
+        """
+        Reverse the parametric orientation of a NURBS object along a
+        specified axis.
+
+        Given an axis or axes, reverse the parametric orientation of
+        the NURBS object. If no axes are given, reverses the
+        parametric direction of all axes.
+
+        Parameters
+        ----------
+        axes : int
+              axis indices to reverse separated by commas
+
+        Examples
+        --------
+        
+        Create a curve, copy it, reverse the copy, evaluate at
+        equivalent parametric points, verify the point is the same.
+
+        >>> c1 = NURBS(np.random.rand(6,2),[[0,0,0,0.25,0.75,0.75,1,1,1]])
+        >>> c2 = c1.copy()
+        >>> c2 = c2.reverse()
+        >>> u = 0.3
+        >>> (abs(c1.evaluate(u)-c2.evaluate(1.0-u))).max() < 1.0e-15
+        True
+
+        """
         def CntRev(C, axis):
             dim = C.ndim - 1
             index = list(np.index_exp[:,:,:][:dim])
@@ -395,9 +445,9 @@ class NURBS(object):
         Create a random curve, copy the curve, degree elevate the
         copy, check maximum error at 100 points
 
-        >>> c1 = NURBS(np.random.rand(2,3),[ [0,0,1,1] ])
+        >>> c1 = NURBS(np.random.rand(3,3),[ [0,0,0,1,1,1] ])
         >>> c2 = c1.copy()
-        >>> c2 = c2.elevate(1)
+        >>> c2 = c2.elevate(2)
         >>> u = np.linspace(0.0,1.0,100,endpoint=True)
         >>> (abs(c1.evaluate(u)-c2.evaluate(u))).max() < 1.0e-15
         True
@@ -409,7 +459,7 @@ class NURBS(object):
         >>> s2 = s1.copy()
         >>> s2 = s2.elevate(1,1)
         >>> u = np.linspace(0.0,1.0,100,endpoint=True)
-        >>> (abs(s1.evaluate(u,u)-s2.evaluate(u,u))).max() < 1.0e-8
+        >>> (abs(s1.evaluate(u,u)-s2.evaluate(u,u))).max() < 1.0e-15
         True
 
         """
@@ -436,6 +486,27 @@ class NURBS(object):
         return self
 
     def extract(self, axis, value):
+        """
+        Extract lower dimensional NURBS object.
+
+        Examples
+        --------
+
+        Create a random volume, extract a surface along the 3rd
+        parametric direction at w=0.3, further extract a curve from
+        the surface along the 1st parametric direction and u=0.5,
+        compare evaluations at equivalent points.
+
+        >>> v1 = NURBS(np.random.rand(4,3,2,3),[ [0,0,0,0,1,1,1,1], [0,0,0,1,1,1], [0,0,1,1] ])
+        >>> u = 0.5; v = 0.75; w = 0.3
+        >>> s1 = v1.extract(2,w)
+        >>> c1 = s1.extract(0,u)
+        >>> (abs(v1.evaluate(u,v,w)-s1.evaluate(u,v))).max() < 1.0e-15
+        True
+        >>> (abs(v1.evaluate(u,v,w)-c1.evaluate(v))).max() < 1.0e-15
+        True
+        
+        """
         assert self.dim > 1
         axis = range(self.dim)[axis]
         value = float(value)
@@ -462,6 +533,18 @@ class NURBS(object):
         return nrb
 
     def boundary(self, axis, side):
+        """
+        Extract the boundary of a NURBS object along the specified
+        axis and side.
+
+        Parameters
+        ----------
+        axis : int
+              index of axis along which to extract boundary
+        side : int
+              side of axis from which to extract the boundary
+
+        """
         assert self.dim > 1
         assert side in (0, 1)
         axis = range(self.dim)[axis]
@@ -474,6 +557,13 @@ class NURBS(object):
         return self.extract(axis, value)
 
     def evaluate(self, *uvw):
+        """
+        Evaluate the NURBS object at the given parametric values.
+
+        Parameters
+        ----------
+        
+        """
         assert len(uvw) == self.dim
         uvw = [np.asarray(U, dtype='d') for U in uvw]
         #

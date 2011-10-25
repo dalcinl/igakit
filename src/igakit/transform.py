@@ -24,7 +24,7 @@ class transform(object):
 
     def clone(self):
         trans = transform.__new__(type(self))
-        trans.matrix = self.matrix.copy()
+        trans.matrix = self.matrix
         return trans
 
     def inverse(self):
@@ -46,7 +46,7 @@ class transform(object):
             else:
                 assert matrix.shape == (4, 4)
                 M = matrix
-        self.matrix[...] = np.dot(M, self.matrix)
+        self.matrix = np.dot(M, self.matrix)
         return self
 
     def translate(self, displ, axis=None):

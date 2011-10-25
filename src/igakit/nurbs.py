@@ -16,99 +16,142 @@ class NURBS(object):
     An abstract NURBS object class.
 
     This NURBS class allows for the definition of B-spline or NURBS
-    curves/surfaces/volumes by specifying a control point array and a
-    list of knot vectors.
+    curves/surfaces/volumes by specifying a control point array, a
+    sequence of knot vectors and optional rational weights.
+
+    Parameters
+    ----------
+    control : array_like or 2-tuple of array_like
+        Control points and optional rational weights.
+    knots : sequence of array_like
+        Knot vectors. The number of knot vectors will define what kind
+        of NURBS object is created (1=curve, 2=surface, 3=volume).
+    weights : array_like, optional
+       Rational weights. If weights are omitted, the object will be
+       non-rational (B-spline).
 
     Attributes
     ----------
-    control : numpy.ndarray
-          control point array in 4D space (includes rational weights)
-    degree : array of int
-          array of polynomial degrees
     dim : int
-          parametric dimension of NURBS object {1,2,3}
-    knots : array of numpy.ndarray
-          array of knot vectors, one for each parametric dimension
+        Parametric dimension of the NURBS object {1,2,3}
+    shape : tuple of ints
+        Number of control points in each parametric dimension.
+    degree : tuple of ints
+        Polynomial degrees in each parametric dimension.
+    knots : tuple of numpy.ndarray
+        Knot vectors in each parametric dimension.
+    control : numpy.ndarray
+        Control points in homogeneous 4D space (includes rational weights).
     points : numpy.ndarray
-         control point array projected into 3D space
-    shape : array of int
-          array of number of control points in each parametric dimension
+        Control points projected into 3D space.
+    weigths : numpy.ndarray
+        Rational weigths.
+
+    Examples
+    --------
+
+    Create a quarter circle NURBS curve with 2D control points and
+    rational weigths and check error:
+
+    >>> C = [[0, 1], [1, 1], [1, 0]] # 3x2 grid of 2D control points
+    >>> w = [1, np.sqrt(2)/2, 1]     # rational weigths
+    >>> U = [0,0,0, 1,1,1]           # knot vector
+    >>> crv = NURBS(C, [U], w)
+    >>> u = np.linspace(0,1,1000)
+    >>> xyz = crv.evaluate(u)
+    >>> x, y, z = xyz.T
+    >>> r = np.sqrt(x**2+y**2)
+    >>> np.allclose(r, 1, rtol=0, atol=1e-15)
+    True
+    >>> np.allclose(z, 0, rtol=0, atol=1e-15)
+    True
+
+    Create a quarter circle NURBS curve with homogeneous 4D control
+    points and check error:
+
+    >>> wgt = np.sqrt(2)/2
+    >>> Cw = np.zeros((3,4))
+    >>> Cw[0,:] = [0.0, 1.0, 0.0, 1.0]
+    >>> Cw[1,:] = [wgt, wgt, 0.0, wgt]
+    >>> Cw[2,:] = [1.0, 0.0, 0.0, 1.0]
+    >>> crv = NURBS(Cw, [U])
+    >>> u = np.linspace(0,1,1000)
+    >>> xyz = crv.evaluate(u)
+    >>> x, y, z = xyz.T
+    >>> r = np.sqrt(x**2+y**2)
+    >>> np.allclose(r, 1, rtol=0, atol=1e-15)
+    True
+    >>> np.allclose(z, 0, rtol=0, atol=1e-15)
+    True
+
+    Create a random B-spline curve:
+
+    >>> C = np.random.rand(3,3) # 3D control points
+    >>> U = [0,0,0, 1,1,1]      # knot vector
+    >>> crv = NURBS(C, [U])
+    >>> crv.dim
+    1
+    >>> crv.shape
+    (3,)
+    >>> crv.degree
+    (2,)
+    >>> np.allclose(crv.knots[0], U, rtol=0, atol=1e-15)
+    True
+    >>> np.allclose(crv.points,   C, rtol=0, atol=1e-15)
+    True
+    >>> np.allclose(crv.weights,  1, rtol=0, atol=1e-15)
+    True
+
+    Create a random B-spline surface:
+
+    >>> C = np.random.rand(3,2,3) # 3x2 grid of 3D control points
+    >>> U = [0,0,0, 1,1,1]        # knot vector
+    >>> V = [0,0, 1,1]            # knot vector
+    >>> srf = NURBS(C, [U,V])
+    >>> srf.dim
+    2
+    >>> srf.shape
+    (3, 2)
+    >>> srf.degree
+    (2, 1)
+    >>> np.allclose(srf.knots[0], U, rtol=0, atol=1e-15)
+    True
+    >>> np.allclose(srf.knots[1], V, rtol=0, atol=1e-15)
+    True
+    >>> np.allclose(srf.points,   C, rtol=0, atol=1e-15)
+    True
+    >>> np.allclose(srf.weights,  1, rtol=0, atol=1e-15)
+    True
+
+    Create a random B-spline volume:
+
+    >>> C = np.random.rand(3,2,7,3) # 3x2x7 grid of 3D control points
+    >>> U = [0,0,0, 1,1,1]          # knot vector
+    >>> V = [0,0, 1,1]              # knot vector
+    >>> W = [0]*4+[0.25, 0.5, 0.5]+[1]*4
+    >>> vol = NURBS(C, [U,V,W])
+    >>> vol.dim
+    3
+    >>> vol.shape
+    (3, 2, 7)
+    >>> vol.degree
+    (2, 1, 3)
+    >>> np.allclose(vol.knots[0], U, rtol=0, atol=1e-15)
+    True
+    >>> np.allclose(vol.knots[1], V, rtol=0, atol=1e-15)
+    True
+    >>> np.allclose(vol.knots[2], W, rtol=0, atol=1e-15)
+    True
+    >>> np.allclose(vol.points,   C, rtol=0, atol=1e-15)
+    True
+    >>> np.allclose(vol.weights,  1, rtol=0, atol=1e-15)
+    True
 
     """
 
     def __init__(self, control, knots, weights=None):
         """
-        Creates a NURBS object
-        
-        Given a control point array and a list of knot vectors,
-        creates a NURBS curve/surface/volume. The parametric dimension
-        will be inferred from the number of knot vectors specified. If
-        weights are omitted, the object will be polynomial (B-spline).
-
-        Parameters
-        ----------
-        control : array_like
-              two dimensional array of control points. The first 
-              dimension is the number of control points. The second 
-              dimension is the spatial dimension of the object (could be 
-              4D where the last dimension is the weight)
-        knots : list of array_like
-              list of knot vectors. Number of knot vectors will define 
-              what kind of NURBS object is created (1=curve,2=surface,
-              3=volume)
-        weights :
-              optional weights
-
-        Examples
-        --------
-
-        Initialize a random B-spline curve
-
-        >>> U = [0,0,0, 1,1,1]
-        >>> XYZ = np.random.rand(3,3)
-        >>> crv = NURBS(XYZ,[U])
-
-        Initialize a quarter circle NURBS curve and check maximum error at
-        1000 points
-
-        >>> XYZ[0,:] = [0.0, 1.0, 0.0]
-        >>> XYZ[1,:] = [1.0, 1.0, 0.0]
-        >>> XYZ[2,:] = [1.0, 0.0, 0.0]
-        >>> W = np.asarray([1.0,0.5*np.sqrt(2.0),1.0])
-        >>> crv = NURBS(XYZ,[U],W)
-        >>> u = np.linspace(0,1.0,1000,endpoint=True)
-        >>> xy = crv.evaluate(u)
-        >>> xy[:,2] = abs(1.0-np.sqrt(xy[:,0]**2+xy[:,1]**2))
-        >>> xy[:,2].max() < 1.0e-15
-        True
-
-        Initialize a quarter circle NURBS curve with projected control points
-        and check maximum error of 1000 points
-
-        >>> wgt = 0.5*np.sqrt(2.0)
-        >>> XYZW = np.zeros((3,4))
-        >>> XYZW[0,:] = [0.0, 1.0, 0.0, 1.0]
-        >>> XYZW[1,:] = [wgt, wgt, 0.0, wgt]
-        >>> XYZW[2,:] = [1.0, 0.0, 0.0, 1.0]
-        >>> crv = NURBS(XYZW,[U])
-        >>> u = np.linspace(0,1.0,1000,endpoint=True)
-        >>> xy = crv.evaluate(u)
-        >>> xy[:,2] = abs(1.0-np.sqrt(xy[:,0]**2+xy[:,1]**2))
-        >>> xy[:,2].max() < 1.0e-15
-        True
-
-        Initialize a random B-spline surface 
-
-        >>> V = [0,0, 1,1]
-        >>> XYZ = np.random.rand(3,2,3)
-        >>> srf = NURBS(XYZ,[U,V])
-
-        Initialize a random B-spline volume
-
-        >>> W = [0,0,0,0, 0.25, 0.5,0.5, 1,1,1,1]
-        >>> XYZ = np.random.rand(3,2,7,3)
-        >>> vol = NURBS(XYZ,[U,V,W])
-
+        Create a NURBS object.
         """
         #
         if (isinstance(control, (list, tuple))
@@ -153,31 +196,16 @@ class NURBS(object):
         self._knots = knots
 
     @property
-    def control(self):
-        """
-        Return the control point grid in 4D space.
-        """
-        return self._cntrl
-
-    @property
-    def knots(self):
-        """
-        Return an array of knot vectors, one for each parametric
-        dimension.
-        """
-        return self._knots
-
-    @property
     def dim(self):
         """
-        Return the parametric dimension of NURBS object {1,2,3}.
+        Parametric dimension of the NURBS object {1,2,3}.
         """
         return self.control.ndim-1
 
     @property
     def shape(self):
         """
-        Return the shape of the control point net. Also the number of
+        Shape of the control point net. Also the number of
         basis functions in each parametric direction.
         """
         return self.control.shape[:-1]
@@ -185,16 +213,30 @@ class NURBS(object):
     @property
     def degree(self):
         """
-        Return an array of polynomial degrees for each polynomial direction.
+        Polynomial degrees for each parametric direction.
         """
         N = [n-1 for n in self.shape]
         M = [len(k)-1 for k in self.knots]
         return tuple(m-n-1 for (m, n) in zip(M, N))
 
     @property
+    def knots(self):
+        """
+        Knot vectors for each parametric dimension.
+        """
+        return self._knots
+
+    @property
+    def control(self):
+        """
+        Control point grid in 4D space.
+        """
+        return self._cntrl
+
+    @property
     def points(self):
         """
-        Return the control point grid projected into 3D space.
+        Control point grid projected into 3D space.
         """
         Cw = self.control
         w = self.weights
@@ -203,7 +245,7 @@ class NURBS(object):
     @property
     def weights(self):
         """
-        Return the rational weights.
+        Rational weight grid.
         """
         return self.control[...,-1]
 

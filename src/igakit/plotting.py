@@ -11,7 +11,6 @@ def controlpoints(nurbs, **kwargs):
         options['color'] = (1,0,0)
     if 'mode' not in options:
         options['mode'] = 'sphere'
-    #
     pts = plt.points3d(x, y, z, **options)
     if 'scale_factor' not in options:
         try:
@@ -29,9 +28,15 @@ def controlgrid(nurbs, **kwargs):
     options = dict(kwargs)
     if 'color' not in options:
         options['color'] = (0,0,1)
-    if 'representation' not in options:
+    mode = options.pop('mode', 'line')
+    assert mode in ('line', 'tube')
+    if mode == 'line':
         options['representation'] = 'wireframe'
         options['tube_radius'] = None
+    elif mode == 'tube':
+        options['representation'] = 'mesh'
+        #options['tube_radius'] = None
+        #options['tube_sides'] = 6
     grd = plt.grid3d(x, y, z, **options)
     return grd
 
@@ -49,7 +54,6 @@ def knotpoints(nurbs, **kwargs):
         options['color'] = (0,1,0)
     if 'mode' not in options:
         options['mode'] = 'cube'
-    #
     pts = plt.points3d(x, y, z, **options)
     if 'scale_factor' not in options:
         try:
@@ -78,16 +82,21 @@ def knotgrid(nurbs, **kwargs):
     options = dict(kwargs)
     if 'color' not in options:
         options['color'] = (0,1,0)
-    if 'representation' not in options:
+    mode = options.pop('mode', 'line')
+    assert mode in ('line', 'tube')
+    if mode == 'line':
         options['representation'] = 'wireframe'
         options['tube_radius'] = None
-    #
-    lins = []
+    elif mode == 'tube':
+        options['representation'] = 'surface'
+        #options['tube_radius'] = None
+        #options['tube_sides'] = 6
+    grd = []
     for C in lines:
         x, y, z = C.T
         lin = plt.plot3d(x, y, z, **options)
-        lins.append(lin)
-    return lins
+        grd.append(lin)
+    return grd
 
 def curve(nurbs, **kwargs):
     plt = get_backend()
@@ -97,11 +106,19 @@ def curve(nurbs, **kwargs):
         u = np.linspace(U[p], U[-p-1], resol)
         C = nurbs.evaluate(u)
         x, y, z = C.T
+        #
         options = dict(kwargs)
         if 'color' not in options:
             options['color'] = (1,1,0)
-        if 'representation' not in options:
+        mode = options.pop('mode', 'tube')
+        assert mode in ('line', 'tube')
+        if mode == 'line':
             options['representation'] = 'wireframe'
+            options['tube_radius'] = None
+        elif mode == 'tube':
+            options['representation'] = 'surface'
+            #options['tube_radius'] = None
+            #options['tube_sides'] = 6
         crv = plt.plot3d(x, y, z, **options)
         return crv
     else:
@@ -119,6 +136,7 @@ def surface(nurbs, **kwargs):
                for (p, U) in zip(nurbs.degree, nurbs.knots)]
         C = nurbs.evaluate(*uvw)
         x, y, z = C.T
+        #
         options = dict(kwargs)
         if 'color' not in options:
             options['color'] = (1,1,0)

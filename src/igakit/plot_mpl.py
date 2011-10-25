@@ -38,6 +38,8 @@ def points3d(x, y ,z, **kwargs):
         kwargs['marker'] = 'o'
     if m == 'cube':
         kwargs['marker'] = 's'
+    if m == 'cone':
+        kwargs['marker'] = '^'
     ax = mpl.gca()
     x, y, z = [c.ravel() for c in (x, y, z)]
     pts = ax.scatter(x, y, z, s=30, **kwargs)

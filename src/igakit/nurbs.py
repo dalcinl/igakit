@@ -430,7 +430,7 @@ class NURBS(object):
         self._knots = knots
         return self
 
-    def refine(self, *uvw):
+    def refine(self, u, *vw):
         """
         Knot refine a NURBS object.
 
@@ -440,23 +440,32 @@ class NURBS(object):
 
         Parameters
         ----------
-        uvw : array_like
-              a list of knots to insert in each parameter direction
+        u, v, w : float or array_like or None
+            Knots to insert in each parameter direction
 
         Examples
         --------
 
-        Create a random surface, copy the surface, knot refine the
-        copy, check maximum error at 100 points
+        Create a random surface, knot refine, check error:
 
-        >>> s1 = NURBS(np.random.rand(4,3,3),[ [0,0,0,0,1,1,1,1], [0,0,0,1,1,1] ])
-        >>> s2 = s1.copy()
-        >>> s2 = s2.refine([0.25, 0.5, 0.75, 0.75], [0.33, 0.33, 0.67, 0.67])
-        >>> u = np.linspace(0.0,1.0,10,endpoint=True)
-        >>> (abs(s1.evaluate(u,u)-s2.evaluate(u,u))).max() < 1.0e-15
+        >>> C = np.random.rand(4,3,3)
+        >>> U = [0,0,0,0,1,1,1,1]; V = [0,0,0,1,1,1]
+        >>> s1 = NURBS(C, [U,V])
+        >>> s1.shape
+        (4, 3)
+        >>> u = [0.25, 0.50, 0.75, 0.75]
+        >>> v = [0.33, 0.33, 0.67, 0.67]
+        >>> s2 = s1.clone().refine(u, v)
+        >>> s2.shape
+        (8, 7)
+        >>> u = v = np.linspace(0,1,100)
+        >>> xyz1 = s1.evaluate(u, v)
+        >>> xyz2 = s2.evaluate(u, v)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
 
         """
+        uvw = (u,) + vw
         assert len(uvw) == self.dim
         def arg(U):
             if U is None: U = []

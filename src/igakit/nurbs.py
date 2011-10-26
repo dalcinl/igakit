@@ -271,7 +271,7 @@ class NURBS(object):
         >>> c2.control[2,:] = [1.0,1.0,0.0,1.0]
         >>> (abs(c2.control-c1.control)).max() < 1.0e-15
         False
-       
+
         """
         nrb = NURBS.__new__(type(self))
         nrb._cntrl = self.control.copy()
@@ -298,7 +298,7 @@ class NURBS(object):
         >>> c2.control[2,:] = [1.0,1.0,0.0,1.0]
         >>> (abs(c2.control-c1.control)).max() < 1.0e-15
         True
-       
+
         """
         nrb = NURBS.__new__(type(self))
         nrb._cntrl = self.control
@@ -308,7 +308,7 @@ class NURBS(object):
     def transform(self, trans):
         """
         Apply a scaling, rotation, or a translation to a NURBS object.
-        
+
         A NURBS object can be scaled, rotated, or translated by
         applying the tranformation to the control points. To contruct
         composite transformations, consult the docstrings in
@@ -317,7 +317,7 @@ class NURBS(object):
         Parameters
         ----------
         trans : array_like
-              a matrix or transformation which scales, rotates, and/or 
+              a matrix or transformation which scales, rotates, and/or
               translates a NURBS object.
 
         """
@@ -330,7 +330,7 @@ class NURBS(object):
     def transpose(self, axes=None):
         """
         Permute the axes of a NURBS object.
-        
+
         Permute parametric axes with the given ordering and adjust the
         control points accordingly.
 
@@ -342,7 +342,7 @@ class NURBS(object):
 
         Examples
         --------
-        
+
         Create a random B-spline volume, swap the 2nd and 3rd axes,
         evaluate and check.
 
@@ -394,7 +394,7 @@ class NURBS(object):
 
         Examples
         --------
-        
+
         Create a curve, copy it, reverse the copy, evaluate at
         equivalent parametric points, verify the point is the same.
 
@@ -478,7 +478,7 @@ class NURBS(object):
         self._knots = knots
         return self
 
-    def elevate(self, *rst):  
+    def elevate(self, r, *st):
         """
         Degree elevate a NURBS object.
 
@@ -488,33 +488,46 @@ class NURBS(object):
 
         Parameters
         ----------
-        rst : int
-              polynomial orders to elevate by in each parametric direction
+        r, s, t : int or None
+            Polynomial orders to elevate by in each parametric direction.
 
         Examples
         --------
 
-        Create a random curve, copy the curve, degree elevate the
-        copy, check maximum error at 100 points
+        Create a random curve, degree elevate, check error:
 
-        >>> c1 = NURBS(np.random.rand(3,3),[ [0,0,0,1,1,1] ])
-        >>> c2 = c1.copy()
-        >>> c2 = c2.elevate(2)
-        >>> u = np.linspace(0.0,1.0,100,endpoint=True)
-        >>> (abs(c1.evaluate(u)-c2.evaluate(u))).max() < 1.0e-15
+        >>> C = np.random.rand(3,3)
+        >>> U = [0,0,0,1,1,1]
+        >>> c1 = NURBS(C, [U])
+        >>> c1.degree
+        (2,)
+        >>> c2 = c1.clone().elevate(2)
+        >>> c2.degree
+        (4,)
+        >>> u = np.linspace(0,1,100)
+        >>> xyz1 = c1.evaluate(u)
+        >>> xyz2 = c2.evaluate(u)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
 
-        Create a random surface, copy the surface, degree elevate the
-        copy, check maximum error at 10000 points
+        Create a random surface, degree elevate, check error:
 
-        >>> s1 = NURBS(np.random.rand(3,3,3),[ [0,0,0,1,1,1], [0,0,0.5,1,1] ])
-        >>> s2 = s1.copy()
-        >>> s2 = s2.elevate(1,1)
-        >>> u = np.linspace(0.0,1.0,100,endpoint=True)
-        >>> (abs(s1.evaluate(u,u)-s2.evaluate(u,u))).max() < 1.0e-15
+        >>> C = np.random.rand(3,3,3)
+        >>> U = [0,0,0,1,1,1]; V = [0,0,0.5,1,1]
+        >>> s1 = NURBS(C, [U,V])
+        >>> s1.degree
+        (2, 1)
+        >>> s2 = s1.clone().elevate(1, 1)
+        >>> s2.degree
+        (3, 2)
+        >>> u = v = np.linspace(0,1,100)
+        >>> xyz1 = s1.evaluate(u, v)
+        >>> xyz2 = s2.evaluate(u, v)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
 
         """
+        rst = (r,) + st
         assert len(rst) == self.dim
         def arg(t):
             if t is None: t = 0
@@ -557,7 +570,7 @@ class NURBS(object):
         True
         >>> (abs(v1.evaluate(u,v,w)-c1.evaluate(v))).max() < 1.0e-15
         True
-        
+
         """
         assert self.dim > 1
         axis = range(self.dim)[axis]

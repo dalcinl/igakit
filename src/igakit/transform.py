@@ -100,8 +100,8 @@ class transform(object):
             assert u_norm > 0
             u /= u_norm
             # R = cos(a) I + sin(a) U_x + (1-cos(a)) UU
-            u_upper = np.array([-u[3], +u[2], -u[0]])
-            u_lower = np.array([+u[3], -u[2], +u[0]])
+            u_upper = np.array([-u[2], +u[1], -u[0]])
+            u_lower = np.array([+u[2], -u[1], +u[0]])
             u_outer = np.outer(u, u)
             R.flat[[0,4,8]] = cos_a
             R.flat[[1,2,5]] = sin_a*u_upper

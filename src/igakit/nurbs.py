@@ -608,16 +608,31 @@ class NURBS(object):
             value = U[-p-1]
         return self.extract(axis, value)
 
-    def evaluate(self, *uvw):
+    def evaluate(self, u, *vw):
         """
         Evaluate the NURBS object at the given parametric values.
 
         Parameters
         ----------
-        
+        u, v, w : float or array_like
+
+        Examples
+        --------
+
+        >>> C = [[-1,0],[0,1],[1,0]]
+        >>> U = [0,0,0,1,1,1]
+        >>> crv = NURBS(C, [U])
+        >>> crv.evaluate(0.5).tolist()
+        [0.0, 0.5, 0.0]
+        >>> crv.evaluate([0.5]).tolist()
+        [[0.0, 0.5, 0.0]]
+        >>> crv.evaluate([0, 1]).tolist()
+        [[-1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]
+
         """
+        uvw = (u,) + vw
         assert len(uvw) == self.dim
-        uvw = [np.asarray(U, dtype='d') for U in uvw]
+        uvw = [np.asarray(a, dtype='d') for a in uvw]
         #
         arglist = []
         for p, U in zip(self.degree, self.knots):
@@ -628,6 +643,11 @@ class NURBS(object):
         Evaluate = _api[self.dim].Evaluate
         Cw = Evaluate(*arglist)
         C = Cw[...,:-1] / Cw[...,-1,np.newaxis]
+        #
+        newshape = list(C.shape)
+        remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
+        for i in reversed(remove): del newshape[i]
+        C.shape = newshape
         return C
 
     #

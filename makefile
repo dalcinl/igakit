@@ -5,6 +5,11 @@ PACKAGE=igakit
 build:
 	$(PYTHON) setup.py build
 
+.PHONY: doctest
+doctest:
+	$(PYTHON) -m doctest src/igakit/nurbs.py
+	-@$(RM) -r src/igakit/*.py[co]
+	-@$(RM) -r src/igakit/__pycache__
 .PHONY: test
 test:
 	$(PYTHON) test/runtests.py

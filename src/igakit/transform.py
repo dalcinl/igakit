@@ -53,13 +53,15 @@ class transform(object):
         displ = np.asarray(displ, dtype='d')
         assert displ.ndim in (0, 1)
         if displ.ndim > 0:
+            assert axis is None
             assert displ.size <= 3
             t = displ
         else:
-            assert axis is not None
             t = np.zeros(3, dtype='d')
-            axis = np.arange(3)[axis]
-            t[axis] = displ
+            if axis is None:
+                t[0] = displ
+            else:
+                t[axis] = displ
         T = np.identity(4, dtype='d')
         T[:t.size, 3] = t
         self.compose(T)
@@ -74,11 +76,10 @@ class transform(object):
             assert scale.size <= 3
             s = scale
         else:
+            s = np.ones(3, dtype='d')
             if axis is None:
-                s = scale.repeat(3)
+                s[:] = scale
             else:
-                s = np.ones(3, dtype='d')
-                axis = np.arange(3)[axis]
                 s[axis] = scale
         S = np.identity(3, dtype='d')
         i = np.arange(s.size)
@@ -95,7 +96,7 @@ class transform(object):
         cos_a = np.cos(angle)
         R = np.identity(3, dtype='d')
         if axis.ndim > 0:
-            assert axis.size <= 3
+            assert 1 <= axis.size <= 3
             u = np.zeros(3, dtype='d')
             u[0:axis.size] = axis
             u_norm = np.linalg.norm(u)
@@ -110,7 +111,7 @@ class transform(object):
             R.flat[[3,6,7]] = sin_a*u_lower
             R += (1-cos_a)*u_outer
         else:
-            axis = np.arange(3)[axis]
+            axis = (0,1,2)[axis]
             if axis == 0:
                 R[1, [1,2]] = [ cos_a, -sin_a]
                 R[2, [1,2]] = [ sin_a,  cos_a]

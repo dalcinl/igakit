@@ -52,8 +52,7 @@ class transform(object):
     def translate(self, displ, axis=None):
         displ = np.asarray(displ, dtype='d')
         assert displ.ndim in (0, 1)
-        if displ.ndim > 0:
-            assert axis is None
+        if displ.ndim > 0 and axis is None:
             assert displ.size <= 3
             t = displ
         else:
@@ -72,7 +71,7 @@ class transform(object):
     def scale(self, scale, axis=None):
         scale = np.asarray(scale, dtype='d')
         assert scale.ndim in (0, 1)
-        if scale.ndim > 0:
+        if scale.ndim > 0 and axis is None:
             assert scale.size <= 3
             s = scale
         else:

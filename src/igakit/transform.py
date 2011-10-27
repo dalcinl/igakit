@@ -87,6 +87,8 @@ class transform(object):
         return self
 
     def rotate(self, angle, axis):
+        angle = float(angle)
+        if angle == 0.0: return self
         axis = np.asarray(axis)
         assert axis.ndim in (0, 1)
         sin_a = np.sin(angle)

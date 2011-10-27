@@ -4,6 +4,14 @@ from igakit.transform import transform
 
 # -----
 
+Pi = np.pi
+deg2rad = np.deg2rad
+rad2deg = np.rad2deg
+radians = np.radians
+degrees = np.degrees
+
+# -----
+
 def line(p0=(0,0), p1=(1,0)):
     """
     p0         p1
@@ -19,51 +27,108 @@ def line(p0=(0,0), p1=(1,0)):
     return NURBS(points, [knots])
 
 def circle(radius=1, center=None, angle=None):
-    Pi = np.pi
-    #
+    """
+    Construct a NURBS circular arc or full circle
+
+    Parameters
+    ----------
+    radius : float, optional
+    center : array_like, optional
+    angle : float or 2-tuple of floats, optional
+
+    Examples
+    --------
+
+    >>> crv = circle()
+    >>> crv.shape
+    (9,)
+    >>> P = crv.evaluate([0, 0.25, 0.5, 0.75, 1])
+    >>> assert np.allclose(P[0], ( 1,  0, 0))
+    >>> assert np.allclose(P[1], ( 0,  1, 0))
+    >>> assert np.allclose(P[2], (-1,  0, 0))
+    >>> assert np.allclose(P[3], ( 0, -1, 0))
+    >>> assert np.allclose(P[4], ( 1,  0, 0))
+
+    >>> crv = circle(angle=3*Pi/2)
+    >>> crv.shape
+    (7,)
+    >>> P = crv.evaluate([0, 1/3., 2/3., 1])
+    >>> assert np.allclose(P[0], ( 1,  0, 0))
+    >>> assert np.allclose(P[1], ( 0,  1, 0))
+    >>> assert np.allclose(P[2], (-1,  0, 0))
+    >>> assert np.allclose(P[3], ( 0, -1, 0))
+
+    >>> crv = circle(radius=2, center=(1,1), angle=(Pi/2,-Pi/2))
+    >>> crv.shape
+    (5,)
+    >>> P = crv.evaluate([0, 0.5, 1])
+    >>> assert np.allclose(P[0], (1,  3, 0))
+    >>> assert np.allclose(P[1], (3,  1, 0))
+    >>> assert np.allclose(P[2], (1, -1, 0))
+
+    >>> crv = circle(radius=3, center=2, angle=Pi/2)
+    >>> crv.shape
+    (3,)
+    >>> P = crv.evaluate([0, 1])
+    >>> assert np.allclose(P[0], ( 5, 0, 0))
+    >>> assert np.allclose(P[1], ( 2, 3, 0))
+
+    """
     if angle is None:
-        start, end = 0, 2*Pi
-    elif isinstance(angle, (tuple, list)):
-        start, end = angle
-        if start is None: start = 0
-        if end is None: end = 2*Pi
+        # Full circle, 4 knot spans, 9 control points
+        spans = 4
+        Cw = np.zeros((9,4), dtype='d')
+        Cw[:,:2] = [[ 1, 0], [ 1, 1], [ 0, 1],
+                    [-1, 1], [-1, 0], [-1,-1],
+                    [ 0,-1], [ 1,-1], [ 1, 0]]
+        wm = np.sqrt(2)/2
+        Cw[:,3] = 1; Cw[1::2,:] *= wm
     else:
-        start, end = 0, angle
-    quadrants = (0.0, Pi/2, Pi, 3*Pi/2)
-    sweep = end - start
-    if sweep < 0: sweep = 2*Pi + sweep
-    spans = np.searchsorted(quadrants, abs(sweep))
-    #
-    alpha = sweep/(2*spans)
-    sin_a = np.sin(alpha)
-    cos_a = np.cos(alpha)
-    tan_a = np.tan(alpha)
-    x = radius*cos_a
-    y = radius*sin_a
-    w = cos_a
-    m = x + y*tan_a
-    Ca = np.array([[  x, -y, 0, 1],
-                   [w*m,  0, 0, w],
-                   [  x,  y, 0, 1]],
-                  dtype='d')
-    #
-    Cw = np.empty((2*spans+1,4), dtype='d')
-    R = transform().rotate(alpha+start, 2)
-    Cw[0:3,:] = R(Ca)
-    if spans > 1:
-        R = transform().rotate(2*alpha, 2)
-        for i in range(1, spans):
-            n = 2*i+1
-            Cw[n:n+2,:] = R(Cw[n-2:n,:])
+        Pi = np.pi # inline numpy.pi
+        # Determine start and end angles
+        if isinstance(angle, (tuple, list)):
+            start, end = angle
+            if start is None: start = 0
+            if end is None: end = 2*Pi
+        else:
+            start, end = 0, angle
+        # Compute sweep and number knot spans
+        sweep = end - start
+        quadrants = (0.0, Pi/2, Pi, 3*Pi/2)
+        spans = np.searchsorted(quadrants, abs(sweep))
+        # Construct a single-segment NURBS circular arc
+        # centered at the origin and bisected by +X axis
+        alpha = sweep/(2*spans)
+        sin_a = np.sin(alpha)
+        cos_a = np.cos(alpha)
+        tan_a = np.tan(alpha)
+        x = radius*cos_a
+        y = radius*sin_a
+        wm = cos_a
+        xm = x + y*tan_a
+        Ca = [[    x, -y, 0,  1],
+              [wm*xm,  0, 0, wm],
+              [    x,  y, 0,  1]]
+        # Compute control points by successive rotation
+        # of the controls points in the first segment
+        Cw = np.empty((2*spans+1,4), dtype='d')
+        R = transform().rotate(alpha+start, 2)
+        Cw[0:3,:] = R(Ca)
+        if spans > 1:
+            R = transform().rotate(2*alpha, 2)
+            for i in range(1, spans):
+                n = 2*i+1
+                Cw[n:n+2,:] = R(Cw[n-2:n,:])
+    # Translate control points to center
     if center is not None:
         T = transform().translate(center)
         Cw = T(Cw)
-    #
+    # Compute knot vector in the range [0,1]
     a, b = 0, 1
     U = np.empty(2*(spans+1)+2, dtype='d')
     U[0], U[-1] = a, b
     U[1:-1] = np.linspace(a,b,spans+1).repeat(2)
-    #
+    # Return the new NURBS object
     return NURBS(Cw, [U])
 
 def bilinear(p00=(-0.5,-0.5),
@@ -115,6 +180,27 @@ def trilinear(points=None):
 # -----
 
 def extrude(nrb, displ, axis=None):
+    """
+    Construct a NURBS surface/volume by 
+    extruding a NURBS curve/surface.
+
+    Parameters
+    ----------
+    nrb : NURBS
+    displ : array_like or float
+    axis : array_like or int, optional
+
+    Example
+    -------
+
+    >>> crv = circle()
+    >>> srf = extrude(crv, displ=1, axis=2)
+
+    >>> srf = bilinear()
+    >>> vol = extrude(srf, displ=1, axis=2)
+
+    """
+    assert nrb.dim <= 2
     T = transform().translate(displ, axis)
     Cw = np.empty(nrb.shape+(2,4))
     Cw[...,0,:] = nrb.control
@@ -123,10 +209,30 @@ def extrude(nrb, displ, axis=None):
     return NURBS(Cw, UVW)
 
 def revolve(nrb, point, axis, angle=None):
+    """
+    Construct a NURBS surface/volume by
+    revolving a NURBS curve/surface.
+    
+    Parameters
+    ----------
+    nrb : NURBS
+    point : array_like
+    axis : array_like or int
+    angle : float, optional
+    
+    Example
+    -------
+
+    >>> crv = line(1,2)
+    >>> srf = revolve(crv,  point=0, axis=2, angle=[Pi/2,2*Pi])
+    >>> vol = revolve(srf, point=3, axis=1, angle=-Pi/2)
+
+    """
+    assert nrb.dim <= 2
     point = np.asarray(point, dtype='d')
     assert point.ndim in (0, 1)
     assert point.size <= 3
-    axis = np.asarray(axis, dtype='d')
+    axis = np.asarray(axis)
     assert axis.ndim in (0, 1)
     assert 1 <= axis.size <= 3
     if axis.ndim == 0:
@@ -139,45 +245,51 @@ def revolve(nrb, point, axis, angle=None):
         norm_axis = np.linalg.norm(v)
         assert norm_axis > 0
         v /= norm_axis
-    #
+    # Transform the NURBS object to a new reference frame
+    # (O,X,Y,Z) centered at point and z-oriented with axis
     n = [v[1], -v[0], 0]    # n = cross(v, z)
     gamma = np.arccos(v[2]) # cos_gamma = dot(v, z)
     T = transform().translate(-point).rotate(gamma, n)
     nrb = nrb.clone().transform(T)
-
+    # Map cartesian coordinates (x,y,z) to cylindrical coordinates
+    # (rho,theta,z) with theta in [0,2*pi] and precompute sines and
+    # cosines of theta angles.
     Cw = nrb.control
     X, Y, Z, W = (Cw[...,i] for i in range(4))
     rho = np.hypot(X, Y)
-    alpha = np.arctan2(Y, X)
-    alpha[alpha<0] += 2*np.pi
-    sines = np.sin(alpha)
-    cosines = np.cos(alpha)
-
+    theta = np.arctan2(Y, X); theta[theta<0] += 2*np.pi
+    sines, cosines = np.sin(theta), np.cos(theta)
+    # Create a circular arc in the XY plane
     arc = circle(angle=angle)
     Aw = arc.control
-
+    # Allocate control points and knots of the result
     Qw = np.empty(nrb.shape + arc.shape + (4,))
     UVW = nrb.knots + arc.knots
-
-    dot = np.dot
+    # Loop over all control points of the NURBS object
+    # to revolve taking advantage of NumPy nd-indexing
+    dot = np.dot # inline numpy.dot
+    zeros = np.zeros # inline numpy.zeros
     for idx in np.ndindex(nrb.shape):
         z = Z[idx]
         w = W[idx]
         r = rho[idx]
-        # for the sake of speed, inline
-        # the transformation matrix
-        # M = Rz(alpha)*Tz(z)*Sxy(rho)
         r_sin_a = r*sines[idx]
         r_cos_a = r*cosines[idx]
-        M = np.identity(4, dtype='d')
+        # for the sake of speed, inline
+        # the transformation matrix
+        # M = Rz(theta)*Tz(z)*Sxy(rho)
+        M = zeros((4,4))
         M[0,0] = r_cos_a; M[0,1] = -r_sin_a
         M[1,0] = r_sin_a; M[1,1] =  r_cos_a
         M[2,3] = z
-
+        M[3,3] = 1
+        # Compute new 4D control points by transforming the 
+        # arc control point and tensor-product the weights
         Qi = Qw[idx]
         Qi[...] = dot(Aw, M.T)
         Qi[...,3] *= w
-
+    # Create the new NURBS object and map
+    # back to the original reference frame
     return NURBS(Qw, UVW).transform(T.invert())
 
 # -----

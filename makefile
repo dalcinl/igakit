@@ -8,6 +8,7 @@ build:
 .PHONY: doctest
 doctest:
 	$(PYTHON) -m doctest src/igakit/nurbs.py
+	$(PYTHON) -m doctest src/igakit/cad.py
 	-@$(RM) -r src/igakit/*.py[co]
 	-@$(RM) -r src/igakit/__pycache__
 .PHONY: test

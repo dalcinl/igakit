@@ -181,7 +181,7 @@ def trilinear(points=None):
 
 def extrude(nrb, displ, axis=None):
     """
-    Construct a NURBS surface/volume by 
+    Construct a NURBS surface/volume by
     extruding a NURBS curve/surface.
 
     Parameters
@@ -212,14 +212,14 @@ def revolve(nrb, point, axis, angle=None):
     """
     Construct a NURBS surface/volume by
     revolving a NURBS curve/surface.
-    
+
     Parameters
     ----------
     nrb : NURBS
     point : array_like
     axis : array_like or int
     angle : float, optional
-    
+
     Example
     -------
 
@@ -283,7 +283,7 @@ def revolve(nrb, point, axis, angle=None):
         M[1,0] = r_sin_a; M[1,1] =  r_cos_a
         M[2,3] = z
         M[3,3] = 1
-        # Compute new 4D control points by transforming the 
+        # Compute new 4D control points by transforming the
         # arc control point and tensor-product the weights
         Qi = Qw[idx]
         Qi[...] = dot(Aw, M.T)
@@ -291,5 +291,75 @@ def revolve(nrb, point, axis, angle=None):
     # Create the new NURBS object and map
     # back to the original reference frame
     return NURBS(Qw, UVW).transform(T.invert())
+
+def ruled(nrb1, nrb2):
+    """
+    Construct a ruled surface/volume
+    between two NURBS curves/surfaces.
+
+    Parameters
+    ----------
+    nrb1, nrb2 : NURBS
+
+    """
+    assert nrb1.dim == nrb2.dim
+    assert nrb1.dim <= 2
+    assert nrb2.dim <= 2
+    # Ensure same degree by degree elevation
+    t1 = []; t2 = []; # times to elevate
+    for (p1, p2) in zip(nrb1.degree, nrb2.degree):
+        p = max(p1, p2)
+        t1.append(p - p1)
+        t2.append(p - p2)
+    if np.any(t1):
+        nrb1 = nrb1.clone().elevate(*t1)
+    if np.any(t2):
+        nrb2 = nrb2.clone().elevate(*t2)
+    #
+    def MergeKnots(p, U1, U2):
+        if np.allclose(U1, U2):
+            u1 = u2 = np.empty(0, dtype='d')
+            return u1, u2
+        # Knot vector (U) -> breaks (u) & multiplicity (s)
+        u1, i1 = np.unique(U1[p+1:-p-1], return_inverse=True)
+        if i1.size: s1 = np.bincount(i1)
+        else: s1 = np.empty(0, dtype='i')
+        # Knot vector (U) -> breaks (u) & multiplicity (s)
+        u2, i2 = np.unique(U2[p+1:-p-1], return_inverse=True)
+        if i2.size: s2 = np.bincount(i2)
+        else: s2 = np.empty(0, dtype='i')
+        # Merge breaks and multiplicities
+        u = np.union1d(u1,u2)
+        s = np.zeros(u.size, dtype='i')
+        mask1 = np.in1d(u,u1)
+        s[mask1] = np.maximum(s[mask1], s1)
+        mask2 = np.in1d(u,u2)
+        s[mask2] = np.maximum(s[mask2], s2)
+        # Detemine breaks to insert and their multiplicities
+        v1 = np.setdiff1d(u,u1)
+        t1 = s[np.in1d(u,v1)]
+        v2 = np.setdiff1d(u,u2)
+        t2 = s[np.in1d(u,v2)]
+        # Build knots from breaks and multiplicities
+        u1 = np.repeat(v1,t1)
+        u2 = np.repeat(v2,t2)
+        #
+        return u1, u2
+    # Merge knot vectors by knot refinement
+    uv1 = []; uv2 = []; # knots to insert
+    for (p, U1, U2) in zip(
+        nrb1.degree, nrb1.knots, nrb2.knots):
+        u1, u2 = MergeKnots(p, U1, U2)
+        uv1.append(u1); uv2.append(u2)
+    if np.any(uv1):
+        nrb1 = nrb1.clone().refine(*uv1)
+    if np.any(uv2):
+        nrb2 = nrb2.clone().refine(*uv2)
+    #
+    Cw = np.zeros(nrb1.shape+(2,4),dtype='d')
+    Cw[...,0,:] = nrb1.control
+    Cw[...,1,:] = nrb2.control
+    UVW = nrb1.knots + ([0,0,1,1],)
+    return NURBS(Cw, UVW)
 
 # -----

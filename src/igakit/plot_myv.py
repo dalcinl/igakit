@@ -1,16 +1,16 @@
 import numpy as np
 try:
-    from tvtk.api import tvtk
     from mayavi import mlab
     from mayavi.tools import helper_functions as _helper
     from mayavi.tools import sources as _sources
     from mayavi.tools import tools as _tools
+    from tvtk.api import tvtk
 except ImportError:
-    from enthought.tvtk.api import tvtk
     from enthought.mayavi import mlab
     from enthought.mayavi.tools import helper_functions as _helper
     from enthought.mayavi.tools import sources as _sources
     from enthought.mayavi.tools import tools as _tools
+    from enthought.tvtk.api import tvtk
 try:
     from vtk.util import colors
 except ImportError:
@@ -43,28 +43,23 @@ colorbar = mlab.colorbar
 
 points3d = mlab.points3d
 plot3d   = mlab.plot3d
-mesh     = mlab.mesh
+quiver3d = mlab.quiver3d
 
-class MGridSource(_sources.MGridSource):
-
-    scalars = None
-    vectors = None
-
-    def reset(self, **traits):
-        self.set(trait_change_notify=False, **traits)
-
-        points = self.points
-        x, y, z = self.x, self.y, self.z
-
+def _grid_data(LINES, SURFS, VOLS):
+    point_list = []
+    line_list  = []
+    poly_list  = []
+    for (x, y, z) in LINES+SURFS+VOLS:
         assert x.ndim == y.ndim == z.ndim
         assert x.shape == y.shape, "Arrays x and y must have same shape."
         assert y.shape == z.shape, "Arrays y and z must have same shape."
-
-        points = np.c_[x.ravel(), y.ravel(), z.ravel()].ravel()
+        #
+        xyz = [x.ravel(), y.ravel(), z.ravel()]
+        points = np.column_stack(xyz).ravel()
         points.shape = (-1, 3)
-        self.set(points=points, trait_change_notify=False)
-
-        lines = polys = None
+        lines = np.zeros((0, 2), dtype='l')
+        polys = np.zeros((0, 4), dtype='l')
+        #
         grid = np.arange(x.size, dtype='l').reshape(x.shape)
         if x.ndim == 1:
             p0 = grid[:-1].ravel()
@@ -97,7 +92,28 @@ class MGridSource(_sources.MGridSource):
                      p1,p2,p6,p5]
             polys = np.column_stack(verts).ravel()
             polys.shape = (-1, 4)
+        point_list.append(points)
+        line_list.append(lines)
+        poly_list.append(polys)
+    offset = 0
+    for points, lines, polys in zip(point_list, line_list, poly_list):
+        lines += offset
+        polys += offset
+        offset += len(points)
+    return (np.row_stack(point_list),
+            np.row_stack(line_list),
+            np.row_stack(poly_list))
 
+class MGridSource(_sources.MlabSource):
+
+    lines = _helper.List(_helper.Array, [])
+    surfs = _helper.List(_helper.Array, [])
+    vols  = _helper.List(_helper.Array, [])
+
+    def reset(self, **traits):
+        self.set(trait_change_notify=False, **traits)
+        lines, surfs, vols = self.lines, self.surfs, self.vols
+        points, lines, polys = _grid_data(lines, surfs, vols)
         if self.dataset is None:
             pd = tvtk.PolyData()
         else:
@@ -105,24 +121,34 @@ class MGridSource(_sources.MGridSource):
         pd.set(lines=None, polys=None)
         pd.set(points=points)
         pd.set(lines=lines, polys=polys)
-
+        pd.point_data.scalars = points[:,-1].copy()
+        pd.point_data.scalars.name = 'scalars'
         self.dataset = pd
 
     @classmethod
-    def grid_source(MGridSource, x, y, z, **kwargs):
-        x, y, z = _sources.convert_to_arrays((x, y, z))
+    def grid_source(MGridSource, lines=(), surfs=(), vols=(), **kwargs):
+        convert = _sources.convert_to_arrays
+        lines = [convert((x, y, z)) for (x, y, z) in lines]
+        surfs = [convert((x, y, z)) for (x, y, z) in surfs]
+        vols  = [convert((x, y, z)) for (x, y, z) in vols ]
         data_source = MGridSource()
-        data_source.reset(x=x, y=y, z=z)
+        data_source.reset(lines=lines, surfs=surfs, vols=vols)
         name = kwargs.pop('name', 'GridSource')
         ds = _tools.add_dataset(data_source.dataset, name, **kwargs)
         data_source.m_data = ds
         return ds
 
 class Grid3d(_helper.Mesh):
+    lines = _helper.List(_helper.Array, [])
+    surfs = _helper.List(_helper.Array, [])
+    vols  = _helper.List(_helper.Array, [])
     _source_function = _helper.Callable(MGridSource.grid_source)
 
 grid3d = _helper.document_pipeline(Grid3d())
 
 del  MGridSource, Grid3d
+
+# --
+
 
 _resolution = { 1:256, 2:128 }

@@ -52,49 +52,39 @@ def plot3d(x, y ,z, **kwargs):
     lns = ax.plot(x, y, z, **kwargs)
     return lns
 
-def mesh(x, y, z, **kwargs):
-    x, y, z = x.T, y.T, z.T
-    r = kwargs.pop('representation', 'surface')
-    kwargs['rstride'] = 1
-    kwargs['cstride'] = 1
-    ax = mpl.gca()
-    if r == 'surface':
-        if 'linewidth' not in kwargs:
-            kwargs['linewidth'] = 0
-        kwargs['antialiased'] = True
-        srf = ax.plot_surface(x, y, z, **kwargs)
-    elif r == 'wireframe':
-        srf = ax.plot_wireframe(x, y, z, **kwargs)
-    return srf
-
-def grid3d(x, y ,z, **kwargs):
-    x, y, z = x.T, y.T, z.T
+def grid3d(lines=(), surfs=(), vols=(), **kwargs):
     r = kwargs.pop('representation', None)
     t = kwargs.pop('tube_radius', None)
     ax = mpl.gca()
-    if x.ndim == 1:
-        x, y, z = [c.ravel() for c in (x, y, z)]
-        grd = ax.plot(x, y, z, **kwargs)
-        return grd
-    if x.ndim == 2:
-        kwargs['rstride'] = 1
-        kwargs['cstride'] = 1
-        grd = ax.plot_wireframe(x, y, z, **kwargs)
-        return grd
-    if x.ndim == 3:
-        I, J, K = [np.arange(s) for s in x.shape]
-        for j in J:
-            for k in K:
-                X = x[:,j,k].ravel()
-                Y = y[:,j,k].ravel()
-                Z = z[:,j,k].ravel()
-                ax.plot(X, Y, Z, **kwargs)
-        kwargs['rstride'] = 1
-        kwargs['cstride'] = 1
-        for i in I:
-            X = x[i,...]
-            Y = y[i,...]
-            Z = z[i,...]
-            ax.plot_wireframe(X, Y, Z, **kwargs)
+    for (x, y ,z) in list(lines)+list(surfs)+list(vols):
+        x, y, z = x.T, y.T, z.T
+        if x.ndim == 1:
+            x, y, z = [c.ravel() for c in (x, y, z)]
+            grd = ax.plot(x, y, z, **kwargs)
+        if x.ndim == 2:
+            kwargs['rstride'] = 1
+            kwargs['cstride'] = 1
+            if r == 'surface':
+                if 'linewidth' not in kwargs:
+                    kwargs['linewidth'] = 0
+                kwargs['antialiased'] = True
+                srf = ax.plot_surface(x, y, z, **kwargs)
+            elif r == 'wireframe':
+                srf = ax.plot_wireframe(x, y, z, **kwargs)
+        if x.ndim == 3:
+            I, J, K = [np.arange(s) for s in x.shape]
+            for j in J:
+                for k in K:
+                    X = x[:,j,k].ravel()
+                    Y = y[:,j,k].ravel()
+                    Z = z[:,j,k].ravel()
+                    ax.plot(X, Y, Z, **kwargs)
+            kwargs['rstride'] = 1
+            kwargs['cstride'] = 1
+            for i in I:
+                X = x[i,...]
+                Y = y[i,...]
+                Z = z[i,...]
+                ax.plot_wireframe(X, Y, Z, **kwargs)
 
 _resolution = { 1:128, 2:16 }

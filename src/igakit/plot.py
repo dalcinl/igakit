@@ -300,10 +300,13 @@ class Plotter(object):
     _modules = {
         'mpl': None,
         'myv': None,
+        'nul': None,
         }
     _alias = {
         'matplotlib' : 'mpl',
         'mayavi'     : 'myv',
+        'null'      :  'nul',
+        'none'      :  'nul',
         }
     _backend = None
 

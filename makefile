@@ -5,15 +5,28 @@ PACKAGE=igakit
 build:
 	$(PYTHON) setup.py build
 
+.PHONY: demotest
+demotest:
+	$(PYTHON) demo/plot_crv.py none
+	$(PYTHON) demo/plot_srf.py none
+	$(PYTHON) demo/plot_vol.py none
+	$(PYTHON) demo/pipe.py     none
+	$(PYTHON) demo/bentpipe.py none
 .PHONY: doctest
 doctest:
+	$(PYTHON) -m doctest src/igakit/transform.py
 	$(PYTHON) -m doctest src/igakit/nurbs.py
 	$(PYTHON) -m doctest src/igakit/cad.py
 	-@$(RM) -r src/igakit/*.py[co]
 	-@$(RM) -r src/igakit/__pycache__
-.PHONY: test
-test:
+.PHONY: unittest
+unittest:
 	$(PYTHON) test/runtests.py
+
+.PHONY: test testall
+test: unittest
+testall: test doctest demotest
+
 
 .PHONY: install install_home install_user
 install: install_home

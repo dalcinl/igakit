@@ -31,11 +31,11 @@ except IndexError:
 vol = make_vol()
 
 plt.figure()
-plt.cpoints(vol)
+plt.cpoint(vol)
 plt.cwire(vol)
 
 plt.figure()
-plt.kpoints(vol)
+plt.kpoint(vol)
 plt.kwire(vol)
 
 plt.figure()

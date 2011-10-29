@@ -1,13 +1,13 @@
 import numpy as np
 
 class Plotter(object):
-    
+
     def __init__(self, backend=None):
         if backend is not None:
             self.use(backend)
 
     # ----------
- 
+
     def points(self, points, **kwargs):
         points = np.asarray(points, dtype='d')
         points = np.atleast_2d(points)
@@ -62,7 +62,7 @@ class Plotter(object):
         backend = self.get_backend()
         vcs = backend.quiver3d(x, y, z, u, v, w, **options)
         return vcs
-    
+
     # ----------
 
     def cpoint(self, nurbs, **kwargs):
@@ -86,23 +86,22 @@ class Plotter(object):
 
     def cwire(self, nurbs, **kwargs):
         C = nurbs.points
+        x, y, z = C.T
         #
         options = dict(kwargs)
         if 'color' not in options:
             options['color'] = (0,0,1)
         mode = options.pop('mode', 'line')
-        assert mode in ('line', 'tube', 'surf')
+        assert mode in ('line', 'tube')
         if mode == 'line':
             options['representation'] = 'wireframe'
             options['tube_radius'] = None
         elif mode == 'tube':
-            options['representation'] = 'mesh'
-        elif mode == 'surf':
             options['representation'] = 'surface'
         #
-        lines = [tuple(C.T)]
+        lines = [(x, y, z)]
         backend = self.get_backend()
-        grd = backend.grid3d(lines=lines, **options)
+        grd = backend.line3d(lines=lines, **options)
         return grd
 
     def kpoint(self, nurbs, **kwargs):
@@ -155,11 +154,11 @@ class Plotter(object):
             options['representation'] = 'wireframe'
             options['tube_radius'] = None
         elif mode == 'tube':
-            options['representation'] = 'mesh'
+            options['representation'] = 'surface'
         #
         lines = [tuple(C.T) for C in lines]
         backend = self.get_backend()
-        wire = backend.grid3d(lines=lines, **options)
+        wire = backend.line3d(lines=lines, **options)
         return wire
 
     def ksurf(self, nurbs, axes=None, **kwargs):
@@ -185,10 +184,11 @@ class Plotter(object):
         options = dict(kwargs)
         if 'color' not in options:
             options['color'] = (0,1,0)
+        options['representation'] = 'surface'
         #
         surfs = [tuple(C.T) for C in surfs]
         backend = self.get_backend()
-        surf = backend.grid3d(surfs=surfs, **options)
+        surf = backend.surf3d(surfs=surfs, **options)
         return surf
 
     # ----------
@@ -212,7 +212,7 @@ class Plotter(object):
         #
         options = dict(kwargs)
         color = options.pop('color', (1,1,0))
-        if color is not None: 
+        if color is not None:
             options['color'] = color
         mode = options.pop('mode', 'tube')
         assert mode in ('line', 'tube')
@@ -222,13 +222,14 @@ class Plotter(object):
         elif mode == 'tube':
             options['representation'] = 'surface'
         #
+        lines = [(x, y, z)]
         backend = self.get_backend()
-        crv = backend.plot3d(x, y, z, **options)
+        crv = backend.line3d(lines=lines, **options)
         return crv
 
     def surface(self, nurbs, **kwargs):
         if nurbs.dim < 2: return None
-        if nurbs.dim >= 2:
+        if nurbs.dim > 2:
             surfaces = []
             for axis in range(nurbs.dim):
                 for side in range(2):
@@ -253,7 +254,7 @@ class Plotter(object):
         #
         surfs = [tuple(C.T) for C in surfs]
         backend = self.get_backend()
-        srf = backend.grid3d(surfs=surfs, **options)
+        srf = backend.surf3d(surfs=surfs, **options)
         return srf
 
     def volume(self, nurbs, **kwargs):
@@ -328,10 +329,12 @@ class Plotter(object):
 
     backend = property(get_backend, set_backend)
 
+    # ----------
+
 
 plt = plotter = Plotter()
 
-use = plotter.use
-plot = plotter.plot
+use   = plotter.use
+plot  = plotter.plot
 cplot = plotter.cplot
 kplot = plotter.kplot

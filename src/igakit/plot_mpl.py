@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as mpl
+import matplotlib.cm as _cm
 import mpl_toolkits.mplot3d as _mplot3d
 import matplotlib.colors as _colors
 
@@ -44,34 +45,55 @@ def points3d(x, y ,z, **kwargs):
     x, y, z = [c.ravel() for c in (x, y, z)]
     pts = ax.scatter(x, y, z, s=30, **kwargs)
 
-def plot3d(x, y ,z, **kwargs):
-    x, y, z = x.T, y.T, z.T
+def line3d(lines, **kwargs):
     r = kwargs.pop('representation', None)
     t = kwargs.pop('tube_radius', None)
     ax = mpl.gca()
-    lns = ax.plot(x, y, z, **kwargs)
-    return lns
-
-def grid3d(lines=(), surfs=(), vols=(), **kwargs):
-    r = kwargs.pop('representation', None)
-    t = kwargs.pop('tube_radius', None)
-    ax = mpl.gca()
-    for (x, y ,z) in list(lines)+list(surfs)+list(vols):
+    for (x, y ,z) in lines:
         x, y, z = x.T, y.T, z.T
         if x.ndim == 1:
-            x, y, z = [c.ravel() for c in (x, y, z)]
-            grd = ax.plot(x, y, z, **kwargs)
+            options = dict(kwargs)
+            x, y, z = (c.ravel() for c in (x, y, z))
+            lns = ax.plot(x, y, z, **options)
         if x.ndim == 2:
-            kwargs['rstride'] = 1
-            kwargs['cstride'] = 1
-            if r == 'surface':
-                if 'linewidth' not in kwargs:
-                    kwargs['linewidth'] = 0
-                kwargs['antialiased'] = True
-                srf = ax.plot_surface(x, y, z, **kwargs)
-            elif r == 'wireframe':
-                srf = ax.plot_wireframe(x, y, z, **kwargs)
+            options = dict(kwargs)
+            options['rstride'] = 1
+            options['cstride'] = 1
+            lns = ax.plot_wireframe(x, y, z, **options)
         if x.ndim == 3:
+            options = dict(kwargs)
+            options['rstride'] = 1
+            options['cstride'] = 1
+            I, J, K = [np.arange(s) for s in x.shape]
+            for i in I:
+                X, Y, Z = (c[i,...] for c in (x, y, z))
+                lns = ax.plot_wireframe(X, Y, Z, **options)
+            options = dict(kwargs)
+            for j in J:
+                for k in K:
+                    X, Y, Z = (c[:,j,k].ravel() for c in (x, y, z))
+                    lns = ax.plot(X, Y, Z, **options)
+
+def surf3d(surfs=(), **kwargs):
+    r = kwargs.pop('representation', None)
+    t = kwargs.pop('tube_radius', None)
+    ax = mpl.gca()
+    for (x, y ,z) in surfs:
+        x, y, z = x.T, y.T, z.T
+        if x.ndim == 2:
+            options = dict(kwargs)
+            options['rstride'] = 1
+            options['cstride'] = 1
+            if 'linewidth' not in options:
+                options['linewidth'] = 0
+            if ('color' not in options and
+                'cmap'  not in options):
+                options['cmap'] = _cm.jet
+            options['shade'] = True
+            options['antialiased'] = True
+            srf = ax.plot_surface(x, y, z, **options)
+        if x.ndim == 3:
+            continue # XXX
             I, J, K = [np.arange(s) for s in x.shape]
             for j in J:
                 for k in K:

@@ -1,6 +1,6 @@
 import numpy as np
 from igakit.nurbs import NURBS, transform
-import igakit.plotting as plt
+from igakit.plot import plt
 
 L  = 3.0
 R0 = 1.0
@@ -48,17 +48,24 @@ W = [0,0,0, 1,1, 2,2,2]
 nrb = NURBS(Pw, [U,V,W])
 assert nrb.degree == (2,1,2)
 
-plt.use_backend('mayavi')
+import sys
+try:
+    backend = sys.argv[1]
+    plt.use(backend)
+except IndexError:
+    pass
+#plt.use('mayavi')
+#plt.use('matplotlib')
 
 plt.figure()
-plt.controlpoints(nrb)
-plt.controlgrid(nrb)
-plt.knotpoints(nrb)
-plt.knotgrid(nrb)
+plt.cpoint(nrb)
+plt.cwire(nrb, mode='tube')
+plt.kpoint(nrb, )
+plt.kwire(nrb, mode='tube')
+plt.plot(nrb, opacity=0.1)
 
 plt.figure()
-plt.knotpoints(nrb, color=(0,0,1))
-plt.knotgrid(nrb,   color=(0,0,1))
-plt.volume(nrb)
+plt.kplot(nrb, color=(0,0,1))
+plt.plot(nrb)
 
 plt.show()

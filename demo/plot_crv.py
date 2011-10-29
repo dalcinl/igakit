@@ -1,6 +1,6 @@
 import numpy as np
 from igakit.nurbs import NURBS
-from igakit import plotting as plt
+from igakit.plot import plt
 
 def make_crv():
     C = [[ 6.0, 0.0, 6.0],
@@ -25,27 +25,26 @@ def make_crv():
 import sys
 try:
     backend = sys.argv[1]
-    plt.use_backend(backend)
+    plt.use(backend)
 except IndexError:
     pass
 
 crv = make_crv()
 
 plt.figure()
-plt.controlpoints(crv)
-plt.controlgrid(crv)
+plt.cpoint(crv)
+plt.cwire(crv)
 
 plt.figure()
-plt.knotpoints(crv)
-plt.knotgrid(crv)
+plt.kpoint(crv)
+plt.kwire(crv)
 
 plt.figure()
 plt.curve(crv)
 
 plt.figure()
-plt.controlpoints(crv)
-plt.controlgrid(crv)
-plt.knotpoints(crv)
-plt.curve(crv)
+plt.cplot(crv)
+plt.kplot(crv)
+plt.plot(crv)
 
 plt.show()

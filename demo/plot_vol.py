@@ -1,6 +1,6 @@
 import numpy as np
 from igakit.nurbs import NURBS
-from igakit import plotting as plt
+from igakit.plot import plt
 
 def make_vol():
     C = np.zeros((3,2,3,4), dtype='d')
@@ -24,19 +24,19 @@ def make_vol():
 import sys
 try:
     backend = sys.argv[1]
-    plt.use_backend(backend)
+    plt.use(backend)
 except IndexError:
     pass
 
 vol = make_vol()
 
 plt.figure()
-plt.controlpoints(vol)
-plt.controlgrid(vol)
+plt.cpoints(vol)
+plt.cwire(vol)
 
 plt.figure()
-plt.knotpoints(vol)
-plt.knotgrid(vol)
+plt.kpoints(vol)
+plt.kwire(vol)
 
 plt.figure()
 plt.curve(vol)
@@ -45,10 +45,8 @@ plt.figure()
 plt.surface(vol)
 
 plt.figure()
-plt.controlpoints(vol)
-plt.controlgrid(vol)
-plt.knotpoints(vol)
-plt.knotgrid(vol)
-plt.surface(vol)
+plt.cplot(vol)
+plt.kplot(vol)
+plt.plot(vol)
 
 plt.show()

@@ -44,7 +44,7 @@ colorbar = mlab.colorbar
 points3d = mlab.points3d
 quiver3d = mlab.quiver3d
 
-def _grid_lines(LINES):
+def _extract_grid_lines(LINES):
     point_list = []
     line_list  = []
     for (x, y, z) in LINES:
@@ -102,7 +102,7 @@ def _grid_lines(LINES):
     return (np.row_stack(point_list),
             np.row_stack(line_list))
 
-def _grid_polys(SURFS):
+def _extract_grid_polys(SURFS):
     point_list = []
     poly_list  = []
     for (x, y, z) in SURFS:
@@ -150,14 +150,13 @@ def _grid_polys(SURFS):
     return (np.row_stack(point_list),
             np.row_stack(poly_list))
 
-
 class MLineSource(_sources.MlabSource):
 
     lines = _helper.List(_helper.Array, [])
 
     def reset(self, **traits):
         self.set(trait_change_notify=False, **traits)
-        points, lines = _grid_lines(self.lines)
+        points, lines = _extract_grid_lines(self.lines)
         if self.dataset is None:
             pd = tvtk.PolyData()
         else:
@@ -185,7 +184,7 @@ class MSurfSource(_sources.MlabSource):
 
     def reset(self, **traits):
         self.set(trait_change_notify=False, **traits)
-        points, polys = _grid_polys(self.surfs)
+        points, polys = _extract_grid_polys(self.surfs)
         if self.dataset is None:
             pd = tvtk.PolyData()
         else:

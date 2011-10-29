@@ -1,6 +1,6 @@
 import numpy as np
 from igakit.nurbs import NURBS
-from igakit import plotting as plt
+from igakit.plot import plt
 
 def make_srf():
     C = np.zeros((3,5,5))
@@ -28,31 +28,28 @@ def make_srf():
 import sys
 try:
     backend = sys.argv[1]
-    plt.use_backend(backend)
+    plt.use(backend)
 except IndexError:
     pass
 
 srf = make_srf()
 
 plt.figure()
-plt.controlpoints(srf)
-plt.controlgrid(srf)
+plt.cpoint(srf)
+plt.cwire(srf)
 
 plt.figure()
-plt.knotpoints(srf)
-plt.knotgrid(srf)
+plt.kpoint(srf)
+plt.kwire(srf)
 
 plt.figure()
 plt.curve(srf)
-
 plt.figure()
 plt.surface(srf)
 
 plt.figure()
-plt.controlpoints(srf)
-plt.controlgrid(srf)
-plt.knotpoints(srf)
-plt.knotgrid(srf)
-plt.surface(srf)
+plt.cplot(srf)
+plt.kplot(srf)
+plt.plot(srf)
 
 plt.show()

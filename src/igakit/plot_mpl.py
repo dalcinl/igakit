@@ -33,80 +33,99 @@ def zlabel(*args, **kwargs):
 colorbar = mpl.colorbar
 
 def points3d(x, y ,z, **kwargs):
-    x, y, z = x.T, y.T, z.T
-    m = kwargs.pop('mode', 'sphere')
+    options = dict(kwargs)
+    _ = options.pop('name', None)
+    _ = options.pop('representation', None)
+    _ = options.pop('opacity', None)
+    _ = options.pop('colormap', None)
+    _ = options.pop('resolution', None)
+    _ = options.pop('scale_factor', None)
+    _ = options.pop('scale_mode', None)
+    _ = options.pop('line_width', None)
+    m = options.pop('mode', 'sphere')
     if m == 'sphere':
-        kwargs['marker'] = 'o'
+        options['marker'] = 'o'
     if m == 'cube':
-        kwargs['marker'] = 's'
+        options['marker'] = 's'
     if m == 'cone':
-        kwargs['marker'] = '^'
+        options['marker'] = '^'
     ax = mpl.gca()
-    x, y, z = [c.ravel() for c in (x, y, z)]
-    pts = ax.scatter(x, y, z, s=30, **kwargs)
+    x, y, z = x.T, y.T, z.T
+    x, y, z = (c.ravel() for c in (x, y, z))
+    pts = ax.scatter(x, y, z, s=30, **options)
 
 def line3d(lines, **kwargs):
-    r = kwargs.pop('representation', None)
-    t = kwargs.pop('tube_radius', None)
+    options = dict(kwargs)
+    _ = options.pop('name', None)
+    _ = options.pop('representation', None)
+    _ = options.pop('opacity', None)
+    _ = options.pop('colormap', None)
+    _ = options.pop('resolution', None)
+    _ = options.pop('tube_radius', None)
+    _ = options.pop('tube_sides', None)
+    _ = options.pop('line_width', None)
     ax = mpl.gca()
     for (x, y ,z) in lines:
         x, y, z = x.T, y.T, z.T
         if x.ndim == 1:
-            options = dict(kwargs)
+            opts = dict(options)
             x, y, z = (c.ravel() for c in (x, y, z))
-            lns = ax.plot(x, y, z, **options)
+            lns = ax.plot(x, y, z, **opts)
         if x.ndim == 2:
-            options = dict(kwargs)
-            options['rstride'] = 1
-            options['cstride'] = 1
-            lns = ax.plot_wireframe(x, y, z, **options)
+            opts = dict(options)
+            opts['rstride'] = opts['cstride'] = 1
+            lns = ax.plot_wireframe(x, y, z, **opts)
         if x.ndim == 3:
-            options = dict(kwargs)
-            options['rstride'] = 1
-            options['cstride'] = 1
+            opts = dict(options)
+            opts['rstride'] = opts['cstride'] = 1
             I, J, K = [np.arange(s) for s in x.shape]
             for i in I:
                 X, Y, Z = (c[i,...] for c in (x, y, z))
-                lns = ax.plot_wireframe(X, Y, Z, **options)
-            options = dict(kwargs)
+                lns = ax.plot_wireframe(X, Y, Z, **opts)
+            opts = dict(options)
             for j in J:
                 for k in K:
                     X, Y, Z = (c[:,j,k].ravel() for c in (x, y, z))
-                    lns = ax.plot(X, Y, Z, **options)
+                    lns = ax.plot(X, Y, Z, **opts)
 
 def surf3d(surfs=(), **kwargs):
-    r = kwargs.pop('representation', None)
-    t = kwargs.pop('tube_radius', None)
+    options = dict(kwargs)
+    _ = options.pop('name', None)
+    _ = options.pop('representation', None)
+    _ = options.pop('opacity', None)
+    _ = options.pop('colormap', None)
+    _ = options.pop('resolution', None)
+    _ = options.pop('scale_factor', None)
+    _ = options.pop('scale_mode', None)
+    _ = options.pop('tube_radius', None)
+    _ = options.pop('tube_sides', None)
+    _ = options.pop('line_width', None)
     ax = mpl.gca()
     for (x, y ,z) in surfs:
         x, y, z = x.T, y.T, z.T
         if x.ndim == 2:
-            options = dict(kwargs)
-            options['rstride'] = 1
-            options['cstride'] = 1
-            if 'linewidth' not in options:
-                options['linewidth'] = 0
-            if ('color' not in options and
-                'cmap'  not in options):
-                options['cmap'] = _cm.jet
-            options['shade'] = True
-            options['antialiased'] = True
-            srf = ax.plot_surface(x, y, z, **options)
+            opts = dict(options)
+            opts['rstride'] = opts['cstride'] = 1
+            if 'linewidth' not in opts:
+                opts['linewidth'] = 0
+            if ('color' not in opts and
+                'cmap'  not in opts):
+                opts['cmap'] = _cm.jet
+            opts['shade'] = True
+            opts['antialiased'] = True
+            srf = ax.plot_surface(x, y, z, **opts)
         if x.ndim == 3:
             continue # XXX
             I, J, K = [np.arange(s) for s in x.shape]
+            opts = dict(options)
+            opts['rstride'] = opts['cstride'] = 1
+            for i in I:
+                X, Y, Z = (c[i,...] for c in (x, y, z))
+                ax.plot_wireframe(X, Y, Z, **opts)
+            opts = dict(options)
             for j in J:
                 for k in K:
-                    X = x[:,j,k].ravel()
-                    Y = y[:,j,k].ravel()
-                    Z = z[:,j,k].ravel()
-                    ax.plot(X, Y, Z, **kwargs)
-            kwargs['rstride'] = 1
-            kwargs['cstride'] = 1
-            for i in I:
-                X = x[i,...]
-                Y = y[i,...]
-                Z = z[i,...]
-                ax.plot_wireframe(X, Y, Z, **kwargs)
+                    X, Y, Z = (c[:,j,k].ravel() for c in (x, y, z))
+                    ax.plot(X, Y, Z, **opts)
 
 _resolution = { 1:128, 2:16 }

@@ -362,4 +362,31 @@ def ruled(nrb1, nrb2):
     UVW = nrb1.knots + ([0,0,1,1],)
     return NURBS(Cw, UVW)
 
+def sweep(section, trajectory):
+    """
+    Construct the translational sweep of a section
+    curve/surface along a trajectory curve.
+
+    S(u,v) = C(u) + T(v)
+
+    V(u,v,w) = S(u,v) + T(w)
+
+    Parameters
+    ----------
+
+    section : NURBS
+        Section curve/surface
+    trajectory : NURBS
+        Trajectory curve
+
+    """
+    assert 1 <= section.dim <= 2
+    assert trajectory.dim == 1
+    Cs, ws = section.points, section.weights
+    Ct, wt = trajectory.points, trajectory.weights
+    C = Cs[...,np.newaxis,:] + Ct
+    w = ws[...,np.newaxis] * wt
+    UVW = section.knots + trajectory.knots
+    return NURBS((C, w), UVW)
+
 # -----

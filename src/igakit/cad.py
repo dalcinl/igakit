@@ -179,6 +179,98 @@ def trilinear(points=None):
 
 # -----
 
+def compat(*nurbs):
+    """
+
+    Parameters
+    ----------
+    nurbs: sequence of NURBS
+
+
+    Returns
+    -------
+    nurbs: list of NURBS
+
+    """
+    #
+    def SameBounds(nurbs):
+        degree = [nrb.degree for nrb in nurbs]
+        knots  = [nrb.knots  for nrb in nurbs]
+        shape  = (len(knots), len(knots[0]), 2)
+        bounds = np.zeros(shape, dtype='d')
+        for i, (degs, knts) in enumerate(zip(degree, knots)):
+            for j, (p, U) in enumerate(zip(degs, knts)):
+                bounds[i,j,:] = U[p], U[-p-1]
+        umin = bounds[...,0].min(axis=0)
+        umax = bounds[...,1].max(axis=0)
+        limits = zip(umin, umax)
+        for i, bnds in enumerate(bounds):
+            knts = knots[i] = list(knots[i])
+            for j, (ab, cd) in enumerate(zip(bnds, limits)):
+                # u in [a, b] -> s in [d, d]
+                a, b = ab; c, d = cd;
+                if (a == c) and (b == d): continue
+                # U <- (d-c)/(b-a) * (U-a) + c
+                U = knts[j] = knts[j].copy()
+                U -= a; U *= (d-c)/(b-a); U += c
+        for i, knts in enumerate(knots):
+            nurbs[i]._knots = tuple(knts)
+    #
+    def SameDegree(nurbs):
+        # Ensure same degree by degree elevation
+        degree = np.row_stack([nrb.degree for nrb in nurbs])
+        degmax = degree.max(axis=0)
+        times = degmax - degree
+        for i, rst in enumerate(times):
+            if np.any(rst):
+                nurbs[i].elevate(*rst)
+    #
+    def MergeKnots(nurbs):
+        degree = [nrb.degree for nrb in nurbs]
+        knots  = [nrb.knots  for nrb in nurbs]
+        kvalues = []
+        for degs, knts in zip(zip(*degree), zip(*knots)):
+            breaks = []; mults = [];
+            for (p, U) in zip(degs, knts):
+                # knot vector -> breaks & multiplicities
+                s = np.empty(0, dtype='i')
+                u, i = np.unique(U[p+1:-p-1], return_inverse=True)
+                if i.size: s = np.bincount(i)
+                breaks.append(u); mults.append(s)
+            # Merge breaks and multiplicities
+            u = np.unique(np.concatenate(breaks))
+            s = np.zeros(u.size, dtype='i')
+            for (ui, si) in zip(breaks, mults):
+                mask = np.in1d(u, ui)
+                s[mask] = np.maximum(s[mask], si)
+            # Detemine knots to insert
+            kvals = []
+            for ui in breaks:
+                vi = np.setdiff1d(u, ui) # breaks to insert
+                ti = s[np.in1d(u, vi)]   # multiplicities
+                kv = np.repeat(vi, ti)
+                kvals.append(kv)
+            kvalues.append(kvals)
+        # Apply knot refinement
+        for i, uvw in enumerate(zip(*kvalues)):
+            if np.any(u.size for u in uvw):
+                nurbs[i].refine(*uvw)
+    #
+    if len(nurbs) == 1:
+        if not isinstance(nurbs[0], NURBS):
+            nurbs = nurbs[0]
+    nurbs = [nrb.clone() for nrb in nurbs]
+    if len(nurbs) < 2: return nurbs
+    assert (min(nrb.dim for nrb in nurbs) ==
+            max(nrb.dim for nrb in nurbs))
+    SameBounds(nurbs)
+    SameDegree(nurbs)
+    MergeKnots(nurbs)
+    #
+    return nurbs
+
+# -----
+
 def extrude(nrb, displ, axis=None):
     """
     Construct a NURBS surface/volume by
@@ -305,57 +397,7 @@ def ruled(nrb1, nrb2):
     assert nrb1.dim == nrb2.dim
     assert nrb1.dim <= 2
     assert nrb2.dim <= 2
-    # Ensure same degree by degree elevation
-    t1 = []; t2 = []; # times to elevate
-    for (p1, p2) in zip(nrb1.degree, nrb2.degree):
-        p = max(p1, p2)
-        t1.append(p - p1)
-        t2.append(p - p2)
-    if np.any(t1):
-        nrb1 = nrb1.clone().elevate(*t1)
-    if np.any(t2):
-        nrb2 = nrb2.clone().elevate(*t2)
-    #
-    def MergeKnots(p, U1, U2):
-        if np.allclose(U1, U2):
-            u1 = u2 = np.empty(0, dtype='d')
-            return u1, u2
-        # Knot vector (U) -> breaks (u) & multiplicity (s)
-        u1, i1 = np.unique(U1[p+1:-p-1], return_inverse=True)
-        if i1.size: s1 = np.bincount(i1)
-        else: s1 = np.empty(0, dtype='i')
-        # Knot vector (U) -> breaks (u) & multiplicity (s)
-        u2, i2 = np.unique(U2[p+1:-p-1], return_inverse=True)
-        if i2.size: s2 = np.bincount(i2)
-        else: s2 = np.empty(0, dtype='i')
-        # Merge breaks and multiplicities
-        u = np.union1d(u1,u2)
-        s = np.zeros(u.size, dtype='i')
-        mask1 = np.in1d(u,u1)
-        s[mask1] = np.maximum(s[mask1], s1)
-        mask2 = np.in1d(u,u2)
-        s[mask2] = np.maximum(s[mask2], s2)
-        # Detemine breaks to insert and their multiplicities
-        v1 = np.setdiff1d(u,u1)
-        t1 = s[np.in1d(u,v1)]
-        v2 = np.setdiff1d(u,u2)
-        t2 = s[np.in1d(u,v2)]
-        # Build knots from breaks and multiplicities
-        u1 = np.repeat(v1,t1)
-        u2 = np.repeat(v2,t2)
-        #
-        return u1, u2
-    # Merge knot vectors by knot refinement
-    uv1 = []; uv2 = []; # knots to insert
-    for (p, U1, U2) in zip(
-        nrb1.degree, nrb1.knots, nrb2.knots):
-        u1, u2 = MergeKnots(p, U1, U2)
-        uv1.append(u1); uv2.append(u2)
-    if np.any(uv1):
-        nrb1 = nrb1.clone().refine(*uv1)
-    if np.any(uv2):
-        nrb2 = nrb2.clone().refine(*uv2)
-    #
+    nrb1, nrb2 = compat(nrb1, nrb2)
     Cw = np.zeros(nrb1.shape+(2,4),dtype='d')
     Cw[...,0,:] = nrb1.control
     Cw[...,1,:] = nrb2.control

@@ -254,9 +254,9 @@ def compat(*nurbs):
             breaks = []; mults = [];
             for (p, U) in zip(degs, knts):
                 # knot vector -> breaks & multiplicities
-                s = np.empty(0, dtype='i')
                 u, i = np.unique(U[p+1:-p-1], return_inverse=True)
                 if i.size: s = np.bincount(i)
+                else: s = np.empty(0, dtype='i')
                 breaks.append(u); mults.append(s)
             # Merge breaks and multiplicities
             u = np.unique(np.concatenate(breaks))

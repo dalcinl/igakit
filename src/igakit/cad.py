@@ -131,51 +131,72 @@ def circle(radius=1, center=None, angle=None):
     # Return the new NURBS object
     return NURBS(Cw, [U])
 
-def bilinear(p00=(-0.5,-0.5),
-             p01=(+0.5,-0.5),
-             p10=(-0.5,+0.5),
-             p11=(+0.5,+0.5)):
+def linear(points=None):
     """
-    o------------------o
-    |p10  v         p11|
-    |     ^            |
-    |     |            |
-    |p00  +----> u  p01|
-    o------------------o
+    p[0]         p[1]
+    o------------o
+       +----> u
     """
-    p00 = np.asarray(p00, dtype='d')
-    p01 = np.asarray(p01, dtype='d')
-    p10 = np.asarray(p10, dtype='d')
-    p11 = np.asarray(p11, dtype='d')
-    points = np.zeros((2,2,3), dtype='d')
-    points[0,0,:p00.size] = p00
-    points[0,1,:p01.size] = p01
-    points[1,0,:p10.size] = p10
-    points[1,1,:p11.size] = p11
+    if points is None:
+        points = np.zeros((2,2), dtype='d')
+        points[0,0] = -0.5
+        points[1,0] = +0.5
+    else:
+        points = np.asarray(points, dtype='d')
+        assert points.shape[:-1] == (2,)
+    knots = [0,0,1,1]
+    return NURBS(points, [knots])
+
+def bilinear(points=None):
+    """
+    p[0,1]       p[1,1]
+    o------------o
+    |  v         |
+    |  ^         |
+    |  |         |
+    |  +----> u  |
+    o------------o
+    p[0,0]       p[1,0]
+    """
+    if points is None:
+        s = slice(-0.5, +0.5, 2j)
+        x, y = np.ogrid[s, s]
+        points = np.zeros((2,2,2), dtype='d')
+        points[...,0] = x
+        points[...,1] = y
+    else:
+        points = np.array(points, dtype='d')
+        assert points.shape[:-1] == (2,2)
     knots = [0,0,1,1]
     return NURBS(points, [knots]*2)
 
 def trilinear(points=None):
     """
-       +---------+
-      /         /|
-     /         / |
-    +---------+  |
-    |         |  |
-    |  +      |  +
-    |         | /
-    |         |/
-    +---------+
+       p[0,1,1]     p[1,1,1]
+       o------------o
+      /|           /|
+     / |          / |          w
+    o------------o  |          ^  v
+    | p[0,0,1]   | p[1,0,1]    | /
+    |  |         |  |          |/
+    |  o-------- | -o          +----> u
+    | / p[0,1,0] | / p[1,1,0]
+    |/           |/
+    o------------o
+    p[0,0,0]     p[1,0,0]
     """
     if points is None:
-        points = np.mgrid[-.5:+.5:2j,-.5:+.5:2j,-.5:+.5:2j]
-        points = np.rollaxis(points, 0, 4)
+        s = slice(-0.5, +0.5, 2j)
+        x, y, z = np.ogrid[s, s, s]
+        points = np.zeros((2,2,2,3), dtype='d')
+        points[...,0] = x
+        points[...,1] = y
+        points[...,2] = z
     else:
-        points = np.asarray(points, dtype='d')
-        if points.shape == (3,2,2,2):
-            points = np.rollaxis(points, 0, 4)
+        points = np.array(points, dtype='d')
+        assert points.shape[:-1] == (2,2,2)
     knots = [0,0,1,1]
-    return NURBS(grid, [knots]*3)
+    return NURBS(points, [knots]*3)
 
 # -----
 

@@ -154,8 +154,7 @@ class NURBS(object):
         Create a NURBS object.
         """
         #
-        if (isinstance(control, (list, tuple))
-            and len(control) == 2):
+        if (isinstance(control, tuple) and len(control) == 2):
             assert weights is None
             control, weights = control
         #

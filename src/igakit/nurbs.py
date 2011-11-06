@@ -581,16 +581,33 @@ class NURBS(object):
 
         Create a random volume, extract a surface along the 3rd
         parametric direction at w=0.3, further extract a curve from
-        the surface along the 1st parametric direction and u=0.5,
+        the surface along the 1st parametric direction at u=0.5,
         compare evaluations at equivalent points.
 
-        >>> v1 = NURBS(np.random.rand(4,3,2,3),[ [0,0,0,0,1,1,1,1], [0,0,0,1,1,1], [0,0,1,1] ])
-        >>> u = 0.5; v = 0.75; w = 0.3
-        >>> s1 = v1.extract(2,w)
-        >>> c1 = s1.extract(0,u)
-        >>> (abs(v1.evaluate(u,v,w)-s1.evaluate(u,v))).max() < 1.0e-15
+        >>> C = np.random.rand(4,3,2,3)
+        >>> U = [0,0,0,0,1,1,1,1]; V = U[1:-1]; W = V[1:-1];
+        >>> u = 0.5; v = 0.75; w = 0.3;
+        >>> vol = NURBS(C,[U,V,W])
+        >>> vol.shape
+        (4, 3, 2)
+        >>> vol.degree
+        (3, 2, 1)
+        >>> srf = vol.extract(2,w)
+        >>> srf.shape
+        (4, 3)
+        >>> srf.degree
+        (3, 2)
+        >>> crv = srf.extract(0,u)
+        >>> crv.shape
+        (3,)
+        >>> crv.degree
+        (2,)
+        >>> p1 = vol.evaluate(u,v,w)
+        >>> p2 = srf.evaluate(u,v)
+        >>> p3 = crv.evaluate(v)
+        >>> np.allclose(p1, p2, rtol=0, atol=1e-15)
         True
-        >>> (abs(v1.evaluate(u,v,w)-c1.evaluate(v))).max() < 1.0e-15
+        >>> np.allclose(p2, p3, rtol=0, atol=1e-15)
         True
 
         """

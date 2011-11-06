@@ -363,8 +363,6 @@ contains
     real   (kind=8), intent(in) :: P1(d),P2(d)
     integer(kind=4) :: i
     real   (kind=8) :: dist
-    !dist = norm2(P1-P2)
-    !return
     dist = 0.0
     do i = 1,d
        dist = dist + (P1(i)-P2(i))*(P1(i)-P2(i))
@@ -517,7 +515,7 @@ subroutine DegreeElevate(d,n,p,U,Pw,t,nh,Uh,Qw)
 contains
   pure function Bin(n,k) result (C)
     implicit none
-    integer(kind=4), intent(in)  :: n, k
+    integer(kind=4), intent(in) :: n, k
     integer(kind=4) :: i, C
     C = 1
     do i = 0, min(k,n-k) - 1
@@ -818,19 +816,19 @@ subroutine Evaluate(d,n,p,U,Pw,r,X,Cw)
   real   (kind=8), intent(out) :: Cw(d,0:r)
   integer(kind=4) :: i, j, span
   real   (kind=8) :: basis(0:p), C(d)
-  !span = FindSpan(n,p,X(0),U)
+  !
   do i = 0, r
-     !if (X(i) < U(span) .or. X(i) >= U(span+1)) then
-     !   span = FindSpan(n,p,X(i),U)
-     !end if
      span = FindSpan(n,p,X(i),U)
      call BasisFuns(span,X(i),p,U,basis)
+     !
      C = 0.0
      do j = 0, p
         C = C + basis(j)*Pw(:,span-p+j)
      end do
      Cw(:,i) = C
+     !
   end do
+  !
 end subroutine Evaluate
 
 subroutine RefineKnotVector(d,n,p,U,Pw,r,X,Ubar,Qw)
@@ -916,7 +914,6 @@ subroutine Evaluate(d,nx,px,Ux,ny,py,Uy,Pw,rx,X,ry,Y,Cw)
   real   (kind=8), intent(in)  :: Pw(d,0:ny,0:nx)
   real   (kind=8), intent(in)  :: X(0:rx), Y(0:ry)
   real   (kind=8), intent(out) :: Cw(d,0:ry,0:rx)
-  !
   integer(kind=4) :: ix, jx, iy, jy, ox, oy
   integer(kind=4) :: spanx(0:rx), spany(0:ry)
   real   (kind=8) :: basisx(0:px,0:rx), basisy(0:py,0:ry)
@@ -947,6 +944,7 @@ subroutine Evaluate(d,nx,px,Ux,ny,py,Uy,Pw,rx,X,ry,Y,Cw)
         ! ---
      end do
   end do
+  !
 end subroutine Evaluate
 
 subroutine RefineKnotVector(d,n,p,U,m,q,V,Pw,r,X,s,Y,Ubar,Vbar,Qw)
@@ -962,7 +960,6 @@ subroutine RefineKnotVector(d,n,p,U,m,q,V,Pw,r,X,s,Y,Ubar,Vbar,Qw)
   real   (kind=8), intent(out) :: Ubar(0:n+p+1+r+1)
   real   (kind=8), intent(out) :: Vbar(0:m+q+1+s+1)
   real   (kind=8), intent(out) :: Qw(d,0:m+s+1,0:n+r+1)
-  !
   real   (kind=8) :: Q1(d*(m+1),0:n+r+1)
   real   (kind=8) :: Aw(d,0:n+r+1,0:m)
   real   (kind=8) :: Q2(d*(n+r+1+1),0:m+s+1)
@@ -999,7 +996,6 @@ subroutine DegreeElevate(d,n,p,U,m,q,V,Pw,r,s,nh,Uh,mh,Vh,Qw)
   real   (kind=8), intent(out) :: Uh(0:nh+p+r+1)
   real   (kind=8), intent(out) :: Vh(0:mh+q+s+1)
   real   (kind=8), intent(out) :: Qw(d,0:mh,0:nh)
-  !
   real   (kind=8) :: Q1(d*(m+1),0:nh)
   real   (kind=8) :: Aw(d,0:nh,0:m)
   real   (kind=8) :: Q2(d*(nh+1),0:mh)
@@ -1038,17 +1034,20 @@ subroutine Extract(d,nx,px,Ux,ny,py,Uy,Pw,ii,uu,n,p,U,Cw)
   real   (kind=8), intent(out) :: U(0:n+p+1)
   real   (kind=8), intent(out) :: Cw(d,0:n)
   real   (kind=8)  :: Pw1(d,0:nx,0:ny)
+  !
   if (ii == 0) then
      call CurvePntByCornerCut(d*(ny+1),nx,px,Ux,Pw,uu,Cw)
      U = Uy
      return
   end if
+  !
   if (ii == 1) then
      Pw1 = reshape(Pw,shape(Pw1),order=(/1,3,2/))
      call CurvePntByCornerCut(d*(nx+1),ny,py,Uy,Pw1,uu,Cw)
      U = Ux
      return
   end if
+  !
 end subroutine Extract
 
 
@@ -1074,7 +1073,6 @@ subroutine Evaluate(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,rx,X,ry,Y,rz,Z,Cw)
   real   (kind=8), intent(in)  :: Pw(d,0:nz,0:ny,0:nx)
   real   (kind=8), intent(in)  :: X(0:rx), Y(0:ry), Z(0:rz)
   real   (kind=8), intent(out) :: Cw(d,0:rz,0:ry,0:rx)
-  !
   integer(kind=4) :: ix, jx, iy, jy, iz, jz, ox, oy, oz
   integer(kind=4) :: spanx(0:rx), spany(0:ry), spanz(0:rz)
   real   (kind=8) :: basisx(0:px,0:rx), basisy(0:py,0:ry), basisz(0:pz,0:rz)
@@ -1114,6 +1112,7 @@ subroutine Evaluate(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,rx,X,ry,Y,rz,Z,Cw)
         end do
      end do
   end do
+  !
 end subroutine Evaluate
 
 subroutine RefineKnotVector(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,rx,X,ry,Y,rz,Z,Vx,Vy,Vz,Qw)
@@ -1132,7 +1131,6 @@ subroutine RefineKnotVector(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,rx,X,ry,Y,rz,Z,Vx,Vy
   real   (kind=8), intent(out) :: Vy(0:ny+py+1+ry+1)
   real   (kind=8), intent(out) :: Vz(0:nz+pz+1+rz+1)
   real   (kind=8), intent(out) :: Qw(d,0:nz+rz+1,0:ny+ry+1,0:nx+rx+1)
-  !
   real   (kind=8) :: Q1(d*(nz+1)*(ny+1),0:nx+rx+1)
   real   (kind=8) :: Aw(d,0:nz,0:nx+rx+1,0:ny)
   real   (kind=8) :: Q2(d*(nz+1)*(nx+rx+1+1),0:ny+ry+1)
@@ -1242,6 +1240,7 @@ subroutine Extract(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,ii,uu,n0,p0,U0,n1,p1,U1,Cw)
      U1 = Uz
      return
   end if
+  !
   if (ii == 1) then
      d1 = d*(nx+1)*(nz+1)
      Pw1 = reshape(Pw,shape(Pw1),order=(/1,2,4,3/))
@@ -1250,6 +1249,7 @@ subroutine Extract(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,ii,uu,n0,p0,U0,n1,p1,U1,Cw)
      U1 = Uz
      return
   end if
+  !
   if (ii == 2) then
      d2 = d*(nx+1)*(ny+1)
      Pw2 = reshape(Pw,shape(Pw2),order=(/1,4,2,3/))
@@ -1258,6 +1258,7 @@ subroutine Extract(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,ii,uu,n0,p0,U0,n1,p1,U1,Cw)
      U1 = Uy
      return
   end if
+  !
 end subroutine Extract
 
 end module Vol

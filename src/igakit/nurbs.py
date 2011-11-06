@@ -464,12 +464,23 @@ class NURBS(object):
         True
 
         """
+        def Arg(p, U, uu):
+            if uu is None: uu = []
+            uu = np.asarray(uu, dtype='d').ravel()
+            if uu.size == 0: return uu
+            uu.sort(kind='heapsort')
+            assert uu[ 0] >= U[p]
+            assert uu[-1] <= U[-p-1]
+            tmp = np.concatenate((uu, U[1:-1]))
+            u, i = np.unique(tmp, return_inverse=True)
+            s = np.bincount(i)
+            assert s.max() <= p
+            return uu
+        #
         uvw = (u,) + vw
         assert len(uvw) == self.dim
-        def arg(U):
-            if U is None: U = []
-            return np.asarray(U, dtype='d').ravel()
-        uvw = [arg(U) for U in uvw]
+        uvw = [Arg(p, U, uu) for p, U, uu in
+               zip(self.degree, self.knots, uvw)]
         #
         arglist = []
         for p, U in zip(self.degree, self.knots):
@@ -535,12 +546,15 @@ class NURBS(object):
         True
 
         """
+        def Arg(t):
+            if t is None: t = 0
+            t = int(t)
+            assert t >= 0
+            return t
+        #
         rst = (r,) + st
         assert len(rst) == self.dim
-        def arg(t):
-            if t is None: t = 0
-            return int(t)
-        rst = [arg(t) for t in rst]
+        rst = [Arg(t) for t in rst]
         for t in rst: assert t >= 0
         #
         arglist = []

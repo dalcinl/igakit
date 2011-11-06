@@ -1,6 +1,6 @@
 import numpy as np
 from igakit.nurbs import NURBS
-import igakit.plotting as plt
+from igakit.plot  import plt
 
 def InsertUniformly(U,n):
     """
@@ -94,9 +94,9 @@ insert_U=InsertUniformly(U,4*res)
 insert_V=InsertUniformly(V,res)
 tube.refine(insert_U,insert_V)
 
-plt.use_backend('mayavi')
+plt.use('mayavi')
 
 plt.figure()
-plt.surface(tube)
+plt.plot(tube)
 
 plt.show()

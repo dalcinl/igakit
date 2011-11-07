@@ -452,4 +452,49 @@ def sweep(section, trajectory):
     UVW = section.knots + trajectory.knots
     return NURBS((C, w), UVW)
 
+def coons(curves):
+    """
+                C[1,1]
+           o--------------o
+           |  v           |
+           |  ^           |
+    C[0,0] |  |           | C[0,1]
+           |  |           |
+           |  +------> u  |
+           o--------------o
+                C[1,0]
+    """
+    (C00, C01), (C10, C11) = curves
+    assert C00.dim == C01.dim == 1
+    assert C10.dim == C11.dim == 1
+    #
+    (C00, C01) = compat(C00, C01)
+    (C10, C11) = compat(C10, C11)
+    #
+    p, U = C10.degree[0], C10.knots[0]
+    u0, u1 = U[p], U[-p-1]
+    P = np.zeros((2,2,3), dtype='d')
+    P[0,0] = C10.evaluate(u0)
+    P[1,0] = C10.evaluate(u1)
+    P[0,1] = C11.evaluate(u0)
+    P[1,1] = C11.evaluate(u1)
+    #
+    q, V = C00.degree[0], C00.knots[0]
+    v0, v1 = V[q], V[-q-1]
+    Q = np.zeros((2,2,3), dtype='d')
+    Q[0,0] = C00.evaluate(v0)
+    Q[0,1] = C00.evaluate(v1)
+    Q[1,0] = C01.evaluate(v0)
+    Q[1,1] = C01.evaluate(v1)
+    #
+    assert np.allclose(P, Q, rtol=0, atol=1e-15)
+    #
+    R0 = ruled(C00, C01).transpose()
+    R1 = ruled(C10, C11)
+    B = bilinear(P)
+    R0, R1, B = compat(R0, R1, B)
+    control = R0.control + R1.control - B.control
+    knots = B.knots
+    return NURBS(control, knots)
+
 # -----

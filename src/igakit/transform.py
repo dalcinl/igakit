@@ -86,7 +86,7 @@ class transform(object):
         self.compose(S)
         return self
 
-    def rotate(self, angle, axis):
+    def rotate(self, angle, axis=2):
         angle = float(angle)
         if angle == 0.0: return self
         axis = np.asarray(axis)

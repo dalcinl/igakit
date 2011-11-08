@@ -343,7 +343,7 @@ class NURBS(object):
     def rotate(self, angle, axis=2):
         t = transform().rotate(angle, axis)
         return self.transform(t)
-        
+
     #
 
     def transpose(self, axes=None):
@@ -494,6 +494,8 @@ class NURBS(object):
         self._knots = knots
         return self
 
+    #
+
     def refine(self, u, *vw):
         """
         Knot refine a NURBS object.
@@ -637,6 +639,55 @@ class NURBS(object):
         self._knots = knots
         return self
 
+    #
+
+    def slice(self, axis, start, end):
+        dim = self.dim
+        axis = range(dim)[axis]
+        p = self.degree[axis]
+        U = self.knots[axis]
+        if start is None:
+            start = U[p]
+        if end is None:
+            end = U[-p-1]
+        start = float(start)
+        end = float(end)
+        assert start >= U[p]
+        assert end <= U[-p-1]
+        assert start < end
+        #
+        FindKnotSpan = _api[0].FindKnotSpan
+        Multiplicity = _api[0].Multiplicity
+        u0 = start
+        k0 = FindKnotSpan(p,U,u0)
+        s0 = Multiplicity(p,U,u0,k0)
+        t0 = max(0, p-s0)
+        u1 = end
+        k1 = FindKnotSpan(p,U,u1)
+        s1 = Multiplicity(p,U,u1,k1)
+        t1 = max(0, p-s1)
+        u = np.repeat([u0,u1],[t0,t1]).astype('d')
+        #
+        nrb = self.clone()
+        uvw = [None] * dim
+        uvw[axis] = u
+        nrb.refine(*uvw)
+        U = nrb.knots[axis]
+        k0 = FindKnotSpan(p,U,u0)
+        k1 = FindKnotSpan(p,U,u1)
+        if u1 == U[-p-1]: k1 += p
+        #
+        index = [slice(None)] * dim
+        index[axis] = slice(k0-p, k1-p+1)
+        control = nrb.control[index].copy()
+        knots = list(nrb.knots)
+        knots[axis] = np.hstack([u0, U[k0-p+1:k1+1], u1])
+        knots = tuple(knots)
+        #
+        self._cntrl = control
+        self._knots = knots
+        return self
+
     def extract(self, axis, value):
         """
         Extract lower dimensional NURBS object.
@@ -724,6 +775,8 @@ class NURBS(object):
         else:
             value = U[-p-1]
         return self.extract(axis, value)
+
+    #
 
     def evaluate(self, u, *vw):
         """

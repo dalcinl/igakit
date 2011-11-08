@@ -304,6 +304,8 @@ class NURBS(object):
         nrb._knots = self.knots
         return nrb
 
+    #
+
     def transform(self, trans):
         """
         Apply a scaling, rotation, or a translation to a NURBS object.
@@ -326,6 +328,22 @@ class NURBS(object):
         self._cntrl = np.ascontiguousarray(Cw)
         return self
 
+    def translate(self, displ, axis=None):
+        t = transform().translate(scale, axis)
+        return self.transform(t)
+
+    def move(self, displ, axis=None):
+        t = transform().move(scale, axis)
+        return self.transform(t)
+
+    def scale(self, scale, axis=None):
+        t = transform().scale(scale, axis)
+        return self.transform(t)
+
+    def rotate(self, angle, axis=2):
+        t = transform().rotate(angle, axis)
+        return self.transform(t)
+        
     #
 
     def transpose(self, axes=None):

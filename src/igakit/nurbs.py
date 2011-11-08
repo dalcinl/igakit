@@ -326,6 +326,8 @@ class NURBS(object):
         self._cntrl = np.ascontiguousarray(Cw)
         return self
 
+    #
+
     def transpose(self, axes=None):
         """
         Permute the axes of a NURBS object.
@@ -372,6 +374,51 @@ class NURBS(object):
         caxes = kaxes+[self.dim]
         control = self.control.transpose(caxes).copy()
         knots = tuple(self.knots[i] for i in kaxes)
+        #
+        self._cntrl = control
+        self._knots = knots
+        return self
+
+    def swap(self, axis1, axis2):
+        """
+        Interchange two parametric axes of NURBS object.
+
+        Parameters
+        ----------
+        axis1 : int
+            First axis.
+        axis2 : int
+            Second axis.
+
+        Examples
+        --------
+
+        Create a random B-spline volume, swap the 2nd and 3rd axes,
+        swap the first and last axes, evaluate and check.
+
+        >>> C = np.random.rand(4,3,2,3)
+        >>> U = [0,0,0,0,1,1,1,1]
+        >>> V = [0,0,0,1,1,1]
+        >>> W = [0,0,1,1]
+        >>> vol1 = NURBS(C, [U,V,W])
+        >>> vol2 = vol1.clone().swap(1,2)
+        >>> vol3 = vol1.clone().swap(0,-1)
+        >>> u = 0.25; v = 0.50; w = 0.75
+        >>> xyz1 = vol1.evaluate(u,v,w)
+        >>> xyz2 = vol2.evaluate(u,w,v)
+        >>> xyz3 = vol3.evaluate(w,v,u)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
+        True
+        >>> np.allclose(xyz1, xyz3, rtol=0, atol=1e-15)
+        True
+
+        """
+        allaxes = range(self.dim)
+        ax1, ax2 = allaxes[axis1], allaxes[axis2]
+        control = self.control.swapaxes(ax1, ax2).copy()
+        knots = list(self.knots)
+        knots[ax1], knots[ax2] = knots[ax2], knots[ax1]
+        knots = tuple(knots)
         #
         self._cntrl = control
         self._knots = knots

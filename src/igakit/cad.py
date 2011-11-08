@@ -243,8 +243,7 @@ def compat(*nurbs):
         degmax = degree.max(axis=0)
         times = degmax - degree
         for i, rst in enumerate(times):
-            if np.any(rst):
-                nurbs[i].elevate(*rst)
+            nurbs[i].elevate(*rst)
     #
     def MergeKnots(nurbs):
         degree = [nrb.degree for nrb in nurbs]
@@ -274,8 +273,7 @@ def compat(*nurbs):
             kvalues.append(kvals)
         # Apply knot refinement
         for i, uvw in enumerate(zip(*kvalues)):
-            if np.any(u.size for u in uvw):
-                nurbs[i].refine(*uvw)
+            nurbs[i].refine(*uvw)
     #
     if len(nurbs) == 1:
         if not isinstance(nurbs[0], NURBS):

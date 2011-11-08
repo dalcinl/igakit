@@ -548,6 +548,8 @@ class NURBS(object):
         assert len(uvw) == self.dim
         uvw = [Arg(p, U, uu) for p, U, uu in
                zip(self.degree, self.knots, uvw)]
+        if not np.any(uu.size>0 for uu in uvw):
+            return self
         #
         arglist = []
         for p, U in zip(self.degree, self.knots):
@@ -623,6 +625,8 @@ class NURBS(object):
         assert len(rst) == self.dim
         rst = [Arg(t) for t in rst]
         for t in rst: assert t >= 0
+        if not np.any(t>0 for t in rst):
+            return self
         #
         arglist = []
         for p, U in zip(self.degree, self.knots):

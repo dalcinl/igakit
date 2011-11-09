@@ -19,23 +19,24 @@ class _namespace(object):
         func.__name__ = name
         func.__doc__  = ''
         return func
-_namespace = _namespace()
 
-show = _namespace.show
+nul = _namespace()
 
-figure = _namespace.figure
-close = _namespace.close
-save = _namespace.savefig
+figure = nul.figure
+gcf = nul.gcf
+close = nul.close
+save = nul.savefig
+show = nul.show
 
-title = _namespace.title
-xlabel = _namespace.xlabel
-ylabel = _namespace.ylabel
-zlabel = _namespace.zlabel
-colorbar = _namespace.colorbar
+title = nul.title
+xlabel = nul.xlabel
+ylabel = nul.ylabel
+zlabel = nul.zlabel
+colorbar = nul.colorbar
 
-points3d = _namespace.points3d
-quiver3d = _namespace.quiver3d
-line3d = _namespace.quiver3d
-surf3d = _namespace.quiver3d
+points3d = nul.points3d
+quiver3d = nul.quiver3d
+line3d = nul.quiver3d
+surf3d = nul.quiver3d
 
 _resolution = { 1:64, 2:32 }

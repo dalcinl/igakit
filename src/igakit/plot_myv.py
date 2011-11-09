@@ -29,11 +29,13 @@ except ImportError:
         #
         orange  = (1.00, 0.50, 0.00)
 
-show = mlab.show
+myv = mlab
 
 figure = mlab.figure
+gcf = mlab.gcf
 close = mlab.close
 save = mlab.savefig
+show = mlab.show
 
 title = mlab.title
 xlabel = mlab.xlabel

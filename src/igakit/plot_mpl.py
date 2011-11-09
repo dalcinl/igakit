@@ -8,27 +8,26 @@ class colors(object): pass
 colors = colors()
 colors.__dict__.update(_colors.cnames)
 
-show = mpl.show
-
-def figure(*args, **kwargs):
-    fig = mpl.figure(*args)
-    ax = fig.add_subplot(111, projection='3d', **kwargs)
-    return ax
-
+figure = mpl.figure
+gcf = mpl.gcf
 close = mpl.close
 save = mpl.savefig
+show = mpl.show
+
+def gca(**kwargs):
+    return gcf().gca(projection='3d', **kwargs)
 
 def title(*args, **kwargs):
-    mpl.gca().set_title(*args, **kwargs)
+    gca().set_title(*args, **kwargs)
 
 def xlabel(*args, **kwargs):
-    mpl.gca().set_xlabel(*args, **kwargs)
+    gca().set_xlabel(*args, **kwargs)
 
 def ylabel(*args, **kwargs):
-    mpl.gca().set_ylabel(*args, **kwargs)
+    gca().set_ylabel(*args, **kwargs)
 
 def zlabel(*args, **kwargs):
-    mpl.gca().set_zlabel(*args, **kwargs)
+    gca().set_zlabel(*args, **kwargs)
 
 colorbar = mpl.colorbar
 
@@ -49,7 +48,7 @@ def points3d(x, y ,z, **kwargs):
         options['marker'] = 's'
     if m == 'cone':
         options['marker'] = '^'
-    ax = mpl.gca()
+    ax = gca()
     x, y, z = x.T, y.T, z.T
     x, y, z = (c.ravel() for c in (x, y, z))
     pts = ax.scatter(x, y, z, s=30, **options)
@@ -64,7 +63,7 @@ def line3d(lines, **kwargs):
     _ = options.pop('tube_radius', None)
     _ = options.pop('tube_sides', None)
     _ = options.pop('line_width', None)
-    ax = mpl.gca()
+    ax = gca()
     for (x, y ,z) in lines:
         x, y, z = x.T, y.T, z.T
         if x.ndim == 1:
@@ -100,7 +99,7 @@ def surf3d(surfs=(), **kwargs):
     _ = options.pop('tube_radius', None)
     _ = options.pop('tube_sides', None)
     _ = options.pop('line_width', None)
-    ax = mpl.gca()
+    ax = gca()
     for (x, y ,z) in surfs:
         x, y, z = x.T, y.T, z.T
         if x.ndim == 2:

@@ -228,7 +228,7 @@ def compat(*nurbs):
         for i, bnds in enumerate(bounds):
             knts = knots[i] = list(knots[i])
             for j, (ab, cd) in enumerate(zip(bnds, limits)):
-                # u in [a, b] -> s in [d, d]
+                # u in [a, b] -> s in [c, d]
                 a, b = ab; c, d = cd;
                 if (a == c) and (b == d): continue
                 # U <- (d-c)/(b-a) * (U-a) + c

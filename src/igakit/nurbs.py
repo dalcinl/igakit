@@ -646,6 +646,32 @@ class NURBS(object):
     #
 
     def slice(self, axis, start, end):
+        """
+        Parameters
+        ----------
+        axis: int
+        start, end: float
+        
+        Examples
+        --------
+
+        Create a random volume, slice along first and second axis,
+        check error:
+
+        >>> C = np.random.rand(4,3,2,3)
+        >>> U = [0,0,0,0,1,1,1,1]; V = U[1:-1]; W = V[1:-1];
+        >>> u = 0.5; v = 0.75; w = 0.3;
+        >>> vol = NURBS(C,[U,V,W])
+        >>> sub = vol.slice(0,1./3,2./3).slice(1,0.25,0.75)
+        >>> u = np.linspace(1./3,2./3,100)
+        >>> v = np.linspace(0.25,0.75,100)
+        >>> w = np.linspace(0,1,100)
+        >>> xyz1 = vol.evaluate(u,v,w)
+        >>> xyz2 = sub.evaluate(u,v,w)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=2e-15)
+        True
+
+        """
         dim = self.dim
         axis = range(dim)[axis]
         p = self.degree[axis]
@@ -688,9 +714,10 @@ class NURBS(object):
         knots[axis] = np.hstack([u0, U[k0-p+1:k1+1], u1])
         knots = tuple(knots)
         #
-        self._cntrl = control
-        self._knots = knots
-        return self
+        nrb = NURBS.__new__(type(self))
+        nrb._cntrl = control
+        nrb._knots = knots
+        return nrb
 
     def extract(self, axis, value):
         """

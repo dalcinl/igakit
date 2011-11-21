@@ -329,11 +329,11 @@ class NURBS(object):
         return self
 
     def translate(self, displ, axis=None):
-        t = transform().translate(scale, axis)
+        t = transform().translate(displ, axis)
         return self.transform(t)
 
     def move(self, displ, axis=None):
-        t = transform().move(scale, axis)
+        t = transform().move(displ, axis)
         return self.transform(t)
 
     def scale(self, scale, axis=None):

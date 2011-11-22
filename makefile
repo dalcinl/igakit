@@ -5,8 +5,8 @@ PACKAGE=igakit
 build:
 	$(PYTHON) setup.py build
 
-.PHONY: demotest
-demotest:
+.PHONY: testdemo
+testdemo:
 	$(PYTHON) demo/plot_crv.py none
 	$(PYTHON) demo/plot_srf.py none
 	$(PYTHON) demo/plot_vol.py none
@@ -25,7 +25,7 @@ unittest:
 
 .PHONY: test testall
 test: unittest
-testall: test doctest demotest
+testall: test testdemo
 
 
 .PHONY: install install_home install_user

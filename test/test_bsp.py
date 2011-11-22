@@ -14,6 +14,77 @@ def test_fks(VERB=0):
                   ]:
         span = bsp.FindKnotSpan(p,U,u)
         assert span == k
+    U = np.asarray([-1,0,0, 0.5, 1,1, 2])
+    for u, k in [ (0.00, 2),
+                  (0.25, 2),
+                  (0.50, 3),
+                  (0.75, 3),
+                  (1.00, 3),
+                  ]:
+        span = bsp.FindKnotSpan(p,U,u)
+        assert span == k
+    U = np.asarray([-1,-1,0, 0.5, 1,2,2])
+    for u, k in [ (0.00, 2),
+                  (0.25, 2),
+                  (0.50, 3),
+                  (0.75, 3),
+                  (1.00, 3),
+                  ]:
+        span = bsp.FindKnotSpan(p,U,u)
+        assert span == k
+    U = np.asarray([-2,-1,0, 0.5, 1,2,3])
+    for u, k in [ (0.00, 2),
+                  (0.25, 2),
+                  (0.50, 3),
+                  (0.75, 3),
+                  (1.00, 3),
+                  ]:
+        span = bsp.FindKnotSpan(p,U,u)
+        assert span == k
+    U = np.asarray([0,0,0, 1,1,1], dtype='d')
+    for u, k in [ (0.00, 2),
+                  (0.50, 2),
+                  (1.00, 2),
+                  ]:
+        span = bsp.FindKnotSpan(p,U,u)
+        assert span == k
+    U = np.asarray([-1,0,0, 1,1,2], dtype='d')
+    for u, k in [ (0.00, 2),
+                  (0.50, 2),
+                  (1.00, 2),
+                  ]:
+        span = bsp.FindKnotSpan(p,U,u)
+        assert span == k
+    U = np.asarray([-1,-1,0, 1,2,2], dtype='d')
+    for u, k in [ (0.00, 2),
+                  (0.50, 2),
+                  (1.00, 2),
+                  ]:
+        span = bsp.FindKnotSpan(p,U,u)
+        assert span == k
+    U = np.asarray([-2,-1,0, 1,2,3], dtype='d')
+    for u, k in [ (0.00, 2),
+                  (0.50, 2),
+                  (1.00, 2),
+                  ]:
+        span = bsp.FindKnotSpan(p,U,u)
+        assert span == k
+    p = 3
+    U = np.asarray([-2,-1,0,0,1,1,2,3], dtype='d')
+    for u, k in [ (0.00, 3),
+                  (0.50, 3),
+                  (1.00, 3),
+                  ]:
+        span = bsp.FindKnotSpan(p,U,u)
+        assert span == k
+    U = np.asarray([-2,-1,0,0,0.5,1,1,2,3], dtype='d')
+    for u, k in [ (0.00, 3),
+                  (0.50, 4),
+                  (1.00, 4),
+                  ]:
+        span = bsp.FindKnotSpan(p,U,u)
+        assert span == k
+
 
 def test_mul(VERB=0):
     if VERB: print(bsp.Multiplicity.__doc__)
@@ -24,6 +95,30 @@ def test_mul(VERB=0):
                   (0.50, 1),
                   (0.75, 0),
                   (1.00, 3),
+                  ]:
+        span = bsp.FindKnotSpan(p,U,u)
+        mult1 = bsp.Multiplicity(p,U,u,span)
+        mult2 = bsp.Multiplicity(p,U,u)
+        assert mult2 == mult1
+        assert mult2 == s
+    U = np.asarray([-1,0,0,0.25, 0.25, 0.5, 1,1,2])
+    for u, s in [ (0.00, 2),
+                  (0.25, 2),
+                  (0.50, 1),
+                  (0.75, 0),
+                  (1.00, 2),
+                  ]:
+        span = bsp.FindKnotSpan(p,U,u)
+        mult1 = bsp.Multiplicity(p,U,u,span)
+        mult2 = bsp.Multiplicity(p,U,u)
+        assert mult2 == mult1
+        assert mult2 == s
+    U = np.asarray([-2,-1,0,0.25, 0.25, 0.5, 1,2,3])
+    for u, s in [ (0.00, 1),
+                  (0.25, 2),
+                  (0.50, 1),
+                  (0.75, 0),
+                  (1.00, 1),
                   ]:
         span = bsp.FindKnotSpan(p,U,u)
         mult1 = bsp.Multiplicity(p,U,u,span)

@@ -655,14 +655,42 @@ class NURBS(object):
         Examples
         --------
 
-        Create a random volume, slice along first and second axis,
+        Create a random curve, slice, check error:
+
+        >>> C = np.random.rand(5,3)
+        >>> U = [0,0,0,0,0.5,1,1,1,1]
+        >>> crv = NURBS(C,[U])
+        >>> sub = crv.slice(0,0.5,0.75)
+        >>> u = np.linspace(0.5,0.75,100)
+        >>> xyz1 = crv.evaluate(u)
+        >>> xyz2 = sub.evaluate(u)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
+        True
+
+        Create a random surface, slice along first axis,
+        check error:
+
+        >>> C = np.random.rand(5,4,3)
+        >>> U = [0,0,0,0,0.5,1,1,1,1]; V = U[1:-1];
+        >>> srf = NURBS(C,[U,V])
+        >>> sub = srf.slice(0,1./3,2./3)
+        >>> u = np.linspace(1./3,2./3,100)
+        >>> v = np.linspace(0,1,100)
+        >>> xyz1 = srf.evaluate(u,v)
+        >>> xyz2 = sub.evaluate(u,v)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=2e-15)
+        True
+
+        Create a random volume, slice along first and second axes,
         check error:
 
         >>> C = np.random.rand(4,3,2,3)
         >>> U = [0,0,0,0,1,1,1,1]; V = U[1:-1]; W = V[1:-1];
-        >>> u = 0.5; v = 0.75; w = 0.3;
         >>> vol = NURBS(C,[U,V,W])
         >>> sub = vol.slice(0,1./3,2./3).slice(1,0.25,0.75)
+        >>> sub = sub.slice(0,1./3,2./3) # no-op
+        >>> sub = sub.slice(1,0.25,0.75) # no-op
+        >>> sub = sub.slice(2,0,1)       # no-op
         >>> u = np.linspace(1./3,2./3,100)
         >>> v = np.linspace(0.25,0.75,100)
         >>> w = np.linspace(0,1,100)
@@ -702,16 +730,20 @@ class NURBS(object):
         uvw = [None] * dim
         uvw[axis] = u
         nrb.refine(*uvw)
-        U = nrb.knots[axis]
-        k0 = FindKnotSpan(p,U,u0)
-        k1 = FindKnotSpan(p,U,u1)
-        if u1 == U[-p-1]: k1 += p
+        control = nrb.control
+        knots = nrb.knots
         #
+        U = knots[axis]
+        i0 = U.searchsorted(u0, 'r') - 1
+        i1 = U.searchsorted(u1, 'l')
         index = [slice(None)] * dim
-        index[axis] = slice(k0-p, k1-p+1)
-        control = nrb.control[index].copy()
+        index[axis] = slice(i0-p, i1)
+        control = control[index].copy()
+        Ul = U[i0].repeat(p)
+        Uc = U[i0:i1+1]
+        Ur = U[i1].repeat(p)
         knots = list(nrb.knots)
-        knots[axis] = np.hstack([u0, U[k0-p+1:k1+1], u1])
+        knots[axis] = np.concatenate([Ul, Uc, Ur])
         knots = tuple(knots)
         #
         nrb = NURBS.__new__(type(self))

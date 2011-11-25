@@ -496,6 +496,162 @@ class NURBS(object):
 
     #
 
+    def insert(self, axis, value, times=1):
+        """
+        Insert a single knot value multiple times.
+
+        Parameters
+        ----------
+        axis : int
+        value: float
+        times: int
+
+        Examples
+        --------
+
+        Create a random curve, insert knots, check error:
+
+        >>> C = np.random.rand(5,3)
+        >>> U = [0,0,0,0,0.5,1,1,1,1]
+        >>> c1 = NURBS(C, [U])
+        >>> c2 = c1.clone().insert(0, 0.25)
+        >>> c3 = c2.clone().insert(0, 0.50, 2)
+        >>> c4 = c3.clone().insert(0, 0.75, 3)
+        >>> u = np.linspace(0,1,100)
+        >>> xyz1 = c1.evaluate(u)
+        >>> xyz2 = c2.evaluate(u)
+        >>> xyz3 = c3.evaluate(u)
+        >>> xyz4 = c4.evaluate(u)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
+        True
+        >>> np.allclose(xyz1, xyz3, rtol=0, atol=1e-15)
+        True
+        >>> np.allclose(xyz1, xyz4, rtol=0, atol=1e-15)
+        True
+
+        Create a random surface, insert knots, check error:
+
+        >>> C = np.random.rand(4,3,3)
+        >>> U = [0,0,0,0,1,1,1,1]; V = [0,0,0,1,1,1]
+        >>> s1 = NURBS(C, [U,V])
+        >>> s1.shape
+        (4, 3)
+        >>> s2 = s1.clone().insert(0, 0.25).insert(1, 0.75, 2)
+        >>> s2.shape
+        (5, 5)
+        >>> u = v = np.linspace(0,1,100)
+        >>> xyz1 = s1.evaluate(u, v)
+        >>> xyz2 = s2.evaluate(u, v)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
+        True
+
+        """
+        axes = range(self.dim)
+        axis = axes[axis]
+        control = self.control.view()
+        knots = list(self.knots)
+        p = self.degree[axis]
+        U = knots[axis]
+        assert U[p] <= value <= U[-p-1]
+        #
+        mult = _api[0].Multiplicity(p, U, value)
+        mult = min(mult, p)
+        if times is None: times = p-mult
+        assert times + mult <= p
+        if times == 0: return self
+        #
+        InsertKnot = _api[0].InsertKnot
+        Pw = np.rollaxis(control, axis, 0)
+        shape = Pw.shape
+        Pw = Pw.reshape((shape[0], -1))
+        V, Qw = InsertKnot(p, U, Pw, value, times)
+        Qw.shape = (Qw.shape[0], ) + shape[1:]
+        control = np.rollaxis(Qw, 0, axis+1)
+        knots[axis] = V
+        #
+        self._cntrl = np.ascontiguousarray(control)
+        self._knots = tuple(knots)
+        return self
+
+    def remove(self, axis, value, times=1):
+        r"""
+        Remove a single knot value multiple times.
+
+        Parameters
+        ----------
+        axis : int
+        value: float
+        times: int
+
+        Examples
+        --------
+
+        Create a random curve, insert knots,
+        remove knots, check error:
+
+        >>> C = np.random.rand(5,3)
+        >>> U = [0,0,0,0,0.5,1,1,1,1]
+        >>> c1 = NURBS(C, [U])
+        >>> c1.shape
+        (5,)
+        >>> c2 = c1.clone().insert(0, 0.25) \
+        ...                .remove(0, 0.25) \
+        ...                .remove(0, 0.25)
+        >>> c2.shape
+        (5,)
+        >>> c3 = c2.clone().insert(0, 0.50, 2) \
+        ...                .remove(0, 0.50, 2)
+        >>> c3.shape
+        (5,)
+        >>> c4 = c3.clone().insert(0, 0.75, 3) \
+        ...                .remove(0, 0.75, 1) \
+        ...                .remove(0, 0.75, 2) \
+        >>> c3.shape
+        (5,)
+        >>> u = np.linspace(0,1,100)
+        >>> xyz1 = c1.evaluate(u)
+        >>> xyz2 = c2.evaluate(u)
+        >>> xyz3 = c3.evaluate(u)
+        >>> xyz4 = c4.evaluate(u)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
+        True
+        >>> np.allclose(xyz1, xyz3, rtol=0, atol=1e-15)
+        True
+        >>> np.allclose(xyz1, xyz4, rtol=0, atol=1e-15)
+        True
+
+        """
+        axes = range(self.dim)
+        axis = axes[axis]
+        control = self.control.view()
+        knots = list(self.knots)
+        p = self.degree[axis]
+        U = knots[axis]
+        assert U[p] <= value <= U[-p-1]
+        #
+        mult = _api[0].Multiplicity(p, U, value)
+        if times is None: times = mult
+        times = min(times, mult, p)
+        assert times >= 0
+        if times == 0: return self
+        if value == U[p]: return self
+        if value == U[p-1]: return self
+        #
+        RemoveKnot = _api[0].RemoveKnot
+        Pw = np.rollaxis(control, axis, 0)
+        shape = Pw.shape
+        Pw = Pw.reshape((shape[0], -1))
+        t, V, Qw = RemoveKnot(p, U, Pw, value, times)
+        if t > 0: V = V[:-t].copy()
+        if t > 0: Qw = Qw[:-t,:].copy()
+        Qw.shape = (Qw.shape[0], ) + shape[1:]
+        control = np.rollaxis(Qw, 0, axis+1)
+        knots[axis] = V
+        #
+        self._cntrl = np.ascontiguousarray(control)
+        self._knots = tuple(knots)
+        return self
+
     def refine(self, u, *vw):
         """
         Knot refine a NURBS object.
@@ -651,7 +807,7 @@ class NURBS(object):
         ----------
         axis: int
         start, end: float
-        
+
         Examples
         --------
 

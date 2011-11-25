@@ -30,7 +30,7 @@ function FindSpan(n,p,uu,U) result (span)
   end do
 end function FindSpan
 
-function Multiplicity(i,uu,p,U) result (mult)
+function FindMult(i,uu,p,U) result (mult)
   implicit none
   integer(kind=4), intent(in)  :: i, p
   real   (kind=8), intent(in)  :: uu, U(0:i+p+1)
@@ -40,7 +40,7 @@ function Multiplicity(i,uu,p,U) result (mult)
   do j = -p, p+1
      if (uu == U(i+j)) mult = mult + 1
   end do
-end function Multiplicity
+end function FindMult
 
 subroutine FindSpanMult(n,p,uu,U,k,s)
   implicit none
@@ -48,7 +48,7 @@ subroutine FindSpanMult(n,p,uu,U,k,s)
   real   (kind=8), intent(in)  :: uu, U(0:n+p+1)
   integer(kind=4), intent(out) :: k, s
   k = FindSpan(n,p,uu,U)
-  s = Multiplicity(k,uu,p,U)
+  s = FindMult(k,uu,p,U)
 end subroutine FindSpanMult
 
 subroutine BasisFuns(i,uu,p,U,N)
@@ -189,7 +189,7 @@ subroutine CurvePntByCornerCut(d,n,p,U,Pw,x,Cw)
   if (x <= U(p)) then
      uu = U(p)
      k = p
-     s = Multiplicity(p,uu,p,U)
+     s = FindMult(p,uu,p,U)
      if (s >= p) then
         Cw(:) = Pw(:,0)
         return
@@ -197,7 +197,7 @@ subroutine CurvePntByCornerCut(d,n,p,U,Pw,x,Cw)
   elseif (x >= U(n+1)) then
      uu = U(n+1)
      k = n+1
-     s = Multiplicity(n,uu,p,U)
+     s = FindMult(n,uu,p,U)
      if (s >= p) then
         Cw(:) = Pw(:,n)
         return
@@ -205,7 +205,7 @@ subroutine CurvePntByCornerCut(d,n,p,U,Pw,x,Cw)
   else
      uu = x
      k = FindSpan(n,p,uu,U)
-     s = Multiplicity(k,uu,p,U)
+     s = FindMult(k,uu,p,U)
      if (s >= p) then
         Cw(:) = Pw(:,k-p)
         return
@@ -223,6 +223,43 @@ subroutine CurvePntByCornerCut(d,n,p,U,Pw,x,Cw)
   end do
   Cw(:) = Rw(:,0)
 end subroutine CurvePntByCornerCut
+
+subroutine InsertKnot(d,n,p,U,Pw,uu,k,s,r,V,Qw)
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: n, p
+  real   (kind=8), intent(in)  :: U(0:n+p+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:n)
+  real   (kind=8), intent(in)  :: uu
+  integer(kind=4), intent(in)  :: k, s, r
+  real   (kind=8), intent(out) :: V(0:n+p+1+r)
+  real   (kind=8), intent(out) :: Qw(d,0:n+r)
+  integer(kind=4) :: i, j, idx
+  real   (kind=8) :: alpha, Rw(d,0:p)
+  ! Load new knot vector
+  forall (i = 0:k) V(i) = U(i)
+  forall (i = 1:r) V(k+i) = uu
+  forall (i = k+1:n+p+1) V(i+r) = U(i)
+  ! Save unaltered control points
+  forall (i = 0:k-p) Qw(:,i)   = Pw(:,i)
+  forall (i = k-s:n) Qw(:,i+r) = Pw(:,i)
+  forall (i = 0:p-s) Rw(:,i)   = Pw(:,k-p+i)
+  ! Insert the knot r times
+  do j = 1, r
+     idx = k-p+j
+     do i = 0, p-j-s
+        alpha = (uu-U(idx+i))/(U(i+k+1)-U(idx+i))
+        Rw(:,i) = alpha*Rw(:,i+1)+(1-alpha)*Rw(:,i)
+     end do
+     Qw(:,idx) = Rw(:,0)
+     Qw(:,k+r-j-s) = Rw(:,p-j-s)
+  end do
+  ! Load remaining control points
+  idx = k-p+r
+  do i = idx+1, k-s-1
+     Qw(:,i) = Rw(:,i-idx)
+  end do
+end subroutine InsertKnot
 
 subroutine RefineKnotVector(d,n,p,U,Pw,r,X,Ubar,Qw)
   implicit none
@@ -544,7 +581,7 @@ subroutine FindKnotSpan(p,m,U,uu,span)
 end subroutine FindKnotSpan
 
 subroutine Multiplicity(p,m,U,uu,span,mult)
-  use bspline, KnotMult => Multiplicity
+  use bspline
   implicit none
   integer(kind=4), intent(in)  :: p, m
   real   (kind=8), intent(in)  :: U(0:m), uu
@@ -556,8 +593,17 @@ subroutine Multiplicity(p,m,U,uu,span,mult)
   else
      k = FindSpan(m-(p+1),p,uu,U)
   end if
-  mult = KnotMult(k,uu,p,U)
+  mult = FindMult(k,uu,p,U)
 end subroutine Multiplicity
+
+subroutine FindSpanMult(p,m,U,uu,k,s)
+  use bspline, FindSM => FindSpanMult
+  implicit none
+  integer(kind=4), intent(in)  :: p, m
+  real   (kind=8), intent(in)  :: U(0:m), uu
+  integer(kind=4), intent(out) :: k, s
+  call FindSM(m-(p+1),p,uu,U,k,s)
+end subroutine FindSpanMult
 
 subroutine EvalBasisFuns(p,m,U,uu,span,N)
   use bspline
@@ -588,6 +634,48 @@ subroutine EvalBasisFunsDers(p,m,U,uu,d,span,dN)
   end if
   call DersBasisFuns(i,uu,p,d,U,dN)
 end subroutine EvalBasisFunsDers
+
+subroutine InsertKnot(d,n,p,U,Pw,uu,r,V,Qw)
+  use bspline, InsKnt => InsertKnot
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: n, p
+  real   (kind=8), intent(in)  :: U(0:n+p+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:n)
+  real   (kind=8), intent(in)  :: uu
+  integer(kind=4), intent(in)  :: r
+  real   (kind=8), intent(out) :: V(0:n+p+1+r)
+  real   (kind=8), intent(out) :: Qw(d,0:n+r)
+  integer(kind=4) :: k, s
+  if (r == 0) then
+     V = U; Qw = Pw; return
+  end if
+  call FindSpanMult(n,p,uu,U,k,s)
+  call InsKnt(d,n,p,U,Pw,uu,k,s,r,V,Qw)
+end subroutine InsertKnot
+
+subroutine RemoveKnot(d,n,p,U,Pw,uu,r,t,V,Qw)
+  use bspline, RemKnt => RemoveKnot
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: n, p
+  real   (kind=8), intent(in)  :: U(0:n+p+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:n)
+  real   (kind=8), intent(in)  :: uu
+  integer(kind=4), intent(in)  :: r
+  integer(kind=4), intent(out) :: t
+  real   (kind=8), intent(out) :: V(0:n+p+1)
+  real   (kind=8), intent(out) :: Qw(d,0:n)
+  integer(kind=4) :: k, s
+  t = 0
+  V = U
+  Qw = Pw
+  if (r == 0) return
+  if (uu <= U(p)) return
+  if (uu >= U(n+1)) return
+  call FindSpanMult(n,p,uu,U,k,s)
+  call RemKnt(d,n,p,V,Qw,uu,k,s,r,t)
+end subroutine RemoveKnot
 
 end module BSp
 
@@ -868,7 +956,7 @@ subroutine RemoveKnot(d,n,p,U,Pw,uu,k,r,s,t,Ub,Qw)
   if (s >= 0) then
      mul = s
   else
-     mul = Multiplicity(idx,uu,p,U)
+     mul = FindMult(idx,uu,p,U)
   end if
   if (k >= 0) then
      num = min(k,mul)

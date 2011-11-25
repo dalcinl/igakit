@@ -18,22 +18,22 @@ interface
 
    module bsp
 
-     subroutine FindKnotSpan(p,m,U,u,span)
+     subroutine FindSpan(p,m,U,u,span)
        integer(kind=4), intent(in),   check(p>=1)     :: p
        integer(kind=4), intent(hide), check(m>=2*p+1) :: m
        real   (kind=8), intent(in)  :: U(0:m)
        real   (kind=8), intent(in)  :: u
        integer(kind=4), intent(out) :: span
-     end subroutine FindKnotSpan
+     end subroutine FindSpan
 
-     subroutine Multiplicity(p,m,U,u,span,mult)
+     subroutine FindMult(p,m,U,u,span,mult)
        integer(kind=4), intent(in),   check(p>=1)     :: p
        integer(kind=4), intent(hide), check(m>=2*p+1) :: m
        real   (kind=8), intent(in)  :: U(0:m)
        real   (kind=8), intent(in)  :: u
        integer(kind=4), optional    :: span = -1
        integer(kind=4), intent(out) :: mult
-     end subroutine Multiplicity
+     end subroutine FindMult
 
      subroutine FindSpanMult(p,m,U,u,span,mult)
        integer(kind=4), intent(in),   check(p>=1)     :: p
@@ -42,7 +42,7 @@ interface
        real   (kind=8), intent(in)  :: u
        integer(kind=4), intent(out) :: span
        integer(kind=4), intent(out) :: mult
-     end subroutine FindKnotSpan
+     end subroutine FindSpanMult
 
      subroutine EvalBasisFuns(p,m,U,u,span,N)
        integer(kind=4), intent(in),   check(p>=1)     :: p
@@ -163,21 +163,6 @@ interface
        real   (kind=8), intent(c,out) :: V(0:n+r+1+p+1)
        real   (kind=8), intent(c,out) :: Qw(0:n+r+1,d)
      end subroutine RefineKnotVector
-
-     subroutine RemoveKnot(d,n,p,U,Pw,u,k,r,s,t,Ub,Qw)
-       !f2py threadsafe
-       integer(kind=4), intent(hide), check(d>=1) :: d
-       integer(kind=4), intent(hide), check(n>=1) :: n
-       integer(kind=4), intent(in),   check(p>=1) :: p
-       real   (kind=8), intent(c,in)  :: U(0:n+p+1)
-       real   (kind=8), intent(c,in)  :: Pw(0:n,d)
-       real   (kind=8), intent(in)    :: u
-       integer(kind=4), intent(in)    :: k=-1
-       integer(kind=4), intent(in)    :: r=-1, s=-1
-       integer(kind=4), intent(out)   :: t
-       real   (kind=8), intent(c,out) :: Ub(0:n+p+1)
-       real   (kind=8), intent(c,out) :: Qw(0:n,d)
-     end subroutine RemoveKnot
 
      subroutine DegreeElevate(d,n,p,U,Pw,t,o,V,Qw)
        !f2py threadsafe

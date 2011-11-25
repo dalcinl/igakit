@@ -554,7 +554,7 @@ class NURBS(object):
         U = knots[axis]
         assert U[p] <= value <= U[-p-1]
         #
-        mult = _api[0].Multiplicity(p, U, value)
+        mult = _api[0].FindMult(p, U, value)
         mult = min(mult, p)
         if times is None: times = p-mult
         assert times + mult <= p
@@ -620,6 +620,10 @@ class NURBS(object):
         >>> np.allclose(xyz1, xyz4, rtol=0, atol=1e-15)
         True
 
+        >>> c0 = c1.remove(0, 0).remove(0, 1)
+        >>> np.allclose(c1.control, c1.control, rtol=0, atol=1e-15)
+        True
+
         """
         axes = range(self.dim)
         axis = axes[axis]
@@ -629,13 +633,13 @@ class NURBS(object):
         U = knots[axis]
         assert U[p] <= value <= U[-p-1]
         #
-        mult = _api[0].Multiplicity(p, U, value)
+        mult = _api[0].FindMult(p, U, value)
         if times is None: times = mult
         times = min(times, mult, p)
         assert times >= 0
         if times == 0: return self
-        if value == U[p]: return self
-        if value == U[p-1]: return self
+        if value <= U[p]: return self
+        if value >= U[-p-1]: return self
         #
         RemoveKnot = _api[0].RemoveKnot
         Pw = np.rollaxis(control, axis, 0)
@@ -870,15 +874,12 @@ class NURBS(object):
         assert end <= U[-p-1]
         assert start < end
         #
-        FindKnotSpan = _api[0].FindKnotSpan
-        Multiplicity = _api[0].Multiplicity
+        FindSpanMult = _api[0].FindSpanMult
         u0 = start
-        k0 = FindKnotSpan(p,U,u0)
-        s0 = Multiplicity(p,U,u0,k0)
+        k0, s0 = FindSpanMult(p,U,u0)
         t0 = max(0, p-s0)
         u1 = end
-        k1 = FindKnotSpan(p,U,u1)
-        s1 = Multiplicity(p,U,u1,k1)
+        k1, s1 = FindSpanMult(p,U,u1)
         t1 = max(0, p-s1)
         u = np.repeat([u0,u1],[t0,t1]).astype('d')
         #

@@ -571,17 +571,17 @@ end module bspline
 module BSp
 contains
 
-subroutine FindKnotSpan(p,m,U,uu,span)
-  use bspline
+subroutine FindSpan(p,m,U,uu,span)
+  use bspline, FindS => FindSpan
   implicit none
   integer(kind=4), intent(in)  :: p, m
   real   (kind=8), intent(in)  :: U(0:m), uu
   integer(kind=4), intent(out) :: span
-  span = FindSpan(m-(p+1),p,uu,U)
-end subroutine FindKnotSpan
+  span = FindS(m-(p+1),p,uu,U)
+end subroutine FindSpan
 
-subroutine Multiplicity(p,m,U,uu,span,mult)
-  use bspline
+subroutine FindMult(p,m,U,uu,span,mult)
+  use bspline, FindM => FindMult
   implicit none
   integer(kind=4), intent(in)  :: p, m
   real   (kind=8), intent(in)  :: U(0:m), uu
@@ -593,8 +593,8 @@ subroutine Multiplicity(p,m,U,uu,span,mult)
   else
      k = FindSpan(m-(p+1),p,uu,U)
   end if
-  mult = FindMult(k,uu,p,U)
-end subroutine Multiplicity
+  mult = FindM(k,uu,p,U)
+end subroutine FindMult
 
 subroutine FindSpanMult(p,m,U,uu,k,s)
   use bspline, FindSM => FindSpanMult
@@ -932,40 +932,6 @@ subroutine RefineKnotVector(d,n,p,U,Pw,r,X,Ubar,Qw)
   real   (kind=8), intent(out) :: Qw(d,0:n+r+1)
   call RefKnt(d,n,p,U,Pw,r,X,Ubar,Qw)
 end subroutine RefineKnotVector
-
-subroutine RemoveKnot(d,n,p,U,Pw,uu,k,r,s,t,Ub,Qw)
-  use bspline, RemKnt => RemoveKnot
-  implicit none
-  integer(kind=4), intent(in)  :: d
-  integer(kind=4), intent(in)  :: n, p
-  real   (kind=8), intent(in)  :: U(0:n+p+1)
-  real   (kind=8), intent(in)  :: Pw(d,0:n)
-  real   (kind=8), intent(in)  :: uu
-  integer(kind=4), intent(in)  :: k, r, s
-  integer(kind=4), intent(out) :: t
-  real   (kind=8), intent(out) :: Ub(0:n+p+1)
-  real   (kind=8), intent(out) :: Qw(d,0:n)
-  integer(kind=4) :: idx, mul, num
-  Ub = U
-  Qw = Pw
-  if (r >= 0) then
-     idx = r
-  else
-     idx = FindSpan(n,p,uu,U)
-  end if
-  if (s >= 0) then
-     mul = s
-  else
-     mul = FindMult(idx,uu,p,U)
-  end if
-  if (k >= 0) then
-     num = min(k,mul)
-  else
-     num = mul
-  end if
-  t = 0
-  call RemKnt(d,n,p,Ub,Qw,uu,idx,mul,num,t)
-end subroutine RemoveKnot
 
 subroutine DegreeElevate(d,n,p,U,Pw,t,nh,Uh,Qw)
   use bspline, DegElev => DegreeElevate

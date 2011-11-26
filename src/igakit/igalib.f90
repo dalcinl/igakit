@@ -261,58 +261,6 @@ subroutine InsertKnot(d,n,p,U,Pw,uu,k,s,r,V,Qw)
   end do
 end subroutine InsertKnot
 
-subroutine RefineKnotVector(d,n,p,U,Pw,r,X,Ubar,Qw)
-  implicit none
-  integer(kind=4), intent(in)  :: d
-  integer(kind=4), intent(in)  :: n, p
-  real   (kind=8), intent(in)  :: U(0:n+p+1)
-  real   (kind=8), intent(in)  :: Pw(d,0:n)
-  integer(kind=4), intent(in)  :: r
-  real   (kind=8), intent(in)  :: X(0:r)
-  real   (kind=8), intent(out) :: Ubar(0:n+r+1+p+1)
-  real   (kind=8), intent(out) :: Qw(d,0:n+r+1)
-  integer(kind=4) :: m, a, b
-  integer(kind=4) :: i, j, k, l
-  integer(kind=4) :: idx
-  real   (kind=8) :: alpha
-  if (r < 0) then
-     Ubar = U
-     Qw = Pw
-     return
-  end if
-  m = n + p + 1
-  a = FindSpan(n,p,X(0),U)
-  b = FindSpan(n,p,X(r),U)
-  b = b + 1
-  forall (j = 0:a-p) Qw(:,j)     = Pw(:,j)
-  forall (j = b-1:n) Qw(:,j+r+1) = Pw(:,j)
-  forall (j =   0:a) Ubar(j)     = U(j)
-  forall (j = b+p:m) Ubar(j+r+1) = U(j)
-  i = b + p - 1
-  k = b + p + r
-  do j = r, 0, -1
-     do while (X(j) <= U(i) .and. i > a)
-        Qw(:,k-p-1) = Pw(:,i-p-1)
-        Ubar(k) = U(i)
-        k = k - 1
-        i = i - 1
-     end do
-     Qw(:,k-p-1) = Qw(:,k-p)
-     do l = 1, p
-        idx = k - p + l
-        alpha = Ubar(k+l) - X(j)
-        if (abs(alpha) == 0.0) then
-           Qw(:,idx-1) = Qw(:,idx)
-        else
-           alpha = alpha / (Ubar(k+l) - U(i-p+l))
-           Qw(:,idx-1) = alpha*Qw(:,idx-1) + (1-alpha)*Qw(:,idx)
-        end if
-     end do
-     Ubar(k) = X(j)
-     k = k-1
-  end do
-end subroutine RefineKnotVector
-
 subroutine RemoveKnot(d,n,p,U,Pw,uu,r,s,num,t)
   implicit none
   integer(kind=4), intent(in)    :: d
@@ -407,6 +355,135 @@ contains
     dist = sqrt(dist)
   end function Distance
 end subroutine RemoveKnot
+
+subroutine ClampKnot(d,n,p,U,Pw)
+  implicit none
+  integer(kind=4), intent(in)    :: d
+  integer(kind=4), intent(in)    :: n, p
+  real   (kind=8), intent(inout) :: U(0:n+p+1)
+  real   (kind=8), intent(inout) :: Pw(d,0:n)
+  integer(kind=4) :: k, s
+  ! Clamp at left end
+  k = p
+  s = FindMult(p,U(p),p,U)
+  call KntIns(d,n,p,U,Pw,k,s)
+  U(0:p-1) = U(p)
+  ! Clamp at right end
+  k = n+1
+  s = FindMult(n,U(n+1),p,U)
+  call KntIns(d,n,p,U,Pw,k,s)
+  U(n+2:n+p+1) = U(n+1)
+contains
+  subroutine KntIns(d,n,p,U,Pw,k,s)
+      implicit none
+      integer(kind=4), intent(in)    :: d
+      integer(kind=4), intent(in)    :: n, p
+      real   (kind=8), intent(in)    :: U(0:n+p+1)
+      real   (kind=8), intent(inout) :: Pw(d,0:n)
+      integer(kind=4), intent(in)    :: k, s
+      integer(kind=4) :: r, i, j, idx
+      real   (kind=8) :: uu, alpha, Rw(d,0:p), Qw(d,0:2*p)
+      if (s >= p) return
+      uu = U(k)
+      r = p-s
+      Qw(:,0) = Pw(:,k-p)
+      Rw(:,0:p-s) = Pw(:,k-p:k-s)
+      do j = 1, r
+         idx = k-p+j
+         do i = 0, p-j-s
+            alpha = (uu-U(idx+i))/(U(i+k+1)-U(idx+i))
+            Rw(:,i) = alpha*Rw(:,i+1)+(1-alpha)*Rw(:,i)
+         end do
+         Qw(:,j) = Rw(:,0)
+         Qw(:,p-j-s+r) = Rw(:,p-j-s)
+      end do
+      if (k == p) then ! left end
+         Pw(:,0:r-1) = Qw(:,r:r+r-1)
+      else             ! right end
+         Pw(:,n-r+1:n) = Qw(:,p-r:p-1)
+      end if
+    end subroutine KntIns
+end subroutine ClampKnot
+
+subroutine UnclampKnot(d,n,p,U,Pw)
+  implicit none
+  integer(kind=4), intent(in)    :: d
+  integer(kind=4), intent(in)    :: n, p
+  real   (kind=8), intent(inout) :: U(0:n+p+1)
+  real   (kind=8), intent(inout) :: Pw(d,0:n)
+  integer(kind=4) :: i, j, k
+  real   (kind=8) :: alpha
+  do i = 0, p-2 ! Unclamp at left end
+     U(p-i-1) = U(p-i) - (U(n-i+1)-U(n-i))
+     k = p-1
+     do j = i, 0, -1
+        alpha = (U(p)-U(k))/(U(p+j+1)-U(k))
+        Pw(:,j) = (Pw(:,j)-alpha*Pw(:,j+1))/(1-alpha)
+        k = k-1
+     end do
+  end do
+  U(0) = U(1) - (U(n-p+2)-U(n-p+1)) ! Set first knot
+  do i = 0, p-2  ! Unclamp at right end
+     U(n+i+2) = U(n+i+1) + (U(p+i+1)-U(p+i))
+     do j = i, 0, -1
+        alpha = (U(n+1)-U(n-j))/(U(n-j+i+2)-U(n-j))
+        Pw(:,n-j) = (Pw(:,n-j)-(1-alpha)*Pw(:,n-j-1))/alpha
+     end do
+  end do
+  U(n+p+1) = U(n+p) + (U(2*p)-U(2*p-1)) ! Set last knot
+end subroutine UnclampKnot
+
+subroutine RefineKnotVector(d,n,p,U,Pw,r,X,Ubar,Qw)
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: n, p
+  real   (kind=8), intent(in)  :: U(0:n+p+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:n)
+  integer(kind=4), intent(in)  :: r
+  real   (kind=8), intent(in)  :: X(0:r)
+  real   (kind=8), intent(out) :: Ubar(0:n+r+1+p+1)
+  real   (kind=8), intent(out) :: Qw(d,0:n+r+1)
+  integer(kind=4) :: m, a, b
+  integer(kind=4) :: i, j, k, l
+  integer(kind=4) :: idx
+  real   (kind=8) :: alpha
+  if (r < 0) then
+     Ubar = U
+     Qw = Pw
+     return
+  end if
+  m = n + p + 1
+  a = FindSpan(n,p,X(0),U)
+  b = FindSpan(n,p,X(r),U)
+  b = b + 1
+  forall (j = 0:a-p) Qw(:,j)     = Pw(:,j)
+  forall (j = b-1:n) Qw(:,j+r+1) = Pw(:,j)
+  forall (j =   0:a) Ubar(j)     = U(j)
+  forall (j = b+p:m) Ubar(j+r+1) = U(j)
+  i = b + p - 1
+  k = b + p + r
+  do j = r, 0, -1
+     do while (X(j) <= U(i) .and. i > a)
+        Qw(:,k-p-1) = Pw(:,i-p-1)
+        Ubar(k) = U(i)
+        k = k - 1
+        i = i - 1
+     end do
+     Qw(:,k-p-1) = Qw(:,k-p)
+     do l = 1, p
+        idx = k - p + l
+        alpha = Ubar(k+l) - X(j)
+        if (abs(alpha) == 0.0) then
+           Qw(:,idx-1) = Qw(:,idx)
+        else
+           alpha = alpha / (Ubar(k+l) - U(i-p+l))
+           Qw(:,idx-1) = alpha*Qw(:,idx-1) + (1-alpha)*Qw(:,idx)
+        end if
+     end do
+     Ubar(k) = X(j)
+     k = k-1
+  end do
+end subroutine RefineKnotVector
 
 subroutine DegreeElevate(d,n,p,U,Pw,t,nh,Uh,Qw)
   implicit none
@@ -676,6 +753,34 @@ subroutine RemoveKnot(d,n,p,U,Pw,uu,r,t,V,Qw)
   call FindSpanMult(n,p,uu,U,k,s)
   call RemKnt(d,n,p,V,Qw,uu,k,s,r,t)
 end subroutine RemoveKnot
+
+subroutine Clamp(d,n,p,U,Pw,V,Qw)
+  use bspline
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: n, p
+  real   (kind=8), intent(in)  :: U(0:n+p+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:n)
+  real   (kind=8), intent(out) :: V(0:n+p+1)
+  real   (kind=8), intent(out) :: Qw(d,0:n)
+  V  = U
+  Qw = Pw
+  call ClampKnot(d,n,p,V,Qw)
+end subroutine Clamp
+
+subroutine Unclamp(d,n,p,U,Pw,V,Qw)
+  use bspline
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: n, p
+  real   (kind=8), intent(in)  :: U(0:n+p+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:n)
+  real   (kind=8), intent(out) :: V(0:n+p+1)
+  real   (kind=8), intent(out) :: Qw(d,0:n)
+  V  = U
+  Qw = Pw
+  call UnclampKnot(d,n,p,V,Qw)
+end subroutine Unclamp
 
 end module BSp
 

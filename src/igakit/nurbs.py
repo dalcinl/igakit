@@ -656,6 +656,104 @@ class NURBS(object):
         self._knots = tuple(knots)
         return self
 
+    def clamp(self, *axes):
+        """
+
+        >>> C = np.random.rand(3,3)
+        >>> U = [0,0,0,1,1,1]
+        >>> c1 = NURBS(C, [U])
+        >>> c1.knots[0].tolist()
+        [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
+        >>> c2 = c1.clone().unclamp()
+        >>> c2.knots[0].tolist()
+        [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0]
+        >>> c3 = c2.clone().clamp()
+        >>> c3.knots[0].tolist()
+        [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
+
+        >>> C = np.random.rand(4,4)
+        >>> U = [0,0,0,0.5,1,1,1]
+        >>> c1 = NURBS(C, [U])
+        >>> c1.knots[0].tolist()
+        [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0]
+        >>> c2 = c1.clone().unclamp()
+        >>> c2.knots[0].tolist()
+        [-1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0]
+        >>> c3 = c2.clone().clamp()
+        >>> c3.knots[0].tolist()
+        [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0]
+
+        """
+        allaxes = range(self.dim)
+        if not axes: axes = allaxes
+        #
+        Clamp = _api[0].Clamp
+        control = self.control
+        knots = list(self.knots)
+        degree = self.degree
+        for axis in axes:
+            axis = allaxes[axis]
+            p = degree[axis]
+            U = knots[axis]
+            Pw = np.rollaxis(control, axis, 0).copy()
+            shape = Pw.shape
+            Pw.shape = (shape[0], -1)
+            V, Qw = Clamp(p, U, Pw)
+            Qw.shape = shape
+            control = np.rollaxis(Qw, 0, axis+1)
+            knots[axis] = V
+        #
+        self._cntrl = np.ascontiguousarray(control)
+        self._knots = tuple(knots)
+        return self
+
+    def unclamp(self, *axes):
+        """
+
+        Examples
+        --------
+
+        Create a random curve, unclamp, check error:
+
+        >>> C = np.random.rand(3,3)
+        >>> U = [0,0,0,1,1,1]
+        >>> c1 = NURBS(C, [U])
+        >>> c1.knots[0].tolist()
+        [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
+        >>> c2 = c1.clone().unclamp()
+        >>> c2.knots[0].tolist()
+        [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0]
+        >>> u = np.linspace(0,1,100)
+        >>> xyz1 = c1.evaluate(u)
+        >>> xyz2 = c2.evaluate(u)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
+        True
+
+        """
+        allaxes = range(self.dim)
+        if not axes: axes = allaxes
+        #
+        Unclamp = _api[0].Unclamp
+        control = self.control
+        knots = list(self.knots)
+        degree = self.degree
+        #
+        for axis in axes:
+            axis = allaxes[axis]
+            p = self.degree[axis]
+            U = knots[axis]
+            Pw = np.rollaxis(control, axis, 0).copy()
+            shape = Pw.shape
+            Pw.shape = (shape[0], -1)
+            V, Qw = Unclamp(p, U, Pw)
+            Qw.shape = shape
+            control = np.rollaxis(Qw, 0, axis+1)
+            knots[axis] = V
+        #
+        self._cntrl = np.ascontiguousarray(control)
+        self._knots = tuple(knots)
+        return self
+
     def refine(self, u, *vw):
         """
         Knot refine a NURBS object.

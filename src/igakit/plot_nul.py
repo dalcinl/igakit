@@ -24,6 +24,7 @@ nul = _namespace()
 
 figure = nul.figure
 gcf = nul.gcf
+clf = nul.clf
 close = nul.close
 save = nul.savefig
 show = nul.show

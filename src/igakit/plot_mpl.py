@@ -10,6 +10,7 @@ colors.__dict__.update(_colors.cnames)
 
 figure = mpl.figure
 gcf = mpl.gcf
+clf = mpl.clf
 close = mpl.close
 save = mpl.savefig
 show = mpl.show

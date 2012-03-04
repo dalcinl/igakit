@@ -11,6 +11,39 @@ except ImportError:
     from enthought.mayavi.tools import sources as _sources
     from enthought.mayavi.tools import tools as _tools
     from enthought.tvtk.api import tvtk
+    def close_scene(scene=None, all=None):
+        import copy, warnings
+        from enthought.mayavi.tools.engine_manager import get_engine
+        from enthought.mayavi.core.scene import Scene
+        from enthought.mayavi.core.registry import registry
+        if all is True:
+            engine = get_engine()
+            for scene in copy.copy(engine.scenes):
+                engine.close_scene(scene)
+            return
+        if not isinstance(scene, Scene):
+            engine = get_engine()
+            if scene is None:
+                scene = engine.current_scene
+            else:
+                try:
+                    scene = int(scene)
+                    name = 'Mayavi Scene %d' % scene
+                except TypeError:
+                    name = str(scene)
+                for scene in engine.scenes:
+                    if scene.name == name:
+                        break
+                else:
+                    warnings.warn('Scene %s not managed by mlab' % name)
+                    return
+        else:
+            if scene.scene is None:
+                engine = registry.find_scene_engine(scene)
+            else:
+                engine = registry.find_scene_engine(scene.scene)
+        engine.close_scene(scene)
+    mlab.close = close_scene
 try:
     from vtk.util import colors
 except ImportError:
@@ -33,6 +66,7 @@ myv = mlab
 
 figure = mlab.figure
 gcf = mlab.gcf
+clf = mlab.clf
 close = mlab.close
 save = mlab.savefig
 show = mlab.show

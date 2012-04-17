@@ -165,11 +165,11 @@ if __name__ == '__main__':
     VERB=1
     try:
         from matplotlib import pylab as plt
-        PLOT=0
-    except ImportError:
         PLOT=1
+    except ImportError:
+        PLOT=0
     if 1: test_fks(VERB=VERB)
-    if 1: test_mul(VERB=VERB)
+    if 1: test_mult(VERB=VERB)
     if 1: test_bf_val(VERB=VERB,PLOT=PLOT)
     if 1: test_bf_der(VERB=VERB,PLOT=PLOT)
     if PLOT: plt.show()

@@ -246,6 +246,8 @@ def compat(*nurbs):
             nurbs[i].elevate(*rst)
     #
     def MergeKnots(nurbs):
+        try:  np_unique = np.unique1d
+        except AttributeError: np_unique = np.unique
         degree = [nrb.degree for nrb in nurbs]
         knots  = [nrb.knots  for nrb in nurbs]
         kvalues = []
@@ -253,12 +255,12 @@ def compat(*nurbs):
             breaks = []; mults = [];
             for (p, U) in zip(degs, knts):
                 # knot vector -> breaks & multiplicities
-                u, i = np.unique(U[p+1:-p-1], return_inverse=True)
+                u, i = np_unique(U[p+1:-p-1], return_inverse=True)
                 if i.size: s = np.bincount(i)
                 else: s = np.empty(0, dtype='i')
                 breaks.append(u); mults.append(s)
             # Merge breaks and multiplicities
-            u = np.unique(np.concatenate(breaks))
+            u = np_unique(np.concatenate(breaks))
             s = np.zeros(u.size, dtype='i')
             for (ui, si) in zip(breaks, mults):
                 mask = np.in1d(u, ui)

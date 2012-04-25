@@ -797,7 +797,9 @@ class NURBS(object):
             assert uu[ 0] >= U[p]
             assert uu[-1] <= U[-p-1]
             tmp = np.concatenate((uu, U[1:-1]))
-            u, i = np.unique(tmp, return_inverse=True)
+            try:  np_unique = np.unique1d
+            except AttributeError: np_unique = np.unique
+            u, i = np_unique(tmp, return_inverse=True)
             s = np.bincount(i)
             assert s.max() <= p
             return uu

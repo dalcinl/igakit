@@ -782,6 +782,34 @@ subroutine Unclamp(d,n,p,U,Pw,V,Qw)
   call UnclampKnot(d,n,p,V,Qw)
 end subroutine Unclamp
 
+subroutine RefineKnotVector(d,n,p,U,Pw,r,X,Ubar,Qw)
+  use bspline, RefKnt => RefineKnotVector
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: n, p
+  real   (kind=8), intent(in)  :: U(0:n+p+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:n)
+  integer(kind=4), intent(in)  :: r
+  real   (kind=8), intent(in)  :: X(0:r)
+  real   (kind=8), intent(out) :: Ubar(0:n+r+1+p+1)
+  real   (kind=8), intent(out) :: Qw(d,0:n+r+1)
+  call RefKnt(d,n,p,U,Pw,r,X,Ubar,Qw)
+end subroutine RefineKnotVector
+
+subroutine DegreeElevate(d,n,p,U,Pw,t,nh,Uh,Qw)
+  use bspline, DegElev => DegreeElevate
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: n, p
+  real   (kind=8), intent(in)  :: U(0:n+p+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:n)
+  integer(kind=4), intent(in)  :: t
+  integer(kind=4), intent(in)  :: nh
+  real   (kind=8), intent(out) :: Uh(0:nh+p+t+1)
+  real   (kind=8), intent(out) :: Qw(d,0:nh)
+  call DegElev(d,n,p,U,Pw,t,nh,Uh,Qw)
+end subroutine DegreeElevate
+
 end module BSp
 
 !
@@ -1208,7 +1236,6 @@ subroutine Extract(d,nx,px,Ux,ny,py,Uy,Pw,ii,uu,n,p,U,Cw)
   end if
   !
 end subroutine Extract
-
 
 end module Srf
 

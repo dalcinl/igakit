@@ -546,8 +546,7 @@ class NURBS(object):
         True
 
         """
-        axes = range(self.dim)
-        axis = axes[axis]
+        axis = range(self.dim)[axis]
         control = self.control.view()
         knots = list(self.knots)
         p = self.degree[axis]
@@ -625,8 +624,7 @@ class NURBS(object):
         True
 
         """
-        axes = range(self.dim)
-        axis = axes[axis]
+        axis = range(self.dim)[axis]
         control = self.control.view()
         knots = list(self.knots)
         p = self.degree[axis]
@@ -754,7 +752,7 @@ class NURBS(object):
         self._knots = tuple(knots)
         return self
 
-    def refine(self, u, *vw):
+    def refine(self, u, *vw, **kargs):
         """
         Knot refine a NURBS object.
 
@@ -780,53 +778,66 @@ class NURBS(object):
         >>> u = [0.25, 0.50, 0.75, 0.75]
         >>> v = [0.33, 0.33, 0.67, 0.67]
         >>> s2 = s1.clone().refine(u, v)
+        >>> s3 = s1.clone().refine(u, axis=0).refine(u, axis=1)
         >>> s2.shape
+        (8, 7)
+        >>> s3.shape
         (8, 7)
         >>> u = v = np.linspace(0,1,100)
         >>> xyz1 = s1.evaluate(u, v)
         >>> xyz2 = s2.evaluate(u, v)
+        >>> xyz3 = s3.evaluate(u, v)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
+        True
+        >>> np.allclose(xyz1, xyz3, rtol=0, atol=1e-15)
         True
 
         """
-        def Arg(p, U, uu):
-            if uu is None: uu = []
-            uu = np.asarray(uu, dtype='d').ravel()
-            if uu.size == 0: return uu
-            uu.sort(kind='heapsort')
-            assert uu[ 0] >= U[p]
-            assert uu[-1] <= U[-p-1]
-            tmp = np.concatenate((uu, U[1:-1]))
-            try:  np_unique = np.unique1d
-            except AttributeError: np_unique = np.unique
-            u, i = np_unique(tmp, return_inverse=True)
-            s = np.bincount(i)
-            assert s.max() <= p
-            return uu
-        #
-        uvw = (u,) + vw
-        assert len(uvw) == self.dim
-        uvw = [Arg(p, U, uu) for p, U, uu in
-               zip(self.degree, self.knots, uvw)]
-        if not np.any(uu.size>0 for uu in uvw):
+        axis = kargs.pop('axis', None)
+        if axis is None:
+            uvw = (u,) + vw
+            assert len(uvw) == self.dim
+            for ax, u in enumerate(uvw):
+                self.refine(u, axis=ax)
             return self
         #
-        arglist = []
-        for p, U in zip(self.degree, self.knots):
-            arglist.extend([p,U])
-        arglist.append(self.control)
-        arglist.extend(uvw)
+        def Arg(p, U, u):
+            u.sort(kind='heapsort')
+            assert u[ 0] >= U[p]
+            assert u[-1] <= U[-p-1]
+            tmp = np.concatenate((u, U[1:-1]))
+            try:  np_unique = np.unique1d
+            except AttributeError: np_unique = np.unique
+            uu, i = np_unique(tmp, return_inverse=True)
+            s = np.bincount(i)
+            assert s.max() <= p
+            return u
         #
-        RefineKnotVector = _api[self.dim].RefineKnotVector
-        result = RefineKnotVector(*arglist)
-        control = result[-1]
-        knots = result[:-1]
+        assert len(vw) == 0
+        axis = range(self.dim)[axis]
+        if u is None: return self
+        u = np.asarray(u, dtype='d').ravel()
+        if u.size == 0: return self
+        p = self.degree[axis]
+        U = self.knots[axis]
+        u = Arg(p, U, u)
+        control = self.control.view()
+        knots = list(self.knots)
         #
-        self._cntrl = control
-        self._knots = knots
+        RefineKnotVector = _api[0].RefineKnotVector
+        Pw = np.rollaxis(control, axis, 0)
+        shape = Pw.shape
+        Pw = Pw.reshape((shape[0], -1))
+        V, Qw = RefineKnotVector(p, U, Pw, u)
+        Qw.shape = Qw.shape[:1] + shape[1:]
+        control = np.rollaxis(Qw, 0, axis+1)
+        knots[axis] = V
+        #
+        self._cntrl = np.ascontiguousarray(control)
+        self._knots = tuple(knots)
         return self
 
-    def elevate(self, r, *st):
+    def elevate(self, t, *sr, **kargs):
         """
         Degree elevate a NURBS object.
 
@@ -836,7 +847,7 @@ class NURBS(object):
 
         Parameters
         ----------
-        r, s, t : int or None
+        t, s, r : int or None
             Polynomial orders to elevate by in each parametric direction.
 
         Examples
@@ -865,7 +876,7 @@ class NURBS(object):
         >>> s1 = NURBS(C, [U,V])
         >>> s1.degree
         (2, 1)
-        >>> s2 = s1.clone().elevate(1, 1)
+        >>> s2 = s1.clone().elevate(1, axis=0).elevate(1, axis=1)
         >>> s2.degree
         (3, 2)
         >>> u = v = np.linspace(0,1,100)
@@ -875,32 +886,36 @@ class NURBS(object):
         True
 
         """
-        def Arg(t):
-            if t is None: t = 0
-            t = int(t)
-            assert t >= 0
-            return t
-        #
-        rst = (r,) + st
-        assert len(rst) == self.dim
-        rst = [Arg(t) for t in rst]
-        for t in rst: assert t >= 0
-        if not np.any(t>0 for t in rst):
+        axis = kargs.pop('axis', None)
+        if axis is None:
+            tsr = (t,) + sr
+            assert len(tsr) == self.dim
+            for ax, t in enumerate(tsr):
+                self.elevate(t, axis=ax)
             return self
         #
-        arglist = []
-        for p, U in zip(self.degree, self.knots):
-            arglist.extend([p, U])
-        arglist.append(self.control)
-        arglist.extend(rst)
+        assert len(sr) == 0
+        axis = range(self.dim)[axis]
+        if t is None: return self
+        t = int(t)
+        assert t >= 0
+        if t == 0: return self
+        p = self.degree[axis]
+        U = self.knots[axis]
+        control = self.control.view()
+        knots = list(self.knots)
         #
-        DegreeElevate = _api[self.dim].DegreeElevate
-        result = DegreeElevate(*arglist)
-        control = result[-1]
-        knots = result[:-1]
+        DegreeElevate = _api[0].DegreeElevate
+        Pw = np.rollaxis(control, axis, 0)
+        shape = Pw.shape
+        Pw = Pw.reshape((shape[0], -1))
+        V, Qw = DegreeElevate(p, U, Pw, t)
+        Qw.shape = Qw.shape[:1] + shape[1:]
+        control = np.rollaxis(Qw, 0, axis+1)
+        knots[axis] = V
         #
-        self._cntrl = control
-        self._knots = knots
+        self._cntrl = np.ascontiguousarray(control)
+        self._knots = tuple(knots)
         return self
 
     #

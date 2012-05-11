@@ -810,6 +810,18 @@ subroutine DegreeElevate(d,n,p,U,Pw,t,nh,Uh,Qw)
   call DegElev(d,n,p,U,Pw,t,nh,Uh,Qw)
 end subroutine DegreeElevate
 
+subroutine Extract(d,n,p,U,Pw,x,Cw)
+  use bspline, CornerCut => CurvePntByCornerCut
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: n, p
+  real   (kind=8), intent(in)  :: U(0:n+p+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:n)
+  real   (kind=8), intent(in)  :: x
+  real   (kind=8), intent(out) :: Cw(d)
+  call CornerCut(d,n,p,U,Pw,x,Cw)
+end subroutine Extract
+
 end module BSp
 
 !

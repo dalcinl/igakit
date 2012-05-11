@@ -143,6 +143,17 @@ interface
        real   (kind=8), intent(c,out) :: Qw(0:o,d)
      end subroutine DegreeElevate
 
+     subroutine Extract(d,n,p,U,Pw,uu,Cw)
+       !f2py threadsafe
+       integer(kind=4), intent(hide), check(d>=1) :: d
+       integer(kind=4), intent(hide), check(n>=1) :: n
+       integer(kind=4), intent(in),   check(p>=1) :: p
+       real   (kind=8), intent(c,in)  :: U(0:n+p+1)
+       real   (kind=8), intent(c,in)  :: Pw(0:n,d)
+       real   (kind=8), intent(in)    :: uu
+       real   (kind=8), intent(c,out) :: Cw(d)
+     end subroutine Extract
+
    end module bsp
 
      !

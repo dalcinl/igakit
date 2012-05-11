@@ -1064,27 +1064,25 @@ class NURBS(object):
         """
         assert self.dim > 1
         axis = range(self.dim)[axis]
-        value = float(value)
         p = self.degree[axis]
         U = self.knots[axis]
-        assert value >= U[p]
-        assert value <= U[-p-1]
+        u = float(value)
+        assert u >= U[p]
+        assert u <= U[-p-1]
+        control = self.control.view()
+        knots = list(self.knots)
         #
-        arglist = []
-        for p, U in zip(self.degree, self.knots):
-            arglist.extend([p, U])
-        arglist.append(self.control)
-        arglist.append(axis)
-        arglist.append(value)
-        #
-        Extract = _api[self.dim].Extract
-        result = Extract(*arglist)
-        control = result[-1]
-        knots = result[:-1]
+        Extract = _api[0].Extract
+        Pw = np.rollaxis(control, axis, 0)
+        shape = Pw.shape
+        Pw = Pw.reshape((shape[0], -1))
+        Cw = Extract(p,U,Pw,u)
+        control = Cw.reshape(shape[1:])
+        del knots[axis]
         #
         nrb = NURBS.__new__(NURBS)
-        nrb._cntrl = control
-        nrb._knots = knots
+        nrb._cntrl = np.ascontiguousarray(control)
+        nrb._knots = tuple(knots)
         return nrb
 
     def boundary(self, axis, side):

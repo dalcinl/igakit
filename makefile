@@ -12,6 +12,7 @@ testdemo:
 	$(PYTHON) demo/plot_vol.py none
 	$(PYTHON) demo/pipe.py     none
 	$(PYTHON) demo/bentpipe.py none
+	$(PYTHON) demo/unclamp.py  none
 .PHONY: doctest
 doctest:
 	$(PYTHON) -m doctest src/igakit/transform.py

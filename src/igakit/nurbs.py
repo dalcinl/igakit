@@ -572,7 +572,7 @@ class NURBS(object):
         self._knots = tuple(knots)
         return self
 
-    def remove(self, axis, value, times=1):
+    def remove(self, axis, value, times=1, deviation=1.0e-9):
         r"""
         Remove a single knot value multiple times.
 
@@ -581,6 +581,7 @@ class NURBS(object):
         axis : int
         value: float
         times: int
+        deviation: float
 
         Examples
         --------
@@ -643,7 +644,13 @@ class NURBS(object):
         Pw = np.rollaxis(control, axis, 0)
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
-        t, V, Qw = RemoveKnot(p, U, Pw, value, times)
+        wmin = Pw[:,-1].min()
+        Pmax = []
+        for i in range(Pw.shape[0]):
+            Pmax.append(np.linalg.norm(Pw[i,:-1]))
+        Pmax = max(Pmax)
+        TOL = deviation*wmin/(1.+Pmax)
+        t, V, Qw = RemoveKnot(p, U, Pw, value, TOL, times)
         if t > 0: V = V[:-t].copy()
         if t > 0: Qw = Qw[:-t,:].copy()
         Qw.shape = (Qw.shape[0], ) + shape[1:]

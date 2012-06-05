@@ -261,7 +261,7 @@ subroutine InsertKnot(d,n,p,U,Pw,uu,k,s,r,V,Qw)
   end do
 end subroutine InsertKnot
 
-subroutine RemoveKnot(d,n,p,U,Pw,uu,r,s,num,t)
+subroutine RemoveKnot(d,n,p,U,Pw,uu,r,s,num,t,TOL)
   implicit none
   integer(kind=4), intent(in)    :: d
   integer(kind=4), intent(in)    :: n, p
@@ -270,14 +270,13 @@ subroutine RemoveKnot(d,n,p,U,Pw,uu,r,s,num,t)
   real   (kind=8), intent(in)    :: uu
   integer(kind=4), intent(in)    :: r, s, num
   integer(kind=4), intent(out)   :: t
+  real   (kind=8), intent(in)    :: TOL
 
   integer(kind=4) :: m,ord,fout,last,first,off
   integer(kind=4) :: i,j,ii,jj,k
   logical         :: remflag
   real   (kind=8) :: temp(d,0:2*p)
-  real   (kind=8) :: alfi,alfj,TOL
-
-  TOL = 1.0e-10 ! need to do better
+  real   (kind=8) :: alfi,alfj
 
   m = n + p + 1
   ord = p + 1
@@ -310,7 +309,7 @@ subroutine RemoveKnot(d,n,p,U,Pw,uu,r,s,num,t)
         end if
      end if
      if (remflag .eqv. .false.) then
-        continue ! break out of the for loop
+        exit ! break out of the for loop
      else
         i = first
         j = last
@@ -731,7 +730,7 @@ subroutine InsertKnot(d,n,p,U,Pw,uu,r,V,Qw)
   call InsKnt(d,n,p,U,Pw,uu,k,s,r,V,Qw)
 end subroutine InsertKnot
 
-subroutine RemoveKnot(d,n,p,U,Pw,uu,r,t,V,Qw)
+subroutine RemoveKnot(d,n,p,U,Pw,uu,r,t,V,Qw,TOL)
   use bspline, RemKnt => RemoveKnot
   implicit none
   integer(kind=4), intent(in)  :: d
@@ -743,6 +742,7 @@ subroutine RemoveKnot(d,n,p,U,Pw,uu,r,t,V,Qw)
   integer(kind=4), intent(out) :: t
   real   (kind=8), intent(out) :: V(0:n+p+1)
   real   (kind=8), intent(out) :: Qw(d,0:n)
+  real   (kind=8), intent(in)  :: TOL
   integer(kind=4) :: k, s
   t = 0
   V = U
@@ -751,7 +751,7 @@ subroutine RemoveKnot(d,n,p,U,Pw,uu,r,t,V,Qw)
   if (uu <= U(p)) return
   if (uu >= U(n+1)) return
   call FindSpanMult(n,p,uu,U,k,s)
-  call RemKnt(d,n,p,V,Qw,uu,k,s,r,t)
+  call RemKnt(d,n,p,V,Qw,uu,k,s,r,t,TOL)
 end subroutine RemoveKnot
 
 subroutine Clamp(d,n,p,U,Pw,V,Qw)

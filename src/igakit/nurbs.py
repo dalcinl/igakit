@@ -391,10 +391,10 @@ class NURBS(object):
         kaxes = list(axes)
         caxes = kaxes+[self.dim]
         control = self.control.transpose(caxes).copy()
-        knots = tuple(self.knots[i] for i in kaxes)
+        knots = [self.knots[i] for i in kaxes]
         #
-        self._cntrl = control
-        self._knots = knots
+        self._cntrl = np.ascontiguousarray(control)
+        self._knots = tuple(knots)
         return self
 
     def swap(self, axis1, axis2):
@@ -436,10 +436,9 @@ class NURBS(object):
         control = self.control.swapaxes(ax1, ax2).copy()
         knots = list(self.knots)
         knots[ax1], knots[ax2] = knots[ax2], knots[ax1]
-        knots = tuple(knots)
         #
-        self._cntrl = control
-        self._knots = knots
+        self._cntrl = np.ascontiguousarray(control)
+        self._knots = tuple(knots)
         return self
 
     def reverse(self, *axes):
@@ -488,10 +487,9 @@ class NURBS(object):
             control = CntRev(control, axis)
             knots[axis] = KntRev(degree[axis], knots[axis])
         control = control.copy()
-        knots = tuple(knots)
         #
-        self._cntrl = control
-        self._knots = knots
+        self._cntrl = np.ascontiguousarray(control)
+        self._knots = tuple(knots)
         return self
 
     #
@@ -1023,11 +1021,10 @@ class NURBS(object):
         Ur = U[i1].repeat(p)
         knots = list(nrb.knots)
         knots[axis] = np.concatenate([Ul, Uc, Ur])
-        knots = tuple(knots)
         #
         nrb = NURBS.__new__(type(self))
-        nrb._cntrl = control
-        nrb._knots = knots
+        nrb._cntrl = np.ascontiguousarray(control)
+        nrb._knots = tuple(knots)
         return nrb
 
     def extract(self, axis, value):

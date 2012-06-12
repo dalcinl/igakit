@@ -224,18 +224,9 @@ def compat(*nurbs):
                 bounds[i,j,:] = U[p], U[-p-1]
         umin = bounds[...,0].min(axis=0)
         umax = bounds[...,1].max(axis=0)
-        limits = zip(umin, umax)
-        for i, bnds in enumerate(bounds):
-            knts = knots[i] = list(knots[i])
-            for j, (ab, cd) in enumerate(zip(bnds, limits)):
-                # u in [a, b] -> s in [c, d]
-                a, b = ab; c, d = cd;
-                if (a == c) and (b == d): continue
-                # U <- (d-c)/(b-a) * (U-a) + c
-                U = knts[j] = knts[j].copy()
-                U -= a; U *= (d-c)/(b-a); U += c
-        for i, knts in enumerate(knots):
-            nurbs[i]._knots = tuple(knts)
+        for j, (a, b) in enumerate(zip(umin, umax)):
+            for nrb in nurbs:
+                nrb.remap(j, a, b)
     #
     def SameDegree(nurbs):
         # Ensure same degree by degree elevation

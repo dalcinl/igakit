@@ -494,6 +494,63 @@ class NURBS(object):
 
     #
 
+    def remap(self, axis, start, end):
+        """
+        Linear reparametrization of knot vectors.
+
+        Parameters
+        ----------
+        axis  : int
+        start : float or None
+        end   : float or None
+
+
+        Examples
+        --------
+        
+        >>> c0 = NURBS(np.random.rand(6,3),[[0,0,0,0.25,0.75,0.75,1,1,1]])
+        >>> v0 = c0.evaluate([0,0.5,1])
+        >>> c1 = c0.copy().remap(0, -2, 2)
+        >>> c1.knots[0].tolist()
+        [-2.0, -2.0, -2.0, -1.0, 1.0, 1.0, 2.0, 2.0, 2.0]
+        >>> v1 = c1.evaluate([-2,0.0,2])
+        >>> np.allclose(v0, v1, rtol=0, atol=1e-15)
+        True
+        >>> c2 = c0.copy().remap(0, None, 2)
+        >>> c2.knots[0].tolist()
+        [0.0, 0.0, 0.0, 0.5, 1.5, 1.5, 2.0, 2.0, 2.0]
+        >>> v2 = c2.evaluate([0,1.0,2])
+        >>> np.allclose(v0, v2, rtol=0, atol=1e-15)
+        True
+        >>> c3 = c0.copy().remap(0, -1, None)
+        >>> c3.knots[0].tolist()
+        [-1.0, -1.0, -1.0, -0.5, 0.5, 0.5, 1.0, 1.0, 1.0]
+        >>> v3 = c3.evaluate([-1,0.0,1])
+        >>> np.allclose(v0, v3, rtol=0, atol=1e-15)
+        True
+
+        """
+        axis = range(self.dim)[axis]
+        p = self.degree[axis]
+        U = self.knots[axis]
+        a, b = U[p], U[-p-1]
+        c, d = start, end
+        if c is None: c = a
+        if d is None: d = b
+        c, d = float(c), float(d)
+        if (a == c) and (b == d): return self
+        #
+        assert c < d
+        U = U.copy()
+        U -= a
+        U *= (d-c)/(b-a)
+        U += c
+        knots = list(self.knots)
+        knots[axis] = U
+        #
+        self._knots = tuple(knots) 
+        return self
+
     def insert(self, axis, value, times=1):
         """
         Insert a single knot value multiple times.

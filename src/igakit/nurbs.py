@@ -324,7 +324,8 @@ class NURBS(object):
         """
         if not isinstance(trans, transform):
             trans = transform(trans)
-        Cw = trans(self.control)
+        Cw = self.control.copy()
+        Cw[...,:4] = trans(Cw[...,:4])
         self._cntrl = np.ascontiguousarray(Cw)
         return self
 

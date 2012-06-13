@@ -471,9 +471,9 @@ class NURBS(object):
         """
         def CntRev(C, axis):
             dim = C.ndim - 1
-            index = list(np.index_exp[:,:,:][:dim])
+            index = [slice(None, None, None)] * dim
             index[axis] = slice(None, None, -1)
-            return C[index]
+            return C[tuple(index)]
         def KntRev(p, U):
             U0, U1 = U[p], U[-p-1]
             return (U1+U0)-U[::-1]
@@ -486,7 +486,6 @@ class NURBS(object):
             axis = allaxes[axis]
             control = CntRev(control, axis)
             knots[axis] = KntRev(degree[axis], knots[axis])
-        control = control.copy()
         #
         self._cntrl = np.ascontiguousarray(control)
         self._knots = tuple(knots)

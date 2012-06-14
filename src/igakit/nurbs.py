@@ -149,57 +149,73 @@ class NURBS(object):
 
     """
 
-    def __init__(self, control, knots, weights=None):
+    def __init__(self, control, knots, weights=None, fields=None):
         """
         Create a NURBS object.
         """
         #
-        if (isinstance(control, tuple) and len(control) == 2):
-            assert weights is None
-            control, weights = control
-        #
-        control = np.asarray(control, dtype='d')
-        assert control.ndim >= 2
-        nsd = control.shape[-1]
-        assert nsd >= 2 and nsd <= 4
-        if nsd < 4:
-            shape = control.shape[:-1]
-            Cw = np.zeros(shape+(4,), dtype='d')
-            Cw[...,0:nsd] = control
-            w = np.ones(shape, dtype='d')
-            Cw[...,-1] = w
-            if weights is not None:
-                w = np.asarray(weights, dtype='d')
-                assert w.shape == shape
-                Cw *= w[...,np.newaxis]
-            control = Cw
-        else:
-            assert weights is None
-            control = np.ascontiguousarray(control)
-        #
-        knots = tuple(np.asarray(k, dtype='d') for k in knots)
+        knots = [np.asarray(k, dtype='d') for k in knots]
         assert len(knots) >= 1
         assert len(knots) <= 3
         for k in knots:
             assert k.ndim == 1
             assert k.size >= 4
         #
-        assert control.ndim - 1 == len(knots)
-        N = [n-1 for n in control.shape[:-1]]
+        if (isinstance(control, tuple) and len(control) == 2):
+            assert weights is None
+            control, weights = control
+        if control is not None:
+            control = np.asarray(control, dtype='d')
+        if weights is not None:
+            weights = np.asarray(weights, dtype='d')
+        if fields is not None:
+            fields = np.asarray(fields, dtype='d')
+        #
+        assert control.ndim >= 2
+        shape = control.shape[:-1]
+        sdim = control.shape[-1]
+        if sdim < 4:
+            assert sdim >= 2
+            Cw = np.zeros(shape + (4,), dtype='d')
+            Cw[...,0:sdim] = control
+            if weights is not None:
+                assert weights.shape == shape
+                Cw[...,:sdim] *= weights[...,np.newaxis]
+                Cw[...,3] = weights
+            else:
+                Cw[...,3] = 1
+        else:
+            assert control.shape[-1] <= 4
+            assert weights is None
+            Cw = control
+        #
+        if fields is not None:
+            if fields.shape == shape:
+                D = fields[...,np.newaxis]
+            else:
+                assert fields.shape[:-1] == shape
+                D = fields
+            w = Cw[...,3,np.newaxis]
+            array = np.concatenate([Cw, D*w], axis=-1)
+        else:
+            array = Cw
+        #
+        assert array.ndim - 1 == len(knots)
+        N = [n-1 for n in array.shape[:-1]]
         M = [len(k)-1 for k in knots]
         for n, m in zip(N, M):
             degree = m - n - 1
             assert degree >= 1
         #
-        self._cntrl = control
-        self._knots = knots
+        self._array = np.ascontiguousarray(array)
+        self._knots = tuple(knots)
 
     @property
     def dim(self):
         """
         Parametric dimension of the NURBS object {1,2,3}.
         """
-        return self.control.ndim-1
+        return len(self.knots)
 
     @property
     def shape(self):
@@ -207,7 +223,7 @@ class NURBS(object):
         Shape of the control point net. Also the number of
         basis functions in each parametric direction.
         """
-        return self.control.shape[:-1]
+        return self._array.shape[:-1]
 
     @property
     def degree(self):
@@ -226,27 +242,43 @@ class NURBS(object):
         return self._knots
 
     @property
+    def array(self):
+        """
+        Container for control points, weights, and fields.
+        """
+        return self._array
+
+    @property
     def control(self):
         """
         Control point grid in 4D space.
         """
-        return self._cntrl
-
-    @property
-    def points(self):
-        """
-        Control point grid projected into 3D space.
-        """
-        Cw = self.control
-        w = self.weights
-        return Cw[...,:-1] / w[...,np.newaxis]
+        return self.array[...,:4]
 
     @property
     def weights(self):
         """
         Rational weight grid.
         """
-        return self.control[...,-1]
+        return self.array[...,3]
+
+    @property
+    def points(self):
+        """
+        Control point grid projected into 3D space.
+        """
+        C = self.array[...,:3]
+        w = self.weights[...,np.newaxis]
+        return C / w
+
+    @property
+    def fields(self):
+        """
+        Control variables
+        """
+        D = self.array[...,4:]
+        w = self.weights[...,np.newaxis]
+        return D / w
 
     #
 
@@ -273,7 +305,7 @@ class NURBS(object):
 
         """
         nrb = NURBS.__new__(type(self))
-        nrb._cntrl = self.control.copy()
+        nrb._array = self.array.copy()
         nrb._knots = tuple(k.copy() for k in self.knots)
         return nrb
 
@@ -300,7 +332,7 @@ class NURBS(object):
 
         """
         nrb = NURBS.__new__(type(self))
-        nrb._cntrl = self.control
+        nrb._array = self.array
         nrb._knots = self.knots
         return nrb
 
@@ -324,9 +356,9 @@ class NURBS(object):
         """
         if not isinstance(trans, transform):
             trans = transform(trans)
-        Cw = self.control.copy()
-        Cw[...,:4] = trans(Cw[...,:4])
-        self._cntrl = np.ascontiguousarray(Cw)
+        array = self.array.copy()
+        array[...,:4] = trans(self.control)
+        self._array = np.ascontiguousarray(array)
         return self
 
     def translate(self, displ, axis=None):
@@ -391,10 +423,10 @@ class NURBS(object):
             assert len(axes) == self.dim
         kaxes = list(axes)
         caxes = kaxes+[self.dim]
-        control = self.control.transpose(caxes).copy()
+        array = self.array.transpose(caxes).copy()
         knots = [self.knots[i] for i in kaxes]
         #
-        self._cntrl = np.ascontiguousarray(control)
+        self._array = np.ascontiguousarray(array)
         self._knots = tuple(knots)
         return self
 
@@ -434,11 +466,11 @@ class NURBS(object):
         """
         allaxes = range(self.dim)
         ax1, ax2 = allaxes[axis1], allaxes[axis2]
-        control = self.control.swapaxes(ax1, ax2).copy()
+        array = self.array.swapaxes(ax1, ax2).copy()
         knots = list(self.knots)
         knots[ax1], knots[ax2] = knots[ax2], knots[ax1]
         #
-        self._cntrl = np.ascontiguousarray(control)
+        self._array = np.ascontiguousarray(array)
         self._knots = tuple(knots)
         return self
 
@@ -480,15 +512,15 @@ class NURBS(object):
             return (U1+U0)-U[::-1]
         allaxes = range(self.dim)
         if not axes: axes = allaxes
-        control = self.control
+        array = self.array
         knots = list(self.knots)
         degree = self.degree
         for axis in axes:
             axis = allaxes[axis]
-            control = CntRev(control, axis)
+            array = CntRev(array, axis)
             knots[axis] = KntRev(degree[axis], knots[axis])
         #
-        self._cntrl = np.ascontiguousarray(control)
+        self._array = np.ascontiguousarray(array)
         self._knots = tuple(knots)
         return self
 
@@ -507,7 +539,7 @@ class NURBS(object):
 
         Examples
         --------
-        
+
         >>> c0 = NURBS(np.random.rand(6,3),[[0,0,0,0.25,0.75,0.75,1,1,1]])
         >>> v0 = c0.evaluate([0,0.5,1])
         >>> c1 = c0.copy().remap(0, -2, 2)
@@ -548,7 +580,7 @@ class NURBS(object):
         knots = list(self.knots)
         knots[axis] = U
         #
-        self._knots = tuple(knots) 
+        self._knots = tuple(knots)
         return self
 
     def insert(self, axis, value, times=1):
@@ -602,7 +634,7 @@ class NURBS(object):
 
         """
         axis = range(self.dim)[axis]
-        control = self.control.view()
+        array = self.array.view()
         knots = list(self.knots)
         p = self.degree[axis]
         U = knots[axis]
@@ -615,15 +647,15 @@ class NURBS(object):
         if times == 0: return self
         #
         InsertKnot = _api[0].InsertKnot
-        Pw = np.rollaxis(control, axis, 0)
+        Pw = np.rollaxis(array, axis, 0)
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
         V, Qw = InsertKnot(p, U, Pw, value, times)
         Qw.shape = (Qw.shape[0], ) + shape[1:]
-        control = np.rollaxis(Qw, 0, axis+1)
+        array = np.rollaxis(Qw, 0, axis+1)
         knots[axis] = V
         #
-        self._cntrl = np.ascontiguousarray(control)
+        self._array = np.ascontiguousarray(array)
         self._knots = tuple(knots)
         return self
 
@@ -681,7 +713,7 @@ class NURBS(object):
 
         """
         axis = range(self.dim)[axis]
-        control = self.control.view()
+        array = self.array.view()
         knots = list(self.knots)
         p = self.degree[axis]
         U = knots[axis]
@@ -696,7 +728,7 @@ class NURBS(object):
         if value >= U[-p-1]: return self
         #
         RemoveKnot = _api[0].RemoveKnot
-        Pw = np.rollaxis(control, axis, 0)
+        Pw = np.rollaxis(array, axis, 0)
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
         wmin = Pw[:,-1].min()
@@ -709,10 +741,10 @@ class NURBS(object):
         if t > 0: V = V[:-t].copy()
         if t > 0: Qw = Qw[:-t,:].copy()
         Qw.shape = (Qw.shape[0], ) + shape[1:]
-        control = np.rollaxis(Qw, 0, axis+1)
+        array = np.rollaxis(Qw, 0, axis+1)
         knots[axis] = V
         #
-        self._cntrl = np.ascontiguousarray(control)
+        self._array = np.ascontiguousarray(array)
         self._knots = tuple(knots)
         return self
 
@@ -748,22 +780,22 @@ class NURBS(object):
         if not axes: axes = allaxes
         #
         Clamp = _api[0].Clamp
-        control = self.control
+        array = self.array
         knots = list(self.knots)
         degree = self.degree
         for axis in axes:
             axis = allaxes[axis]
             p = degree[axis]
             U = knots[axis]
-            Pw = np.rollaxis(control, axis, 0).copy()
+            Pw = np.rollaxis(array, axis, 0).copy()
             shape = Pw.shape
             Pw.shape = (shape[0], -1)
             V, Qw = Clamp(p, U, Pw)
             Qw.shape = shape
-            control = np.rollaxis(Qw, 0, axis+1)
+            array = np.rollaxis(Qw, 0, axis+1)
             knots[axis] = V
         #
-        self._cntrl = np.ascontiguousarray(control)
+        self._array = np.ascontiguousarray(array)
         self._knots = tuple(knots)
         return self
 
@@ -794,7 +826,7 @@ class NURBS(object):
         if not axes: axes = allaxes
         #
         Unclamp = _api[0].Unclamp
-        control = self.control
+        array = self.array
         knots = list(self.knots)
         degree = self.degree
         #
@@ -802,15 +834,15 @@ class NURBS(object):
             axis = allaxes[axis]
             p = self.degree[axis]
             U = knots[axis]
-            Pw = np.rollaxis(control, axis, 0).copy()
+            Pw = np.rollaxis(array, axis, 0).copy()
             shape = Pw.shape
             Pw.shape = (shape[0], -1)
             V, Qw = Unclamp(p, U, Pw)
             Qw.shape = shape
-            control = np.rollaxis(Qw, 0, axis+1)
+            array = np.rollaxis(Qw, 0, axis+1)
             knots[axis] = V
         #
-        self._cntrl = np.ascontiguousarray(control)
+        self._array = np.ascontiguousarray(array)
         self._knots = tuple(knots)
         return self
 
@@ -883,19 +915,19 @@ class NURBS(object):
         p = self.degree[axis]
         U = self.knots[axis]
         u = Arg(p, U, u)
-        control = self.control.view()
+        array = self.array.view()
         knots = list(self.knots)
         #
         RefineKnotVector = _api[0].RefineKnotVector
-        Pw = np.rollaxis(control, axis, 0)
+        Pw = np.rollaxis(array, axis, 0)
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
         V, Qw = RefineKnotVector(p, U, Pw, u)
         Qw.shape = Qw.shape[:1] + shape[1:]
-        control = np.rollaxis(Qw, 0, axis+1)
+        array = np.rollaxis(Qw, 0, axis+1)
         knots[axis] = V
         #
-        self._cntrl = np.ascontiguousarray(control)
+        self._array = np.ascontiguousarray(array)
         self._knots = tuple(knots)
         return self
 
@@ -964,19 +996,19 @@ class NURBS(object):
         if t == 0: return self
         p = self.degree[axis]
         U = self.knots[axis]
-        control = self.control.view()
+        array = self.array.view()
         knots = list(self.knots)
         #
         DegreeElevate = _api[0].DegreeElevate
-        Pw = np.rollaxis(control, axis, 0)
+        Pw = np.rollaxis(array, axis, 0)
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
         V, Qw = DegreeElevate(p, U, Pw, t)
         Qw.shape = Qw.shape[:1] + shape[1:]
-        control = np.rollaxis(Qw, 0, axis+1)
+        array = np.rollaxis(Qw, 0, axis+1)
         knots[axis] = V
         #
-        self._cntrl = np.ascontiguousarray(control)
+        self._array = np.ascontiguousarray(array)
         self._knots = tuple(knots)
         return self
 
@@ -1064,7 +1096,7 @@ class NURBS(object):
         uvw = [None] * dim
         uvw[axis] = u
         nrb.refine(*uvw)
-        control = nrb.control
+        array = nrb.array
         knots = nrb.knots
         #
         U = knots[axis]
@@ -1072,7 +1104,7 @@ class NURBS(object):
         i1 = U.searchsorted(u1, 'l')
         index = [slice(None)] * dim
         index[axis] = slice(i0-p, i1)
-        control = control[index].copy()
+        array = array[index].copy()
         Ul = U[i0].repeat(p)
         Uc = U[i0:i1+1]
         Ur = U[i1].repeat(p)
@@ -1080,7 +1112,7 @@ class NURBS(object):
         knots[axis] = np.concatenate([Ul, Uc, Ur])
         #
         nrb = NURBS.__new__(type(self))
-        nrb._cntrl = np.ascontiguousarray(control)
+        nrb._array = np.ascontiguousarray(array)
         nrb._knots = tuple(knots)
         return nrb
 
@@ -1130,19 +1162,19 @@ class NURBS(object):
         u = float(value)
         assert u >= U[p]
         assert u <= U[-p-1]
-        control = self.control.view()
+        array = self.array.view()
         knots = list(self.knots)
         #
         Extract = _api[0].Extract
-        Pw = np.rollaxis(control, axis, 0)
+        Pw = np.rollaxis(array, axis, 0)
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
         Cw = Extract(p,U,Pw,u)
-        control = Cw.reshape(shape[1:])
+        array = Cw.reshape(shape[1:])
         del knots[axis]
         #
         nrb = NURBS.__new__(NURBS)
-        nrb._cntrl = np.ascontiguousarray(control)
+        nrb._array = np.ascontiguousarray(array)
         nrb._knots = tuple(knots)
         return nrb
 
@@ -1201,18 +1233,24 @@ class NURBS(object):
         arglist = []
         for p, U in zip(self.degree, self.knots):
             arglist.extend([p, U])
-        arglist.append(self.control)
+        arglist.append(self.array)
         arglist.extend(uvw)
         #
         Evaluate = _api[self.dim].Evaluate
-        Cw = Evaluate(*arglist)
-        C = Cw[...,:-1] / Cw[...,-1,np.newaxis]
+        CwD = Evaluate(*arglist)
+        w = CwD[...,3,np.newaxis]
+        C = CwD[...,:3] / w
+        D = CwD[...,4:] / w
         #
-        newshape = list(C.shape)
+        shape = list(C.shape[:-1]) + [-1]
         remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
-        for i in reversed(remove): del newshape[i]
-        C.shape = newshape
-        return C
+        for i in reversed(remove): del shape[i]
+        C.shape = shape
+        D.shape = shape
+        if D.shape[-1] == 0:
+            return C
+        else:
+            return (C, D)
 
     #
 

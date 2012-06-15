@@ -33,7 +33,7 @@ U = [0,0,0, 1,1, 2,2, 3,3, 4,4,4]
 V = [0,0, 1,1]
 W = [0,0, 1,1]
 
-nrb = NURBS(C, [U,V,W])
+nrb = NURBS([U,V,W], C)
 
 #nrb1 = nrb.clone().elevate(0,1,1)
 #nrb2 = nrb.clone().refine([],[0.5],[0.25, 0.5, 0.75])

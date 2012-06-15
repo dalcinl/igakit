@@ -63,7 +63,7 @@ class NURBS(object):
     >>> C = [[0, 1], [1, 1], [1, 0]] # 3x2 grid of 2D control points
     >>> w = [1, np.sqrt(2)/2, 1]     # rational weigths
     >>> U = [0,0,0, 1,1,1]           # knot vector
-    >>> crv = NURBS(C, [U], w)
+    >>> crv = NURBS([U], C, weights=w)
     >>> u = np.linspace(0,1,1000)
     >>> xyz = crv.evaluate(u)
     >>> x, y, z = xyz.T
@@ -81,7 +81,7 @@ class NURBS(object):
     >>> Cw[0,:] = [0.0, 1.0, 0.0, 1.0]
     >>> Cw[1,:] = [wgt, wgt, 0.0, wgt]
     >>> Cw[2,:] = [1.0, 0.0, 0.0, 1.0]
-    >>> crv = NURBS(Cw, [U])
+    >>> crv = NURBS([U], Cw)
     >>> u = np.linspace(0,1,1000)
     >>> xyz = crv.evaluate(u)
     >>> x, y, z = xyz.T
@@ -95,7 +95,7 @@ class NURBS(object):
 
     >>> C = np.random.rand(3,3) # 3D control points
     >>> U = [0,0,0, 1,1,1]      # knot vector
-    >>> crv = NURBS(C, [U])
+    >>> crv = NURBS([U], C)
     >>> crv.dim
     1
     >>> crv.shape
@@ -114,7 +114,7 @@ class NURBS(object):
     >>> C = np.random.rand(3,2,3) # 3x2 grid of 3D control points
     >>> U = [0,0,0, 1,1,1]        # knot vector
     >>> V = [0,0, 1,1]            # knot vector
-    >>> srf = NURBS(C, [U,V])
+    >>> srf = NURBS([U,V], C)
     >>> srf.dim
     2
     >>> srf.shape
@@ -136,7 +136,7 @@ class NURBS(object):
     >>> U = [0,0,0, 1,1,1]          # knot vector
     >>> V = [0,0, 1,1]              # knot vector
     >>> W = [0]*4+[0.25, 0.5, 0.5]+[1]*4
-    >>> vol = NURBS(C, [U,V,W])
+    >>> vol = NURBS([U,V,W], C)
     >>> vol.dim
     3
     >>> vol.shape
@@ -156,7 +156,7 @@ class NURBS(object):
 
     """
 
-    def __init__(self, control, knots, weights=None, fields=None):
+    def __init__(self, knots, control=None, fields=None, weights=None):
         """
         Create a NURBS object.
         """
@@ -324,7 +324,9 @@ class NURBS(object):
         Create a random curve, copy the curve, change the control points,
         demonstrate that now c1 and c2 are different
 
-        >>> c1 = NURBS(np.random.rand(5,2),[[0,0,1,2,3,4,4]])
+        >>> C = np.random.rand(5,2)
+        >>> U = [0,0,1,2,3,4,4]
+        >>> c1 = NURBS([U], C)
         >>> c2 = c1.copy()
         >>> c2.control[2,:] = [1.0,1.0,0.0,1.0]
         >>> (abs(c2.control-c1.control)).max() < 1.0e-15
@@ -351,7 +353,9 @@ class NURBS(object):
         Create a random curve, copy the curve, change the control points,
         demonstrate that changing c2 changes c1
 
-        >>> c1 = NURBS(np.random.rand(5,2),[[0,0,1,2,3,4,4]])
+        >>> C = np.random.rand(5,2)
+        >>> U = [0,0,1,2,3,4,4]
+        >>> c1 = NURBS([U], C)
         >>> c2 = c1.clone()
         >>> c2.control[2,:] = [1.0,1.0,0.0,1.0]
         >>> (abs(c2.control-c1.control)).max() < 1.0e-15
@@ -429,7 +433,7 @@ class NURBS(object):
         >>> U = [0,0,0,0,1,1,1,1]
         >>> V = [0,0,0,1,1,1]
         >>> W = [0,0,1,1]
-        >>> vol1 = NURBS(C, [U,V,W])
+        >>> vol1 = NURBS([U,V,W], C)
         >>> vol2 = vol1.clone().transpose([0,2,1])
         >>> u = 0.25; v = 0.50; w = 0.75
         >>> xyz1 = vol1.evaluate(u,v,w)
@@ -478,7 +482,7 @@ class NURBS(object):
         >>> U = [0,0,0,0,1,1,1,1]
         >>> V = [0,0,0,1,1,1]
         >>> W = [0,0,1,1]
-        >>> vol1 = NURBS(C, [U,V,W])
+        >>> vol1 = NURBS([U,V,W], C)
         >>> vol2 = vol1.clone().swap(1,2)
         >>> vol3 = vol1.clone().swap(0,-1)
         >>> u = 0.25; v = 0.50; w = 0.75
@@ -521,7 +525,9 @@ class NURBS(object):
         Create a curve, copy it, reverse the copy, evaluate at
         equivalent parametric points, verify the point is the same.
 
-        >>> c1 = NURBS(np.random.rand(6,2),[[0,0,0,0.25,0.75,0.75,1,1,1]])
+        >>> C = np.random.rand(6,2)
+        >>> U = [0,0,0,0.25,0.75,0.75,1,1,1]
+        >>> c1 = NURBS([U], C)
         >>> c2 = c1.copy()
         >>> c2 = c2.reverse()
         >>> u = 0.3
@@ -567,7 +573,9 @@ class NURBS(object):
         Examples
         --------
 
-        >>> c0 = NURBS(np.random.rand(6,3),[[0,0,0,0.25,0.75,0.75,1,1,1]])
+        >>> C = np.random.rand(6,3)
+        >>> U = [0,0,0,0.25,0.75,0.75,1,1,1]
+        >>> c0 = NURBS([U], C)
         >>> v0 = c0.evaluate([0,0.5,1])
         >>> c1 = c0.copy().remap(0, -2, 2)
         >>> c1.knots[0].tolist()
@@ -627,7 +635,7 @@ class NURBS(object):
 
         >>> C = np.random.rand(5,3)
         >>> U = [0,0,0,0,0.5,1,1,1,1]
-        >>> c1 = NURBS(C, [U])
+        >>> c1 = NURBS([U], C)
         >>> c2 = c1.clone().insert(0, 0.25)
         >>> c3 = c2.clone().insert(0, 0.50, 2)
         >>> c4 = c3.clone().insert(0, 0.75, 3)
@@ -647,7 +655,7 @@ class NURBS(object):
 
         >>> C = np.random.rand(4,3,3)
         >>> U = [0,0,0,0,1,1,1,1]; V = [0,0,0,1,1,1]
-        >>> s1 = NURBS(C, [U,V])
+        >>> s1 = NURBS([U,V], C)
         >>> s1.shape
         (4, 3)
         >>> s2 = s1.clone().insert(0, 0.25).insert(1, 0.75, 2)
@@ -705,7 +713,7 @@ class NURBS(object):
 
         >>> C = np.random.rand(5,3)
         >>> U = [0,0,0,0,0.5,1,1,1,1]
-        >>> c1 = NURBS(C, [U])
+        >>> c1 = NURBS([U], C)
         >>> c1.shape
         (5,)
         >>> c2 = c1.clone().insert(0, 0.25) \
@@ -780,7 +788,7 @@ class NURBS(object):
 
         >>> C = np.random.rand(3,3)
         >>> U = [0,0,0,1,1,1]
-        >>> c1 = NURBS(C, [U])
+        >>> c1 = NURBS([U], C)
         >>> c1.knots[0].tolist()
         [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
         >>> c2 = c1.clone().unclamp()
@@ -792,7 +800,7 @@ class NURBS(object):
 
         >>> C = np.random.rand(4,4)
         >>> U = [0,0,0,0.5,1,1,1]
-        >>> c1 = NURBS(C, [U])
+        >>> c1 = NURBS([U], C)
         >>> c1.knots[0].tolist()
         [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0]
         >>> c2 = c1.clone().unclamp()
@@ -836,7 +844,7 @@ class NURBS(object):
 
         >>> C = np.random.rand(3,3)
         >>> U = [0,0,0,1,1,1]
-        >>> c1 = NURBS(C, [U])
+        >>> c1 = NURBS([U], C)
         >>> c1.knots[0].tolist()
         [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
         >>> c2 = c1.clone().unclamp()
@@ -893,7 +901,7 @@ class NURBS(object):
 
         >>> C = np.random.rand(4,3,3)
         >>> U = [0,0,0,0,1,1,1,1]; V = [0,0,0,1,1,1]
-        >>> s1 = NURBS(C, [U,V])
+        >>> s1 = NURBS([U,V], C)
         >>> s1.shape
         (4, 3)
         >>> u = [0.25, 0.50, 0.75, 0.75]
@@ -978,7 +986,7 @@ class NURBS(object):
 
         >>> C = np.random.rand(3,3)
         >>> U = [0,0,0,1,1,1]
-        >>> c1 = NURBS(C, [U])
+        >>> c1 = NURBS([U], C)
         >>> c1.degree
         (2,)
         >>> c2 = c1.clone().elevate(2)
@@ -993,8 +1001,9 @@ class NURBS(object):
         Create a random surface, degree elevate, check error:
 
         >>> C = np.random.rand(3,3,3)
-        >>> U = [0,0,0,1,1,1]; V = [0,0,0.5,1,1]
-        >>> s1 = NURBS(C, [U,V])
+        >>> U = [0,0,0,1,1,1]
+        >>> V = [0,0,0.5,1,1]
+        >>> s1 = NURBS([U,V], C)
         >>> s1.degree
         (2, 1)
         >>> s2 = s1.clone().elevate(1, axis=0).elevate(1, axis=1)
@@ -1055,7 +1064,7 @@ class NURBS(object):
 
         >>> C = np.random.rand(5,3)
         >>> U = [0,0,0,0,0.5,1,1,1,1]
-        >>> crv = NURBS(C,[U])
+        >>> crv = NURBS([U], C)
         >>> sub = crv.slice(0,0.5,0.75)
         >>> u = np.linspace(0.5,0.75,100)
         >>> xyz1 = crv.evaluate(u)
@@ -1068,7 +1077,7 @@ class NURBS(object):
 
         >>> C = np.random.rand(5,4,3)
         >>> U = [0,0,0,0,0.5,1,1,1,1]; V = U[1:-1];
-        >>> srf = NURBS(C,[U,V])
+        >>> srf = NURBS([U,V], C)
         >>> sub = srf.slice(0,1./3,2./3)
         >>> u = np.linspace(1./3,2./3,100)
         >>> v = np.linspace(0,1,100)
@@ -1082,7 +1091,7 @@ class NURBS(object):
 
         >>> C = np.random.rand(4,3,2,3)
         >>> U = [0,0,0,0,1,1,1,1]; V = U[1:-1]; W = V[1:-1];
-        >>> vol = NURBS(C,[U,V,W])
+        >>> vol = NURBS([U,V,W], C)
         >>> sub = vol.slice(0,1./3,2./3).slice(1,0.25,0.75)
         >>> sub = sub.slice(0,1./3,2./3) # no-op
         >>> sub = sub.slice(1,0.25,0.75) # no-op
@@ -1158,7 +1167,7 @@ class NURBS(object):
         >>> C = np.random.rand(4,3,2,3)
         >>> U = [0,0,0,0,1,1,1,1]; V = U[1:-1]; W = V[1:-1];
         >>> u = 0.5; v = 0.75; w = 0.3;
-        >>> vol = NURBS(C,[U,V,W])
+        >>> vol = NURBS([U,V,W], C)
         >>> vol.shape
         (4, 3, 2)
         >>> vol.degree
@@ -1244,12 +1253,12 @@ class NURBS(object):
 
         >>> C = [[-1,0],[0,1],[1,0]]
         >>> U = [0,0,0,1,1,1]
-        >>> crv = NURBS(C, [U])
+        >>> crv = NURBS([U], C)
         >>> crv.evaluate(0.5).tolist()
         [0.0, 0.5, 0.0]
         >>> crv.evaluate([0.5]).tolist()
         [[0.0, 0.5, 0.0]]
-        >>> crv.evaluate([0, 1]).tolist()
+        >>> crv.evaluate([0,1]).tolist()
         [[-1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]
 
         """

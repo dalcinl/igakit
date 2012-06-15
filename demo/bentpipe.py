@@ -45,7 +45,7 @@ Pw = bentpipe
 U = [0,0,0, 1,1, 2,2, 3,3, 4,4,4]
 V = [0,0, 1,1]
 W = [0,0,0, 1,1, 2,2,2]
-nrb = NURBS(Pw, [U,V,W])
+nrb = NURBS([U,V,W], Pw)
 assert nrb.degree == (2,1,2)
 
 import sys

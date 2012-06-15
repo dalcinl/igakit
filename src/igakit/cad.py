@@ -24,7 +24,7 @@ def line(p0=(0,0), p1=(1,0)):
     points[0,:p0.size] = p0
     points[1,:p1.size] = p1
     knots = [0,0,1,1]
-    return NURBS(points, [knots])
+    return NURBS([knots], points)
 
 def circle(radius=1, center=None, angle=None):
     """
@@ -129,7 +129,7 @@ def circle(radius=1, center=None, angle=None):
     U[0], U[-1] = a, b
     U[1:-1] = np.linspace(a,b,spans+1).repeat(2)
     # Return the new NURBS object
-    return NURBS(Cw, [U])
+    return NURBS([U], Cw)
 
 def linear(points=None):
     """
@@ -145,7 +145,7 @@ def linear(points=None):
         points = np.asarray(points, dtype='d')
         assert points.shape[:-1] == (2,)
     knots = [0,0,1,1]
-    return NURBS(points, [knots])
+    return NURBS([knots], points)
 
 def bilinear(points=None):
     """
@@ -168,7 +168,7 @@ def bilinear(points=None):
         points = np.array(points, dtype='d')
         assert points.shape[:-1] == (2,2)
     knots = [0,0,1,1]
-    return NURBS(points, [knots]*2)
+    return NURBS([knots]*2, points)
 
 def trilinear(points=None):
     """
@@ -196,7 +196,7 @@ def trilinear(points=None):
         points = np.array(points, dtype='d')
         assert points.shape[:-1] == (2,2,2)
     knots = [0,0,1,1]
-    return NURBS(points, [knots]*3)
+    return NURBS([knots]*3, points)
 
 # -----
 
@@ -310,7 +310,7 @@ def extrude(nrb, displ, axis=None):
     Cw[...,0,:] = nrb.control
     Cw[...,1,:] = T(nrb.control)
     UVW = nrb.knots + ([0,0,1,1],)
-    return NURBS(Cw, UVW)
+    return NURBS(UVW, Cw)
 
 def revolve(nrb, point, axis, angle=None):
     """
@@ -394,7 +394,7 @@ def revolve(nrb, point, axis, angle=None):
         Qi[...,3] *= w
     # Create the new NURBS object and map
     # back to the original reference frame
-    return NURBS(Qw, UVW).transform(T.invert())
+    return NURBS(UVW, Qw).transform(T.invert())
 
 def ruled(nrb1, nrb2):
     """
@@ -441,7 +441,7 @@ def sweep(section, trajectory):
     C = Cs[...,np.newaxis,:] + Ct
     w = ws[...,np.newaxis] * wt
     UVW = section.knots + trajectory.knots
-    return NURBS((C, w), UVW)
+    return NURBS(UVW, (C, w))
 
 def coons(curves):
     """
@@ -486,6 +486,6 @@ def coons(curves):
     R0, R1, B = compat(R0, R1, B)
     control = R0.control + R1.control - B.control
     knots = B.knots
-    return NURBS(control, knots)
+    return NURBS(knots, control)
 
 # -----

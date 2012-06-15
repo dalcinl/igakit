@@ -18,7 +18,7 @@ def make_vol():
     U = [0,0,0,     1,1,1]
     V = [0,0,         1,1]
     W = [0,0,   0.5,  1,1]
-    vol = NURBS(C, [U,V,W])
+    vol = NURBS([U,V,W], C)
     return vol
 
 import sys

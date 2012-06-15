@@ -19,7 +19,7 @@ def make_crv():
     U = [0, 0, 0, 0,
          .1, .2, .3, .4, .5, .6, .7, .8, .9,
          1, 1, 1, 1,]
-    nrb = NURBS(C, [U])
+    nrb = NURBS([U], C)
     return nrb
 
 def make_srf():
@@ -42,7 +42,7 @@ def make_srf():
     C = C.transpose()
     U = [0, 0, 0, 1/3., 2/3., 1, 1, 1,]
     V = [0, 0, 0, 1/3., 2/3., 1, 1, 1,]
-    nrb = NURBS(C, [U,V])
+    nrb = NURBS([U,V], C)
     return nrb
 
 def make_vol():
@@ -61,7 +61,7 @@ def make_vol():
     U = [0,0,0,     1,1,1]
     V = [0,0,         1,1]
     W = [0,0,   0.5,  1,1]
-    nrb = NURBS(C, [U,V,W])
+    nrb = NURBS([U,V,W],C)
     return nrb
 
 

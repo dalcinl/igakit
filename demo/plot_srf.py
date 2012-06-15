@@ -22,7 +22,7 @@ def make_srf():
     C = C.transpose()
     U = [0, 0, 0, 1/3., 2/3., 1, 1, 1,]
     V = [0, 0, 0, 1/3., 2/3., 1, 1, 1,]
-    srf = NURBS(C, [U,V])
+    srf = NURBS([U,V], C)
     return srf
 
 import sys

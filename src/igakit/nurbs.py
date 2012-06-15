@@ -2,6 +2,7 @@ import numpy as np
 from igakit.transform import transform
 from igakit import igalib
 
+_bsp = igalib.bsp
 _api = {
     0 : igalib.bsp,
     1 : igalib.crv,
@@ -171,25 +172,45 @@ class NURBS(object):
         if fields is not None:
             fields = np.asarray(fields, dtype='d')
         #
-        assert control.ndim >= 2
-        shape = control.shape[:-1]
-        sdim = control.shape[-1]
-        if sdim < 4:
-            assert sdim >= 2
-            Cw = np.zeros(shape + (4,), dtype='d')
-            Cw[...,0:sdim] = control
-            if weights is not None:
-                assert weights.shape == shape
-                Cw[...,:sdim] *= weights[...,np.newaxis]
-                Cw[...,3] = weights
-            else:
-                Cw[...,3] = 1
-        else:
-            assert control.shape[-1] <= 4
+        if control is None:
             assert weights is None
-            Cw = control
+            dim = len(knots)
+            degs = [1] * dim
+            for i, U in enumerate(knots):
+                p = 1
+                while U[p] == U[p+1]:
+                    p += 1
+                degs[i] = p
+            Greville = _bsp.Greville
+            axes = [Greville(p, U) for p, U in zip(degs,knots)]
+            shape = [len(x) for x in axes]
+            Cw = np.zeros(shape+[4], dtype='d')
+            for i, x in enumerate(axes):
+                index = [np.newaxis] * dim
+                index[i] = slice(None)
+                Cw[...,i] = x[tuple(index)]
+            Cw[...,3] = 1
+        else:
+            assert control.ndim >= 2
+            sdim = control.shape[-1]
+            assert sdim >= 2
+            assert sdim <= 4
+            if sdim < 4:
+                shape = control.shape[:-1]
+                Cw = np.zeros(shape + (4,), dtype='d')
+                Cw[...,0:sdim] = control
+                if weights is not None:
+                    assert weights.shape == shape
+                    Cw[...,:sdim] *= weights[...,np.newaxis]
+                    Cw[...,3] = weights
+                else:
+                    Cw[...,3] = 1
+            else:
+                assert weights is None
+                Cw = control
         #
         if fields is not None:
+            shape = Cw.shape[:-1]
             if fields.shape == shape:
                 D = fields[...,np.newaxis]
             else:

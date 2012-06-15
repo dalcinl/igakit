@@ -681,6 +681,17 @@ subroutine FindSpanMult(p,m,U,uu,k,s)
   call FindSM(m-(p+1),p,uu,U,k,s)
 end subroutine FindSpanMult
 
+subroutine Greville(p,m,U,X)
+  implicit none
+  integer(kind=4), intent(in)  :: p, m
+  real   (kind=8), intent(in)  :: U(0:m)
+  real   (kind=8), intent(out) :: X(0:m-(p+1))
+  integer(kind=4) :: i
+  do i = 0, m-(p+1)
+     X(i) = sum(U(i+1:i+p)) / p
+  end do
+end subroutine Greville
+
 subroutine EvalBasisFuns(p,m,U,uu,span,N)
   use bspline
   implicit none

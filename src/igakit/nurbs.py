@@ -675,13 +675,13 @@ class NURBS(object):
         U = knots[axis]
         assert U[p] <= value <= U[-p-1]
         #
-        mult = _api[0].FindMult(p, U, value)
+        mult = _bsp.FindMult(p, U, value)
         mult = min(mult, p)
         if times is None: times = p-mult
         assert times + mult <= p
         if times == 0: return self
         #
-        InsertKnot = _api[0].InsertKnot
+        InsertKnot = _bsp.InsertKnot
         Pw = np.rollaxis(array, axis, 0)
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
@@ -754,7 +754,7 @@ class NURBS(object):
         U = knots[axis]
         assert U[p] <= value <= U[-p-1]
         #
-        mult = _api[0].FindMult(p, U, value)
+        mult = _bsp.FindMult(p, U, value)
         if times is None: times = mult
         times = min(times, mult, p)
         assert times >= 0
@@ -762,7 +762,7 @@ class NURBS(object):
         if value <= U[p]: return self
         if value >= U[-p-1]: return self
         #
-        RemoveKnot = _api[0].RemoveKnot
+        RemoveKnot = _bsp.RemoveKnot
         Pw = np.rollaxis(array, axis, 0)
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
@@ -814,7 +814,7 @@ class NURBS(object):
         allaxes = range(self.dim)
         if not axes: axes = allaxes
         #
-        Clamp = _api[0].Clamp
+        Clamp = _bsp.Clamp
         array = self.array
         knots = list(self.knots)
         degree = self.degree
@@ -860,7 +860,7 @@ class NURBS(object):
         allaxes = range(self.dim)
         if not axes: axes = allaxes
         #
-        Unclamp = _api[0].Unclamp
+        Unclamp = _bsp.Unclamp
         array = self.array
         knots = list(self.knots)
         degree = self.degree
@@ -953,7 +953,7 @@ class NURBS(object):
         array = self.array.view()
         knots = list(self.knots)
         #
-        RefineKnotVector = _api[0].RefineKnotVector
+        RefineKnotVector = _bsp.RefineKnotVector
         Pw = np.rollaxis(array, axis, 0)
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
@@ -1035,7 +1035,7 @@ class NURBS(object):
         array = self.array.view()
         knots = list(self.knots)
         #
-        DegreeElevate = _api[0].DegreeElevate
+        DegreeElevate = _bsp.DegreeElevate
         Pw = np.rollaxis(array, axis, 0)
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
@@ -1119,7 +1119,7 @@ class NURBS(object):
         assert end <= U[-p-1]
         assert start < end
         #
-        FindSpanMult = _api[0].FindSpanMult
+        FindSpanMult = _bsp.FindSpanMult
         u0 = start
         k0, s0 = FindSpanMult(p,U,u0)
         t0 = max(0, p-s0)
@@ -1201,7 +1201,7 @@ class NURBS(object):
         array = self.array.view()
         knots = list(self.knots)
         #
-        Extract = _api[0].Extract
+        Extract = _bsp.Extract
         Pw = np.rollaxis(array, axis, 0)
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))

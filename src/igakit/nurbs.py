@@ -30,6 +30,8 @@ class NURBS(object):
     weights : array_like, optional
        Rational weights. If weights are omitted, the object will be
        non-rational (B-spline).
+    fields : array_like, optional
+       Additional fields.
 
     Attributes
     ----------
@@ -41,12 +43,16 @@ class NURBS(object):
         Polynomial degrees in each parametric dimension.
     knots : tuple of numpy.ndarray
         Knot vectors in each parametric dimension.
+    array: numpy.ndarray
+        Container for control points, weights, and fields.
     control : numpy.ndarray
         Control points in homogeneous 4D space (includes rational weights).
-    points : numpy.ndarray
-        Control points projected into 3D space.
     weigths : numpy.ndarray
         Rational weigths.
+    points : numpy.ndarray
+        Control points projected into Cartesian 3D space.
+    fields : numpy.ndarray
+        Additional fields.
 
     Examples
     --------
@@ -272,7 +278,7 @@ class NURBS(object):
     @property
     def control(self):
         """
-        Control point grid in 4D space.
+        Control point grid in homogeneous 4D space.
         """
         return self.array[...,:4]
 
@@ -286,7 +292,7 @@ class NURBS(object):
     @property
     def points(self):
         """
-        Control point grid projected into 3D space.
+        Control point grid projected into Cartesian 3D space.
         """
         C = self.array[...,:3]
         w = self.weights[...,np.newaxis]

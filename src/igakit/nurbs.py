@@ -783,7 +783,7 @@ class NURBS(object):
         self._knots = tuple(knots)
         return self
 
-    def clamp(self, *axes):
+    def clamp(self, *axes, **kargs):
         """
 
         >>> C = np.random.rand(3,3)
@@ -806,18 +806,35 @@ class NURBS(object):
         >>> c2 = c1.clone().unclamp()
         >>> c2.knots[0].tolist()
         [-1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0]
-        >>> c3 = c2.clone().clamp()
+        >>> c3 = c2.clone().clamp(side=0)
         >>> c3.knots[0].tolist()
+        [0.0, 0.0, 0.0, 0.5, 1.0, 1.5, 2.0]
+        >>> c4 = c3.clone().clamp(axis=0, side=1)
+        >>> c4.knots[0].tolist()
         [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0]
 
         """
         allaxes = range(self.dim)
-        if not axes: axes = allaxes
+        left, right = True, True
+        if not axes:
+            axis = kargs.pop('axis', None)
+            if axis is not None:
+                axes = (axis,)
+            else:
+                axes = allaxes
+        side = kargs.pop('side', None)
+        if side is not None:
+            assert len(axes) == 1
+            assert side in (0, 1)
+            if side == 0: right = False
+            else:         left  = False
+        assert not kargs
         #
         Clamp = _bsp.Clamp
         array = self.array
         knots = list(self.knots)
         degree = self.degree
+        #
         for axis in axes:
             axis = allaxes[axis]
             p = degree[axis]
@@ -825,7 +842,7 @@ class NURBS(object):
             Pw = np.rollaxis(array, axis, 0).copy()
             shape = Pw.shape
             Pw.shape = (shape[0], -1)
-            V, Qw = Clamp(p, U, Pw)
+            V, Qw = Clamp(p, U, Pw, left, right)
             Qw.shape = shape
             array = np.rollaxis(Qw, 0, axis+1)
             knots[axis] = V
@@ -834,7 +851,7 @@ class NURBS(object):
         self._knots = tuple(knots)
         return self
 
-    def unclamp(self, *axes):
+    def unclamp(self, *axes, **kargs):
         """
 
         Examples
@@ -847,6 +864,7 @@ class NURBS(object):
         >>> c1 = NURBS([U], C)
         >>> c1.knots[0].tolist()
         [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
+
         >>> c2 = c1.clone().unclamp()
         >>> c2.knots[0].tolist()
         [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0]
@@ -856,9 +874,40 @@ class NURBS(object):
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
 
+        >>> c3 = c1.clone().unclamp(side=0)
+        >>> c3.knots[0].tolist()
+        [-2.0, -1.0, 0.0, 1.0, 1.0, 1.0]
+        >>> u = np.linspace(0,1,100)
+        >>> xyz1 = c1.evaluate(u)
+        >>> xyz2 = c2.evaluate(u)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
+        True
+
+        >>> c4 = c1.clone().unclamp(axis=0,side=1)
+        >>> c4.knots[0].tolist()
+        [0.0, 0.0, 0.0, 1.0, 2.0, 3.0]
+        >>> u = np.linspace(0,1,100)
+        >>> xyz1 = c1.evaluate(u)
+        >>> xyz2 = c2.evaluate(u)
+        >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
+        True
+
         """
         allaxes = range(self.dim)
-        if not axes: axes = allaxes
+        left, right = True, True
+        if not axes:
+            axis = kargs.pop('axis', None)
+            if axis is not None:
+                axes = (axis,)
+            else:
+                axes = allaxes
+        side = kargs.pop('side', None)
+        if side is not None:
+            assert len(axes) == 1
+            assert side in (0, 1)
+            if side == 0: right = False
+            else:         left  = False
+        assert not kargs
         #
         Unclamp = _bsp.Unclamp
         array = self.array
@@ -872,7 +921,7 @@ class NURBS(object):
             Pw = np.rollaxis(array, axis, 0).copy()
             shape = Pw.shape
             Pw.shape = (shape[0], -1)
-            V, Qw = Unclamp(p, U, Pw)
+            V, Qw = Unclamp(p, U, Pw, left, right)
             Qw.shape = shape
             array = np.rollaxis(Qw, 0, axis+1)
             knots[axis] = V

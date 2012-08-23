@@ -355,23 +355,26 @@ contains
   end function Distance
 end subroutine RemoveKnot
 
-subroutine ClampKnot(d,n,p,U,Pw)
+subroutine ClampKnot(d,n,p,U,Pw,l,r)
   implicit none
   integer(kind=4), intent(in)    :: d
   integer(kind=4), intent(in)    :: n, p
   real   (kind=8), intent(inout) :: U(0:n+p+1)
   real   (kind=8), intent(inout) :: Pw(d,0:n)
+  logical(kind=4), intent(in)    :: l, r
   integer(kind=4) :: k, s
-  ! Clamp at left end
-  k = p
-  s = FindMult(p,U(p),p,U)
-  call KntIns(d,n,p,U,Pw,k,s)
-  U(0:p-1) = U(p)
-  ! Clamp at right end
-  k = n+1
-  s = FindMult(n,U(n+1),p,U)
-  call KntIns(d,n,p,U,Pw,k,s)
-  U(n+2:n+p+1) = U(n+1)
+  if (l) then ! Clamp at left end
+     k = p
+     s = FindMult(p,U(p),p,U)
+     call KntIns(d,n,p,U,Pw,k,s)
+     U(0:p-1) = U(p)
+  end if
+  if (r) then ! Clamp at right end
+     k = n+1
+     s = FindMult(n,U(n+1),p,U)
+     call KntIns(d,n,p,U,Pw,k,s)
+     U(n+2:n+p+1) = U(n+1)
+  end if
 contains
   subroutine KntIns(d,n,p,U,Pw,k,s)
       implicit none
@@ -404,32 +407,37 @@ contains
     end subroutine KntIns
 end subroutine ClampKnot
 
-subroutine UnclampKnot(d,n,p,U,Pw)
+subroutine UnclampKnot(d,n,p,U,Pw,l,r)
   implicit none
   integer(kind=4), intent(in)    :: d
   integer(kind=4), intent(in)    :: n, p
   real   (kind=8), intent(inout) :: U(0:n+p+1)
   real   (kind=8), intent(inout) :: Pw(d,0:n)
+  logical(kind=4), intent(in)    :: l, r
   integer(kind=4) :: i, j, k
   real   (kind=8) :: alpha
-  do i = 0, p-2 ! Unclamp at left end
-     U(p-i-1) = U(p-i) - (U(n-i+1)-U(n-i))
-     k = p-1
-     do j = i, 0, -1
-        alpha = (U(p)-U(k))/(U(p+j+1)-U(k))
-        Pw(:,j) = (Pw(:,j)-alpha*Pw(:,j+1))/(1-alpha)
-        k = k-1
+  if (l) then ! Unclamp at left end
+     do i = 0, p-2
+        U(p-i-1) = U(p-i) - (U(n-i+1)-U(n-i))
+        k = p-1
+        do j = i, 0, -1
+           alpha = (U(p)-U(k))/(U(p+j+1)-U(k))
+           Pw(:,j) = (Pw(:,j)-alpha*Pw(:,j+1))/(1-alpha)
+           k = k-1
+        end do
      end do
-  end do
-  U(0) = U(1) - (U(n-p+2)-U(n-p+1)) ! Set first knot
-  do i = 0, p-2  ! Unclamp at right end
-     U(n+i+2) = U(n+i+1) + (U(p+i+1)-U(p+i))
-     do j = i, 0, -1
-        alpha = (U(n+1)-U(n-j))/(U(n-j+i+2)-U(n-j))
-        Pw(:,n-j) = (Pw(:,n-j)-(1-alpha)*Pw(:,n-j-1))/alpha
+     U(0) = U(1) - (U(n-p+2)-U(n-p+1)) ! Set first knot
+  end if
+  if (r) then ! Unclamp at right end
+     do i = 0, p-2
+        U(n+i+2) = U(n+i+1) + (U(p+i+1)-U(p+i))
+        do j = i, 0, -1
+           alpha = (U(n+1)-U(n-j))/(U(n-j+i+2)-U(n-j))
+           Pw(:,n-j) = (Pw(:,n-j)-(1-alpha)*Pw(:,n-j-1))/alpha
+        end do
      end do
-  end do
-  U(n+p+1) = U(n+p) + (U(2*p)-U(2*p-1)) ! Set last knot
+     U(n+p+1) = U(n+p) + (U(2*p)-U(2*p-1)) ! Set last knot
+  end if
 end subroutine UnclampKnot
 
 subroutine RefineKnotVector(d,n,p,U,Pw,r,X,Ubar,Qw)
@@ -765,32 +773,34 @@ subroutine RemoveKnot(d,n,p,U,Pw,uu,r,t,V,Qw,TOL)
   call RemKnt(d,n,p,V,Qw,uu,k,s,r,t,TOL)
 end subroutine RemoveKnot
 
-subroutine Clamp(d,n,p,U,Pw,V,Qw)
+subroutine Clamp(d,n,p,U,Pw,l,r,V,Qw)
   use bspline
   implicit none
   integer(kind=4), intent(in)  :: d
   integer(kind=4), intent(in)  :: n, p
   real   (kind=8), intent(in)  :: U(0:n+p+1)
   real   (kind=8), intent(in)  :: Pw(d,0:n)
+  logical(kind=4), intent(in)  :: l, r
   real   (kind=8), intent(out) :: V(0:n+p+1)
   real   (kind=8), intent(out) :: Qw(d,0:n)
   V  = U
   Qw = Pw
-  call ClampKnot(d,n,p,V,Qw)
+  call ClampKnot(d,n,p,V,Qw,l,r)
 end subroutine Clamp
 
-subroutine Unclamp(d,n,p,U,Pw,V,Qw)
+subroutine Unclamp(d,n,p,U,Pw,l,r,V,Qw)
   use bspline
   implicit none
   integer(kind=4), intent(in)  :: d
   integer(kind=4), intent(in)  :: n, p
   real   (kind=8), intent(in)  :: U(0:n+p+1)
   real   (kind=8), intent(in)  :: Pw(d,0:n)
+  logical(kind=4), intent(in)  :: l, r
   real   (kind=8), intent(out) :: V(0:n+p+1)
   real   (kind=8), intent(out) :: Qw(d,0:n)
   V  = U
   Qw = Pw
-  call UnclampKnot(d,n,p,V,Qw)
+  call UnclampKnot(d,n,p,V,Qw,l,r)
 end subroutine Unclamp
 
 subroutine RefineKnotVector(d,n,p,U,Pw,r,X,Ubar,Qw)

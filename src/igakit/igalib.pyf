@@ -172,14 +172,14 @@ interface
 
    module iga
 
-     subroutine KnotVector(E,p,C,Ui,Uf,periodic,m,U)
+     subroutine KnotVector(E,p,C,Ui,Uf,wrap,m,U)
        implicit none
        integer(kind=4), intent(in), check(E>=1)      :: E
        integer(kind=4), intent(in), check(p>=1)      :: p
        integer(kind=4), intent(in), check(C>=0&&C<p) :: C = p-1
        real   (kind=8), intent(in)   :: Ui = 0.0
        real   (kind=8), intent(in)   :: Uf = 1.0
-       logical(kind=4), intent(in)   :: periodic = 0
+       logical(kind=4), intent(in)   :: wrap = 0
        integer(kind=4), intent(hide) :: m = 2*(p+1)+(E-1)*(p-C)-1
        real   (kind=8), intent(out)  :: U(0:m)
      end subroutine KnotVector
@@ -195,7 +195,7 @@ interface
        integer(kind=4), intent(hide), check(m>=2*p+1) :: m
        real   (kind=8), intent(in,c)                  :: U(0:m)
        integer(kind=4), optional, check(d>=0&&d<=p)   :: d = p
-       integer(kind=4), optional, check(q>=1&&q<=10)  :: q = (p*p)/2+1
+       integer(kind=4), optional, check(q>=1&&q<=10)  :: q = p+1
        integer(kind=4), intent(hide)  :: r=CountSpans(m-p-1,p,U)
        integer(kind=4), intent(out,c) :: O(r)
        real   (kind=8), intent(out,c) :: J(r)
@@ -203,6 +203,24 @@ interface
        real   (kind=8), intent(out,c) :: X(r,q)
        real   (kind=8), intent(out,c) :: N(r,q,0:p,0:d)
      end subroutine BasisData
+
+     subroutine Greville(p,m,U,X)
+       integer(kind=4), intent(in),   check(p>=1)     :: p
+       integer(kind=4), intent(hide), check(m>=2*p+1) :: m
+       real   (kind=8), intent(in)  :: U(0:m)
+       real   (kind=8), intent(out) :: X(0:m-(p+1))
+     end subroutine Greville
+
+     subroutine BasisDataCol(p,m,U,r,X,d,O,N)
+       integer(kind=4), intent(in),   check(p>=1)     :: p
+       integer(kind=4), intent(hide), check(m>=2*p+1) :: m
+       real   (kind=8), intent(in,c)                  :: U(0:m)
+       integer(kind=4), intent(hide), check(r>=1)     :: r
+       real   (kind=8), intent(in,c)                  :: X(r)
+       integer(kind=4), optional, check(d>=0&&d<=p)   :: d = p
+       integer(kind=4), intent(out,c) :: O(r)
+       real   (kind=8), intent(out,c) :: N(r,0:p,0:d)
+     end subroutine BasisDataCol
 
    end module iga
 

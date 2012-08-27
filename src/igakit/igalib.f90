@@ -852,11 +852,11 @@ end module BSp
 module IGA
 contains
 
-subroutine KnotVector(E,p,C,Ui,Uf,periodic,m,U)
+subroutine KnotVector(E,p,C,Ui,Uf,wrap,m,U)
   implicit none
   integer(kind=4), intent(in)  :: E,p,C
   real   (kind=8), intent(in)  :: Ui,Uf
-  logical(kind=4), intent(in)  :: periodic
+  logical(kind=4), intent(in)  :: wrap
   integer(kind=4), intent(in)  :: m
   real   (kind=8), intent(out) :: U(0:m)
   integer(kind=4) :: i, j, k
@@ -873,7 +873,7 @@ subroutine KnotVector(E,p,C,Ui,Uf,periodic,m,U)
      U(k)   = Ui
      U(m-k) = Uf
   end do
-  if (periodic) then
+  if (wrap) then
      do k = 0, C
         U(k)     = Ui - Uf + U(m-C-(p+1)+k)
         U(m-C+k) = Uf - Ui + U(p+1+k)
@@ -1048,6 +1048,39 @@ subroutine BasisData(p,m,U,d,q,r,O,J,W,X,N)
      end do
   end do
 end subroutine BasisData
+
+subroutine Greville(p,m,U,X)
+  implicit none
+  integer(kind=4), intent(in)  :: p, m
+  real   (kind=8), intent(in)  :: U(0:m)
+  real   (kind=8), intent(out) :: X(0:m-(p+1))
+  integer(kind=4) :: i
+  do i = 0, m-(p+1)
+     X(i) = sum(U(i+1:i+p)) / p
+  end do
+end subroutine Greville
+
+subroutine BasisDataCol(p,m,U,r,X,d,O,N)
+  use bspline
+  implicit none
+  integer(kind=4), intent(in)  :: p, m
+  real   (kind=8), intent(in)  :: U(0:m)
+  integer(kind=4), intent(in)  :: r, d
+  real   (kind=8), intent(in)  :: X(r)
+  integer(kind=4), intent(out) :: O(r)
+  real   (kind=8), intent(out) :: N(0:d,0:p,r)
+
+  integer(kind=4)  :: ir, ii
+  real   (kind=8)  :: uu, basis(0:p,0:d)
+
+  do ir = 1, r
+     uu = X(ir)
+     ii = FindSpan(m-(p+1),p,uu,U)
+     call DersBasisFuns(ii,uu,p,d,U,basis)
+     O(ir)     = ii - p
+     N(:,:,ir) = transpose(basis)
+  end do
+end subroutine BasisDataCol
 
 end module IGA
 

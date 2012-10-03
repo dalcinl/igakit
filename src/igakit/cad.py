@@ -247,7 +247,7 @@ def compat(*nurbs):
             for (p, U) in zip(degs, knts):
                 # knot vector -> breaks & multiplicities
                 u, i = np_unique(U[p+1:-p-1], return_inverse=True)
-                if i.size: s = np.bincount(i)
+                if i.size: s = np.bincount(i).astype('i')
                 else: s = np.empty(0, dtype='i')
                 breaks.append(u); mults.append(s)
             # Merge breaks and multiplicities
@@ -414,7 +414,7 @@ def ruled(nrb1, nrb2):
     Cw[...,0,:] = nrb1.control
     Cw[...,1,:] = nrb2.control
     UVW = nrb1.knots + ([0,0,1,1],)
-    return NURBS(Cw, UVW)
+    return NURBS(UVW, Cw)
 
 def sweep(section, trajectory):
     """

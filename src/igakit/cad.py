@@ -81,6 +81,7 @@ def circle(radius=1, center=None, angle=None):
         Cw[:,:2] = [[ 1, 0], [ 1, 1], [ 0, 1],
                     [-1, 1], [-1, 0], [-1,-1],
                     [ 0,-1], [ 1,-1], [ 1, 0]]
+        Cw[:,:2] *= radius
         wm = np.sqrt(2)/2
         Cw[:,3] = 1; Cw[1::2,:] *= wm
     else:

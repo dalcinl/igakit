@@ -201,7 +201,7 @@ def trilinear(points=None):
 
 # -----
 
-def compat(*nurbs):
+def compat(*nurbs, **kargs):
     """
 
     Parameters
@@ -215,59 +215,66 @@ def compat(*nurbs):
 
     """
     #
-    def SameBounds(nurbs):
-        degree = [nrb.degree for nrb in nurbs]
-        knots  = [nrb.knots  for nrb in nurbs]
-        shape  = (len(knots), len(knots[0]), 2)
-        bounds = np.zeros(shape, dtype='d')
-        for i, (degs, knts) in enumerate(zip(degree, knots)):
-            for j, (p, U) in enumerate(zip(degs, knts)):
+    def SameBounds(nurbs, axes):
+        m, n = len(nurbs), len(axes)
+        bounds = np.zeros((m, n, 2), dtype='d')
+        for i, nrb in enumerate(nurbs):
+            degs, knts = nrb.degree, nrb.knots
+            for j, axis in enumerate(axes):
+                p, U = degs[axis], knts[axis]
                 bounds[i,j,:] = U[p], U[-p-1]
-        umin = bounds[...,0].min(axis=0)
-        umax = bounds[...,1].max(axis=0)
-        for j, (a, b) in enumerate(zip(umin, umax)):
-            for nrb in nurbs:
-                nrb.remap(j, a, b)
+        Umin = bounds[...,0].min(axis=0)
+        Umax = bounds[...,1].max(axis=0)
+        for i, nrb in enumerate(nurbs):
+            for j, axis in enumerate(axes):
+                a, b = Umin[j], Umax[j]
+                nrb.remap(axis, a, b)
     #
-    def SameDegree(nurbs):
+    def SameDegree(nurbs, axes):
         # Ensure same degree by degree elevation
-        degree = np.row_stack([nrb.degree for nrb in nurbs])
+        degree = [nrb.degree for nrb in nurbs]
+        degree = np.row_stack(degree)
+        degree = degree[:,axes]
         degmax = degree.max(axis=0)
-        times = degmax - degree
-        for i, rst in enumerate(times):
-            nurbs[i].elevate(*rst)
+        elevate = degmax - degree
+        for i, nrb in enumerate(nurbs):
+            for j, axis in enumerate(axes):
+                t = elevate[i,j]
+                nrb.elevate(t, axis=axis)
     #
-    def MergeKnots(nurbs):
+    def MergeKnots(nurbs, axes):
         try:  np_unique = np.unique1d
         except AttributeError: np_unique = np.unique
-        degree = [nrb.degree for nrb in nurbs]
-        knots  = [nrb.knots  for nrb in nurbs]
-        kvalues = []
-        for degs, knts in zip(zip(*degree), zip(*knots)):
+        m, n = len(nurbs), len(axes)
+        insert = np.empty((m, n), dtype=object)
+        for j, axis in enumerate(axes):
+            # Knot vector -> breaks & multiplicities
             breaks = []; mults = [];
-            for (p, U) in zip(degs, knts):
-                # knot vector -> breaks & multiplicities
+            for nrb in nurbs:
+                p, U = nrb.degree[axis], nrb.knots[axis]
                 u, i = np_unique(U[p+1:-p-1], return_inverse=True)
-                if i.size: s = np.bincount(i).astype('i')
-                else: s = np.empty(0, dtype='i')
-                breaks.append(u); mults.append(s)
+                if i.size: s = np.bincount(i)
+                else:      s = np.empty(0)
+                breaks.append(u.astype('d'))
+                mults.append(s.astype('i'))
             # Merge breaks and multiplicities
+            masks = []
             u = np_unique(np.concatenate(breaks))
             s = np.zeros(u.size, dtype='i')
             for (ui, si) in zip(breaks, mults):
                 mask = np.in1d(u, ui)
                 s[mask] = np.maximum(s[mask], si)
-            # Detemine knots to insert
-            kvals = []
-            for ui in breaks:
-                vi = np.setdiff1d(u, ui) # breaks to insert
-                ti = s[np.in1d(u, vi)]   # multiplicities
-                kv = np.repeat(vi, ti)
-                kvals.append(kv)
-            kvalues.append(kvals)
+                masks.append(mask)
+            # Compute knots to insert
+            for i, (mi, si) in enumerate(zip(masks, mults)):
+                t = s.copy(); t[mi] -= si
+                v = np.repeat(u, t).astype('d')
+                insert[i,j] = v
         # Apply knot refinement
-        for i, uvw in enumerate(zip(*kvalues)):
-            nurbs[i].refine(*uvw)
+        for i, nrb in enumerate(nurbs):
+            for j, axis in enumerate(axes):
+                u = insert[i,j]
+                nrb.refine(u, axis=axis)
     #
     if len(nurbs) == 1:
         if not isinstance(nurbs[0], NURBS):
@@ -276,9 +283,21 @@ def compat(*nurbs):
     if len(nurbs) < 2: return nurbs
     assert (min(nrb.dim for nrb in nurbs) ==
             max(nrb.dim for nrb in nurbs))
-    SameBounds(nurbs)
-    SameDegree(nurbs)
-    MergeKnots(nurbs)
+    #
+    dim = nurbs[0].dim
+    allaxes = list(range(dim))
+    axes = kargs.pop('axes', None)
+    assert not kargs
+    if axes is None:
+        axes = allaxes
+    else:
+        axes = np.atleast_1d(axes)
+        axes = [allaxes[i] for i in axes]
+    if not axes: return nurbs
+    #
+    SameBounds(nurbs, axes)
+    SameDegree(nurbs, axes)
+    MergeKnots(nurbs, axes)
     #
     return nurbs
 

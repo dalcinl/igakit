@@ -220,6 +220,7 @@ class NURBS(object):
             if fields.shape == shape:
                 D = fields[...,np.newaxis]
             else:
+                assert fields.ndim-1 == len(shape)
                 assert fields.shape[:-1] == shape
                 D = fields
             w = Cw[...,3,np.newaxis]
@@ -1289,13 +1290,14 @@ class NURBS(object):
 
     #
 
-    def evaluate(self, u, *vw):
+    def evaluate(self, u, *vw, **kwargs):
         """
         Evaluate the NURBS object at the given parametric values.
 
         Parameters
         ----------
         u, v, w : float or array_like
+        fields : array_like, optional
 
         Examples
         --------
@@ -1315,10 +1317,30 @@ class NURBS(object):
         assert len(uvw) == self.dim
         uvw = [np.asarray(a, dtype='d') for a in uvw]
         #
+        fields = kwargs.get('fields', None)
+        if fields is None or isinstance(fields, bool):
+            F = None
+        else:
+            F = np.asarray(fields, dtype='d')
+            shape = self.shape
+            if F.shape == shape:
+                F = F[...,np.newaxis]
+            else:
+                assert F.ndim-1 == len(shape)
+                assert F.shape[:-1] == shape
+            fields = True
+        #
+        if F is not None:
+            Cw = self.control
+            w = Cw[...,3,np.newaxis]
+            CwF = np.concatenate([Cw, F*w], axis=-1)
+            array = np.ascontiguousarray(CwF)
+        else:
+            array = self.array
         arglist = []
         for p, U in zip(self.degree, self.knots):
             arglist.extend([p, U])
-        arglist.append(self.array)
+        arglist.append(array)
         arglist.extend(uvw)
         #
         Evaluate = _api[self.dim].Evaluate
@@ -1327,15 +1349,18 @@ class NURBS(object):
         C = CwD[...,:3] / w
         D = CwD[...,4:] / w
         #
-        shape = list(C.shape[:-1]) + [-1]
+        shape = list(C.shape[:-1]) 
         remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
         for i in reversed(remove): del shape[i]
-        C.shape = shape
-        D.shape = shape
+        C.shape = D.shape = shape + [-1]
+        #
+        if fields is False:
+            return C
+        if fields is True:
+            return (C, D)
         if D.shape[-1] == 0:
             return C
-        else:
-            return (C, D)
+        return (C, D)
 
     #
 

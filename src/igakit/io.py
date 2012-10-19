@@ -1,7 +1,7 @@
-from igakit.nurbs import NURBS
 import numpy as np
+from igakit.nurbs import NURBS
 
-__all__ = ['PetIGA']
+__all__ = ['PetIGA', 'VTK']
 
 class PetIGA(object):
 
@@ -71,10 +71,6 @@ class PetIGA(object):
         ----------
         filename : string
 
-        Returns
-        -------
-        nurbs : NURBS
-
         """
         IGA_ID = self.IGA_ID
         VEC_ID = self.VEC_ID
@@ -111,6 +107,144 @@ class PetIGA(object):
             Cw[...,   -1] = A[...,  -1]
         else:
             Cw = None
-        nurbs = NURBS(knots, Cw)
         fh.close()
-        return nurbs
+        return NURBS(knots, Cw)
+
+
+class VTK(object):
+
+    """
+    VTK Writer
+    """
+
+    title = 'VTK Data'
+
+    def __init__(self):
+        pass
+
+    def write(self, filename, nurbs,
+              geometry=True, sampler=None,
+              scalars=(), vectors=()):
+        """
+        Parameters
+        ----------
+        filename : string
+        nurbs : NURBS
+        geometry : bool, optional
+        sampler : callable, optional
+        scalars : dict or sequence of 2-tuple, optional
+        vectors : dict or sequence or 2-tuple, optional
+
+        """
+        try:  unique = np.unique1d
+        except AttributeError: unique = np.unique
+        if sampler is None:
+            sampler = lambda U: U
+        dim  = nurbs.dim
+        degs = nurbs.degree
+        knts = nurbs.knots
+        uvw = [sampler(unique(U[p:-p]))
+               for p, U in zip(degs, knts)]
+        flag = bool(scalars or vectors)
+        out = nurbs.evaluate(*uvw, fields=flag)
+        if flag: C, F = out
+        else:    C, F = out, out[..., 0:0]
+
+        dimensions = C.shape[:-1] + (1,)*(3-dim)
+        coordinates = uvw + [np.zeros(1)]*(3-dim)
+        points = np.rollaxis(C, -1).ravel('f')
+        points.shape = (-1, 3)
+        fields = np.rollaxis(F, -1).ravel('f')
+        fields.shape = (len(points), -1)
+
+        if isinstance(scalars, dict):
+            keys = sorted(scalars.keys())
+            scalars = [(k, scalars[k]) for k in keys]
+        else:
+            scalars = list(scalars)
+        for i, (name, index) in enumerate(scalars):
+            array = np.zeros((len(points), 1), dtype='d')
+            array[:,0] = fields[:,index]
+            scalars[i] = (name, array)
+
+        if isinstance(vectors, dict):
+            keys = sorted(vectors.keys())
+            vectors = [(k, vectors[k]) for k in keys]
+        else:
+            vectors = list(vectors)
+        for i, (name, index) in enumerate(vectors):
+            array = np.zeros((len(points), 3), dtype='d')
+            array[:,:len(index)] = fields[:,index]
+            vectors[i] = (name, array)
+
+        fh = open(filename, 'wb')
+
+        header = '# vtk DataFile Version %d.%d'
+        version = (2, 0)
+        fh.write(header % version)
+        fh.write('\n')
+        title = self.title
+        fh.write(title[:255])
+        fh.write('\n')
+
+        format = 'BINARY'
+        fh.write(format)
+        fh.write('\n')
+
+        if geometry:
+            dataset_type = 'STRUCTURED_GRID'
+            fh.write('DATASET %s' % dataset_type);
+            fh.write('\n')
+            fh.write('DIMENSIONS %d %d %d' % dimensions)
+            fh.write('\n')
+            fh.write('POINTS %d %s' % (len(points), 'double'))
+            fh.write('\n')
+            points.astype('>d').tofile(fh)
+            fh.write('\n')
+        else:
+            dataset_type = 'RECTILINEAR_GRID'
+            fh.write('DATASET %s' % dataset_type);
+            fh.write('\n')
+            fh.write('DIMENSIONS %d %d %d' % dimensions)
+            fh.write('\n')
+            for X, array in zip("XYZ", coordinates):
+                label = X+'_COORDINATES'
+                fh.write('%s %s %s' % (label, len(array), 'double'))
+                fh.write('\n')
+                array.astype('>d').tofile(fh)
+                fh.write('\n')
+
+        if (not scalars and
+            not vectors):
+            fh.flush()
+            fh.close()
+            return
+
+        data_type = 'POINT_DATA'
+        fh.write('%s %d' % (data_type, len(points)))
+        fh.write('\n')
+
+        for i, (name, array) in enumerate(scalars):
+            attr_type = 'SCALARS'
+            attr_name = name or (attr_type.lower() + str(i))
+            attr_name = attr_name.replace(' ', '_')
+            fh.write('%s %s %s' %(attr_type, attr_name, 'double'))
+            fh.write('\n')
+            lookup_table = 'default'
+            lookup_table = lookup_table.replace(' ', '_')
+            fh.write('LOOKUP_TABLE %s' % lookup_table)
+            fh.write('\n')
+            array.astype('>d').tofile(fh)
+            fh.write('\n')
+
+        for i, (name, array) in enumerate(vectors):
+            attr_type = 'VECTORS'
+            attr_name = name or (attr_type.lower() + str(i))
+            attr_name = attr_name.replace(' ', '_')
+            fh.write('%s %s %s' %(attr_type, attr_name, 'double'))
+            fh.write('\n')
+            array.astype('>d').tofile(fh)
+            fh.write('\n')
+
+        fh.flush()
+        fh.close()

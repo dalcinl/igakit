@@ -1297,7 +1297,7 @@ class NURBS(object):
         Parameters
         ----------
         u, v, w : float or array_like
-        fields : array_like, optional
+        fields : bool or array_like, optional
 
         Examples
         --------
@@ -1318,7 +1318,8 @@ class NURBS(object):
         uvw = [np.asarray(a, dtype='d') for a in uvw]
         #
         fields = kwargs.get('fields', None)
-        if fields is None or isinstance(fields, bool):
+        if (fields is None or
+            isinstance(fields, bool)):
             F = None
         else:
             F = np.asarray(fields, dtype='d')

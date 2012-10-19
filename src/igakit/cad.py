@@ -201,6 +201,76 @@ def trilinear(points=None):
 
 # -----
 
+def grid(shape, degree=2, continuity=None,
+             limits=(0.0, 1.0), wrap=False):
+    """
+    Constructs a NURBS grid with equally-spaced knot vectors
+    and control points built from Greville coordinates.
+
+    Parameters
+    ----------
+    shape : sequence of int
+    degree : int or sequence of int, optional
+    continuity : int or sequence of int, optional
+    limits : 2-float or sequence of 2-float, optional
+    wrap : bool or sequence of bool, optional
+
+    """
+    shape = np.asarray(shape, dtype='i')
+    if shape.ndim == 0:
+        dim = 1
+        shape.shape = (1,)
+    else:
+        assert shape.ndim == 1
+        dim = shape.shape[0]
+    assert 1 <= dim <= 3
+    #
+    degree = np.asarray(degree, dtype='i')
+    if degree.ndim == 0:
+        degree = degree.repeat(dim)
+    assert degree.shape == (dim,)
+    #
+    if continuity is None:
+        continuity = degree - 1
+    continuity = np.asarray(continuity, dtype='i')
+    if continuity.ndim == 0:
+        continuity = continuity.repeat(dim)
+    assert continuity.shape == (dim,)
+    continuity[continuity<0] = degree + continuity
+    #
+    limits = np.asarray(limits, dtype='d')
+    if limits.ndim == 1:
+        assert limits.shape[0] == 2
+        limits = np.row_stack([limits]*dim)
+    assert limits.shape == (dim, 2)
+    #
+    wrap = np.asarray(wrap, dtype='?')
+    if wrap.ndim == 0:
+        wrap = wrap.repeat(dim)
+    assert wrap.shape == (dim,)
+    #
+    from igakit.igalib import bsp, iga
+    KnotVector = iga.KnotVector
+    Greville = bsp.Greville
+    knots = []; caxes = [];
+    for (N, p, C, (Ui, Uf), w) \
+        in zip(shape, degree, continuity, limits, wrap):
+        U = KnotVector(N, p, C, Ui, Uf, w)
+        X = Greville(p, U)
+        knots.append(U)
+        caxes.append(X)
+    shape = [len(x) for x in caxes]
+    control = np.zeros(shape+[4], dtype='d')
+    for i, x in enumerate(caxes):
+        index = [np.newaxis] * dim
+        index[i] = slice(None)
+        control[...,i] = x[tuple(index)]
+    control[...,3] = 1.0
+    #
+    return NURBS(knots, control)
+
+# -----
+
 def compat(*nurbs, **kargs):
     """
 

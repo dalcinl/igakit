@@ -52,6 +52,14 @@ def test_io_3d():
         for U1, U2 in zip(N1.knots, N2.knots):
             assert np.allclose(U1, U2)
         assert np.allclose(N1.control, N2.control)
+        rw.write_vec(fn, V.array.ravel(), V)
+        vec = rw.read_vec(fn, V)
+        assert V.array.shape, vec.shape
+        assert np.allclose(V.array, vec)
+        rw.write_vec(fn, V.weights.ravel(), V)
+        vec = rw.read_vec(fn, V)
+        assert V.weights.shape, vec.shape
+        assert np.allclose(V.weights, vec)
     finally:
         os.remove(fn)
 

@@ -37,27 +37,32 @@ class PetIGA(object):
         VEC_ID = self.VEC_ID
         I, R, S = self.dtypes
         def _write(fh, T, a):
-            return np.asarray(a, T).ravel('f').tofile(fh)
+            return np.asarray(a, T).tofile(fh)
+        #
+        dim = nurbs.dim
+        knots = nurbs.knots
+        degree = nurbs.degree
         if geometry:
-            dim = nurbs.dim
             if nsd is None: nsd = dim
             assert dim <= nsd <= 3
+            idx = list(range(nsd))+[3]
+            Cw = nurbs.control[...,idx]
+            Cw = np.rollaxis(Cw, -1).ravel('f')
             descr = 1
         else:
             assert nsd is None
+            Cw = None
             descr = 0
+        #
         fh = open(filename, 'wb')
         _write(fh, I, IGA_ID)
         _write(fh, I, descr)
         _write(fh, I, nurbs.dim)
-        for p, U in zip(nurbs.degree, nurbs.knots):
+        for p, U in zip(degree, knots):
             _write(fh, I, p)
             _write(fh, I, len(U))
             _write(fh, R, U)
-        if abs(descr) >= 1:
-            idx = list(range(nsd))+[3]
-            Cw = nurbs.control[..., idx]
-            Cw = np.rollaxis(Cw, -1)
+        if geometry:
             _write(fh, I, nsd)
             _write(fh, I, VEC_ID)
             _write(fh, I, Cw.size)
@@ -76,9 +81,12 @@ class PetIGA(object):
         VEC_ID = self.VEC_ID
         I, R, S = self.dtypes
         def _read(fh, T, n=None):
-            a = np.fromfile(fh, T, n or 1)
-            if n is None: a.shape = ()
-            return a
+            if n is None:
+                a = np.fromfile(fh, T, 1)[0]
+            else:
+                a = np.fromfile(fh, T, n)
+            return a.astype(T.newbyteorder('='))
+        #
         fh = open(filename, 'rb')
         iga_id = _read(fh, I)
         assert iga_id == IGA_ID
@@ -96,7 +104,7 @@ class PetIGA(object):
             assert dim <= nsd <= 3
             vec_id = _read(fh, I)
             assert vec_id == VEC_ID
-            n  = _read(fh, I)
+            n = _read(fh, I)
             A = _read(fh, S, n)
             shape = [nsd+1] + sizes
             A = A.reshape(shape, order='f')
@@ -109,6 +117,51 @@ class PetIGA(object):
             Cw = None
         fh.close()
         return NURBS(knots, Cw)
+
+    def write_vec(self, filename, array, nurbs=None):
+        VEC_ID = self.VEC_ID
+        I, R, S = self.dtypes
+        def _write(fh, T, a):
+            return np.asarray(a, T).tofile(fh)
+        #
+        A = np.asarray(array)
+        if nurbs is not None:
+            shape = nurbs.shape + (-1,)
+            A = A.reshape(shape)
+            A = np.rollaxis(A, -1)
+            A = A.ravel('f')
+        #
+        fh = open(filename, 'wb')
+        _write(fh, I, VEC_ID)
+        _write(fh, I, A.size)
+        _write(fh, S, A)
+        fh.flush()
+        fh.close()
+
+    def read_vec(self, filename, nurbs=None):
+        VEC_ID = self.VEC_ID
+        I, R, S = self.dtypes
+        def _read(fh, T, n=None):
+            if n is None:
+                a = np.fromfile(fh, T, 1)[0]
+            else:
+                a = np.fromfile(fh, T, n)
+            return a.astype(T.newbyteorder('='))
+        #
+        fh = open(filename, 'rb')
+        vec_id = _read(fh, I)
+        assert vec_id == VEC_ID
+        n = _read(fh, I)
+        A = _read(fh, S, n)
+        fh.close()
+        #
+        if nurbs is not None:
+            shape = (-1,) + nurbs.shape
+            A = A.reshape(shape, order='f')
+            A = np.rollaxis(A, 0, A.ndim)
+            A = A.squeeze()
+            A = np.ascontiguousarray(A)
+        return A
 
 
 class VTK(object):

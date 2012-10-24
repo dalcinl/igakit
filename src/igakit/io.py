@@ -16,16 +16,31 @@ class PetIGA(object):
     MAT_ID = 1211216
     IGA_ID = 1211299
 
-    def __init__(self, integer='i4', real='f8', scalar='real'):
-        integer = np.dtype(integer)
-        real = np.dtype(real)
-        assert scalar in ('real', 'complex')
-        if scalar == 'real':
-            scalar = real
-        if scalar == 'complex':
-            scalar = np.dtype(real.char.upper())
-        self.dtypes = tuple(T.newbyteorder('>')
-                            for T in (integer, real, scalar))
+    precision = {
+        'single' : {'real' : '>f4', 'complex' : '>c8' },
+        'double' : {'real' : '>f8', 'complex' : '>c16'},
+        }
+    indices = {
+        '32bit' : '>i4',
+        '64bit' : '>i8',
+        }
+
+    def __init__(self, precision='double',
+                 scalar='real', indices='32bit'):
+        I = self.indices[indices]
+        R = self.precision[precision]['real']
+        S = self.precision[precision][scalar]
+        self._types = tuple(np.dtype(t) for t in (I, R, S))
+
+    def _write(self, fid, dtype, array):
+        np.asarray(array, dtype).tofile(fid)
+
+    def _read(self, fid, dtype, count=None):
+        if count is None:
+            array = np.fromfile(fid, dtype, 1)[0]
+        else:
+            array = np.fromfile(fid, dtype, count)
+        return array.astype(dtype.newbyteorder('='))
 
     def write(self, filename, nurbs,
               geometry=True, nsd=None):
@@ -40,9 +55,8 @@ class PetIGA(object):
         """
         IGA_ID = self.IGA_ID
         VEC_ID = self.VEC_ID
-        I, R, S = self.dtypes
-        def _write(fh, T, a):
-            return np.asarray(a, T).tofile(fh)
+        I,R,S  = self._types
+        _write = self._write
         #
         dim = nurbs.dim
         knots = nurbs.knots
@@ -66,7 +80,7 @@ class PetIGA(object):
             _write(fh, I, nurbs.dim)
             for p, U in zip(degree, knots):
                 _write(fh, I, p)
-                _write(fh, I, len(U))
+                _write(fh, I, U.size)
                 _write(fh, R, U)
             if geometry:
                 _write(fh, I, nsd)
@@ -85,20 +99,14 @@ class PetIGA(object):
         """
         IGA_ID = self.IGA_ID
         VEC_ID = self.VEC_ID
-        I, R, S = self.dtypes
-        def _read(fh, T, n=None):
-            if n is None:
-                a = np.fromfile(fh, T, 1)[0]
-            else:
-                a = np.fromfile(fh, T, n)
-            return a.astype(T.newbyteorder('='))
+        I,R,S  = self._types
+        _read  = self._read
         #
         fh = open(filename, 'rb')
         try:
             iga_id = _read(fh, I)
             assert iga_id == IGA_ID
             descr = _read(fh, I)
-            geometry = abs(descr) >= 1
             dim = _read(fh, I)
             assert 1 <= dim <= 3
             knots, sizes = [], []
@@ -109,33 +117,39 @@ class PetIGA(object):
                 n = m-p-1
                 assert n >= 2
                 U = _read(fh, R, m)
+                assert len(U) == m
                 knots.append(U)
                 sizes.append(n)
+            geometry = abs(descr) >= 1
             if geometry:
                 nsd = _read(fh, I)
                 assert dim <= nsd <= 3
                 vec_id = _read(fh, I)
                 assert vec_id == VEC_ID
-                n = _read(fh, I)
-                A = _read(fh, S, n)
-                shape = [nsd+1] + sizes
-                A = A.reshape(shape, order='f')
-                A = np.rollaxis(A, 0, A.ndim)
-                shape = sizes + [4]
-                Cw = np.zeros(shape, dtype=A.dtype)
-                Cw[..., :nsd] = A[..., :-1]
-                Cw[...,   -1] = A[...,  -1]
+                n  = _read(fh, I)
+                Cw = _read(fh, S, n)
+                assert len(Cw) == n
             else:
                 Cw = None
         finally:
             fh.close()
-        return NURBS(knots, Cw)
+        #
+        if geometry:
+            shape = [nsd+1] + sizes
+            Cw = Cw.reshape(shape, order='f')
+            Cw = np.rollaxis(Cw, 0, Cw.ndim)
+            shape = sizes + [4]
+            control = np.zeros(shape, dtype=Cw.dtype)
+            control[..., :nsd] = Cw[..., :-1]
+            control[...,   -1] = Cw[...,  -1]
+        else:
+            control = None
+        return NURBS(knots, control)
 
     def write_vec(self, filename, array, nurbs=None):
         VEC_ID = self.VEC_ID
-        I, R, S = self.dtypes
-        def _write(fh, T, a):
-            return np.asarray(a, T).tofile(fh)
+        I,R,S  = self._types
+        _write = self._write
         #
         A = np.asarray(array)
         if nurbs is not None:
@@ -154,20 +168,16 @@ class PetIGA(object):
 
     def read_vec(self, filename, nurbs=None):
         VEC_ID = self.VEC_ID
-        I, R, S = self.dtypes
-        def _read(fh, T, n=None):
-            if n is None:
-                a = np.fromfile(fh, T, 1)[0]
-            else:
-                a = np.fromfile(fh, T, n)
-            return a.astype(T.newbyteorder('='))
+        I,R,S  = self._types
+        _read  = self._read
         #
         fh = open(filename, 'rb')
         try:
-            vec_id = _read(fh, I)
-            assert vec_id == VEC_ID
+            clsid = _read(fh, I)
+            assert clsid == VEC_ID
             n = _read(fh, I)
             A = _read(fh, S, n)
+            assert len(A) == n
         finally:
             fh.close()
         #
@@ -179,11 +189,37 @@ class PetIGA(object):
             A = np.ascontiguousarray(A)
         return A
 
+    def read_mat(self, filename):
+        MAT_ID = self.MAT_ID
+        I,R,S  = self._types
+        _read  = self._read
+        #
+        fh = open(filename, 'rb')
+        try:
+            clsid = _read(fh, I)
+            assert clsid == MAT_ID
+            M, N, nz = _read(fh, I, 3)
+            AI = np.empty(M+1, dtype=M.dtype)
+            AI[0] = 0
+            rownz = _read(fh, I, M)
+            np.cumsum(rownz, out=AI[1:])
+            assert AI[-1] == nz
+            AJ = _read(fh, I, nz)
+            assert len(AJ) == nz
+            AV = np.fromfile(fh, S, nz)
+            assert len(AV) == nz
+        finally:
+            fh.close()
+        return (M, N), (AI, AJ, AV)
+
 
 class VTK(object):
 
     """
-    VTK Writer
+    VTK_ Writer
+
+    .. _VTK: http://www.vtk.org/
+
     """
 
     title = 'VTK Data'

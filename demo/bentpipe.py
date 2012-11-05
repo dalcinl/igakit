@@ -1,53 +1,23 @@
-import numpy as np
-from igakit.nurbs import NURBS, transform
-from igakit.plot import plt
+from igakit.cad import *
 
-L  = 3.0
+H  = 3.0
 R0 = 1.0
 R1 = 2.0
-Rb = R0+R1
+Rb = 3.0
 
-circle = np.zeros((9,4), dtype='d')
-circle[:,:2] = [[ 1, 0],
-                [ 1, 1],
-                [ 0, 1],
-                [-1, 1],
-                [-1, 0],
-                [-1,-1],
-                [ 0,-1],
-                [ 1,-1],
-                [ 1, 0]]
-circle[:,-1] = 1
-circle[1::2,:] *= np.sqrt(2)/2
+C0 = circle(radius=R0)
+C1 = circle(radius=R1)
+annulus  = ruled(C0, C1)
+pipe     = extrude(annulus, displ=H, axis=2)
+elbow    = revolve(annulus, point=(Rb,0,0),
+                   axis=(0,-1,0), angle=Pi/2)
+bentpipe = join(pipe.reverse(2), elbow, axis=2)
 
-annulus = np.zeros((9,2,4), dtype='d')
-t0 = transform().scale(R0)
-t1 = transform().scale(R1)
-annulus[:,0,:] = t0(circle)
-annulus[:,1,:] = t1(circle)
+# ---
 
-bentpipe = np.zeros((9,2,5,4), dtype='d')
-t0 = transform().move(L, 2)
-t1 = transform().move(L/2, 2)
-t2 = transform().move(0, 2)
-t3 = transform()
-t3.scale([np.sqrt(2), 1, np.sqrt(2)])
-t3.rotate(-np.pi/4, 1).move(-Rb, 2)
-t4 = transform()
-t4.rotate(-np.pi/2, 1).move([Rb, 0, -Rb])
-bentpipe[:,:,0,:] = t0(annulus)
-bentpipe[:,:,1,:] = t1(annulus)
-bentpipe[:,:,2,:] = t2(annulus)
-bentpipe[:,:,3,:] = t3(annulus)
-bentpipe[:,:,4,:] = t4(annulus)
+nrb = bentpipe
 
-Pw = bentpipe
-U = [0,0,0, 1,1, 2,2, 3,3, 4,4,4]
-V = [0,0, 1,1]
-W = [0,0,0, 1,1, 2,2,2]
-nrb = NURBS([U,V,W], Pw)
-assert nrb.degree == (2,1,2)
-
+from igakit.plot import plt
 import sys
 try:
     backend = sys.argv[1]
@@ -60,7 +30,7 @@ except IndexError:
 plt.figure()
 plt.cpoint(nrb)
 plt.cwire(nrb, mode='tube')
-plt.kpoint(nrb, )
+plt.kpoint(nrb)
 plt.kwire(nrb, mode='tube')
 plt.plot(nrb, opacity=0.1)
 

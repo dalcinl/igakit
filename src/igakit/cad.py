@@ -579,3 +579,82 @@ def coons(curves):
     return NURBS(knots, control)
 
 # -----
+
+def join(nrb1, nrb2, axis):
+    """
+    Join two curves/surfaces/volumes along a
+    specified parametric axis.
+
+    Parameters
+    ----------
+    nrb1, nrb2 : NURBS
+    axis : int
+
+    Examples
+    --------
+
+    >>> C1 = circle(radius=0.5)
+    >>> C2 = circle(radius=1.0)
+    >>> annulus = ruled(C1, C2)
+    >>> pipe = extrude(annulus, displ=2, axis=2)
+    >>> elbow = revolve(annulus, point=(1.5,0,0),
+    ...                 axis=(0,-1,0), angle=Pi/2)
+    >>> bentpipe = join(pipe.reverse(2), elbow, axis=2)
+    """
+    dim = nrb1.dim
+    assert dim == nrb2.dim
+    assert 0 <= axis < dim
+
+    axes = list(range(dim))
+    del axes[axis]
+    nrb1, nrb2 = compat(nrb1, nrb2, axes=axes)
+
+    nrb1 = nrb1.clamp(axis, side=1)
+    nrb2 = nrb2.clamp(axis, side=0)
+
+    p1 = nrb1.degree[axis]
+    p2 = nrb2.degree[axis]
+    U1 = nrb1.knots[axis]
+    U2 = nrb2.knots[axis]
+
+    u = U1[-p1-1]
+    a = U2[p2]
+    b = U2[-p2-1]
+    nrb2.remap(axis, a+u, b+u)
+
+    p = max(p1, p2)
+    nrb1.elevate(p-p1, axis=axis)
+    nrb2.elevate(p-p2, axis=axis)
+
+    A1 = nrb1.array
+    A2 = nrb2.array
+    I1 = [slice(None)] * (dim+1)
+    I2 = [slice(None)] * (dim+1)
+    I1[axis] = slice(0,-1)
+    I2[axis] = slice(1,None)
+    Al = A1[I1]
+    Ar = A2[I2]
+    I1[axis] = -1
+    I2[axis] = +0
+    Ac = (A1[I1]+A2[I2])/2.0
+    Ic = [slice(None)] * (dim+1)
+    Ic[axis] = np.newaxis
+    Ac = Ac[Ic]
+    A = np.concatenate([Al, Ac, Ar], axis)
+
+    U1 = nrb1.knots[axis]
+    U2 = nrb2.knots[axis]
+    Ul = U1[:-p-1]
+    Ur = U2[p+1:]
+    Uc = [u]*p
+    U = np.concatenate([Ul, Uc, Ur])
+    knots = list(nrb1.knots)
+    knots[axis] = U
+
+    nrb = NURBS.__new__(type(nrb1))
+    nrb._array = np.ascontiguousarray(A)
+    nrb._knots = tuple(knots)
+    nrb.remove(axis, u, p-1)
+    return nrb
+
+# -----

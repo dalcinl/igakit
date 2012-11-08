@@ -43,13 +43,15 @@ class PetIGA(object):
         return array.astype(dtype.newbyteorder('='))
 
     def write(self, filename, nurbs,
-              geometry=True, nsd=None):
+              control=True, fields=True,
+              nsd=None):
         """
         Parameters
         ----------
         filename : string
         nurbs : NURBS
-        geometry : bool, optional
+        control : bool, optional
+        fields : bool, optional
         nsd : int, optional
 
         """
@@ -58,35 +60,46 @@ class PetIGA(object):
         I,R,S  = self._types
         _write = self._write
         #
+        info = 0
         dim = nurbs.dim
         knots = nurbs.knots
         degree = nurbs.degree
-        if geometry:
+        Cw = None
+        F  = None
+        if control:
             if nsd is None: nsd = dim
             assert dim <= nsd <= 3
             idx = list(range(nsd))+[3]
             Cw = nurbs.control[...,idx]
-            Cw = np.rollaxis(Cw, -1).ravel('f')
-            descr = 1
-        else:
-            assert nsd is None
-            Cw = None
-            descr = 0
+            Cw = np.rollaxis(Cw, -1)
+            info |= 0x1
+        if fields:
+            F = nurbs.fields
+            if F is not None:
+                F = np.rollaxis(F, -1)
+                info |= 0x2
+            else:
+                fields = False
         #
         fh = open(filename, 'wb')
         try:
             _write(fh, I, IGA_ID)
-            _write(fh, I, descr)
+            _write(fh, I, info)
             _write(fh, I, nurbs.dim)
             for p, U in zip(degree, knots):
                 _write(fh, I, p)
                 _write(fh, I, U.size)
                 _write(fh, R, U)
-            if geometry:
-                _write(fh, I, nsd)
+            if control:
+                _write(fh, I, Cw.shape[0]-1)
                 _write(fh, I, VEC_ID)
                 _write(fh, I, Cw.size)
-                _write(fh, S, Cw)
+                _write(fh, S, Cw.ravel('f'))
+            if fields:
+                _write(fh, I, F.shape[0])
+                _write(fh, I, VEC_ID)
+                _write(fh, I, F.size)
+                _write(fh, S, F.ravel('f'))
         finally:
             fh.close()
 
@@ -106,7 +119,9 @@ class PetIGA(object):
         try:
             iga_id = _read(fh, I)
             assert iga_id == IGA_ID
-            descr = _read(fh, I)
+            info = _read(fh, I)
+            control = bool(info & 0x1)
+            fields  = bool(info & 0x2)
             dim = _read(fh, I)
             assert 1 <= dim <= 3
             knots, sizes = [], []
@@ -120,8 +135,7 @@ class PetIGA(object):
                 assert len(U) == m
                 knots.append(U)
                 sizes.append(n)
-            geometry = abs(descr) >= 1
-            if geometry:
+            if control:
                 nsd = _read(fh, I)
                 assert dim <= nsd <= 3
                 vec_id = _read(fh, I)
@@ -131,10 +145,20 @@ class PetIGA(object):
                 assert len(Cw) == n
             else:
                 Cw = None
+            if fields:
+                npd = _read(fh, I)
+                assert npd >= 1
+                vec_id = _read(fh, I)
+                assert vec_id == VEC_ID
+                n = _read(fh, I)
+                D = _read(fh, S, n)
+                assert len(D) == n
+            else:
+                D = None
         finally:
             fh.close()
         #
-        if geometry:
+        if control:
             shape = [nsd+1] + sizes
             Cw = Cw.reshape(shape, order='f')
             Cw = np.rollaxis(Cw, 0, Cw.ndim)
@@ -144,7 +168,16 @@ class PetIGA(object):
             control[...,   -1] = Cw[...,  -1]
         else:
             control = None
-        return NURBS(knots, control)
+        #
+        if fields:
+            shape = [npd] + sizes
+            D = D.reshape(shape, order='f')
+            D = np.rollaxis(Cw, 0, Cw.ndim)
+            fields = D
+        else:
+            fields = None
+        #
+        return NURBS(knots, control, fields)
 
     def write_vec(self, filename, array, nurbs=None):
         VEC_ID = self.VEC_ID
@@ -228,14 +261,14 @@ class VTK(object):
         pass
 
     def write(self, filename, nurbs,
-              geometry=True, sampler=None,
+              control=True, sampler=None,
               scalars=(), vectors=()):
         """
         Parameters
         ----------
         filename : string
         nurbs : NURBS
-        geometry : bool, optional
+        control : bool, optional
         sampler : callable, optional
         scalars : dict or sequence of 2-tuple, optional
         vectors : dict or sequence or 2-tuple, optional
@@ -296,7 +329,7 @@ class VTK(object):
         fh.write(format)
         fh.write('\n')
 
-        if geometry:
+        if control:
             dataset_type = 'STRUCTURED_GRID'
             fh.write('DATASET %s' % dataset_type);
             fh.write('\n')

@@ -77,10 +77,12 @@ def test_io_vtk():
         for N in (L, S, V):
             F = np.random.random(N.shape+(4,))
             N = NURBS(N.knots, N.control, fields=F)
-            for geometry in (False, True):
+            for control in (False, True):
                 for sampler in (None, uniform):
                     rw.write(fn, N,
-                             geometry=geometry, sampler=sampler,
+                             control=control, sampler=sampler)
+                    rw.write(fn, N,
+                             control=control, sampler=sampler,
                              scalars=[(None,0),('',1),("my scalar",2)],
                              vectors=dict(u=[0],v=[0,1],w=[0,1,2]))
     finally:

@@ -51,7 +51,7 @@ class NURBS(object):
         Rational weigths.
     points : numpy.ndarray
         Control points projected into Cartesian 3D space.
-    fields : numpy.ndarray
+    fields : numpy.ndarray or None
         Additional fields.
 
     Examples
@@ -304,6 +304,7 @@ class NURBS(object):
         """
         Control variables
         """
+        if self.array.shape[-1] <= 4: return None
         D = self.array[...,4:]
         w = self.weights[...,np.newaxis]
         return D / w

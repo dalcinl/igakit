@@ -44,13 +44,6 @@ interface
        integer(kind=4), intent(out) :: mult
      end subroutine FindSpanMult
 
-     subroutine Greville(p,m,U,X)
-       integer(kind=4), intent(in),   check(p>=1)     :: p
-       integer(kind=4), intent(hide), check(m>=2*p+1) :: m
-       real   (kind=8), intent(in)  :: U(0:m)
-       real   (kind=8), intent(out) :: X(0:m-(p+1))
-     end subroutine Greville
-
      subroutine EvalBasisFuns(p,m,U,u,span,N)
        integer(kind=4), intent(in),   check(p>=1)     :: p
        integer(kind=4), intent(hide), check(m>=2*p+1) :: m
@@ -70,6 +63,21 @@ interface
        integer(kind=4), optional      :: span = -1
        real   (kind=8), intent(out,c) :: dN(0:d,0:p)
      end subroutine EvalBasisFunsDers
+
+     subroutine SpanIndex(p,m,U,r,I)
+       integer(kind=4), intent(in),   check(p>=1)     :: p
+       integer(kind=4), intent(hide), check(m>=2*p+1) :: m
+       real   (kind=8), intent(in)  :: U(0:m)
+       integer(kind=4), intent(hide):: r=CountSpans(m-p-1,p,U)
+       integer(kind=4), intent(out) :: I(r)
+     end subroutine SpanIndex
+
+     subroutine Greville(p,m,U,X)
+       integer(kind=4), intent(in),   check(p>=1)     :: p
+       integer(kind=4), intent(hide), check(m>=2*p+1) :: m
+       real   (kind=8), intent(in)  :: U(0:m)
+       real   (kind=8), intent(out) :: X(0:m-(p+1))
+     end subroutine Greville
 
      subroutine InsertKnot(d,n,p,U,Pw,u,r,V,Qw)
        !f2py threadsafe

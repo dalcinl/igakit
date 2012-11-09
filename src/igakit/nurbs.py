@@ -309,6 +309,24 @@ class NURBS(object):
         w = self.weights[...,np.newaxis]
         return D / w
 
+    #
+
+    def spans(self, *axes):
+        """
+        Non-empty span indices
+        """
+        if not axes: axes = range(self.dim)
+        knots  = self.knots
+        degree = self.degree
+        SpanIndex = _bsp.SpanIndex
+        spans = []
+        for ax in axes:
+            p = degree[ax]
+            U = knots[ax]
+            s = SpanIndex(p, U)
+            spans.append(s)
+        return spans
+
     def breaks(self, *axes):
         """
         Breaks (unique knot values)
@@ -318,8 +336,8 @@ class NURBS(object):
         degree = self.degree
         breaks = []
         for ax in axes:
-            U = knots[ax]
             p = degree[ax]
+            U = knots[ax]
             u = np.unique(U[p:-p])
             breaks.append(u)
         return breaks

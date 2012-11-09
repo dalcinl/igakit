@@ -689,17 +689,6 @@ subroutine FindSpanMult(p,m,U,uu,k,s)
   call FindSM(m-(p+1),p,uu,U,k,s)
 end subroutine FindSpanMult
 
-subroutine Greville(p,m,U,X)
-  implicit none
-  integer(kind=4), intent(in)  :: p, m
-  real   (kind=8), intent(in)  :: U(0:m)
-  real   (kind=8), intent(out) :: X(0:m-(p+1))
-  integer(kind=4) :: i
-  do i = 0, m-(p+1)
-     X(i) = sum(U(i+1:i+p)) / p
-  end do
-end subroutine Greville
-
 subroutine EvalBasisFuns(p,m,U,uu,span,N)
   use bspline
   implicit none
@@ -729,6 +718,32 @@ subroutine EvalBasisFunsDers(p,m,U,uu,d,span,dN)
   end if
   call DersBasisFuns(i,uu,p,d,U,dN)
 end subroutine EvalBasisFunsDers
+
+subroutine SpanIndex(p,m,U,r,I)
+  integer(kind=4), intent(in)  :: p, m
+  real   (kind=8), intent(in)  :: U(0:m)
+  integer(kind=4), intent(in)  :: r
+  integer(kind=4), intent(out) :: I(r)
+  integer(kind=4) :: k, s
+  s = 1
+  do k = p, m-(p+1)
+     if (U(k) /= U(k+1)) then
+        I(s) = k; s = s + 1
+        if (s > r) exit
+     end if
+  end do
+end subroutine SpanIndex
+
+subroutine Greville(p,m,U,X)
+  implicit none
+  integer(kind=4), intent(in)  :: p, m
+  real   (kind=8), intent(in)  :: U(0:m)
+  real   (kind=8), intent(out) :: X(0:m-(p+1))
+  integer(kind=4) :: i
+  do i = 0, m-(p+1)
+     X(i) = sum(U(i+1:i+p)) / p
+  end do
+end subroutine Greville
 
 subroutine InsertKnot(d,n,p,U,Pw,uu,r,V,Qw)
   use bspline, InsKnt => InsertKnot

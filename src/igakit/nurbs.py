@@ -302,7 +302,7 @@ class NURBS(object):
     @property
     def fields(self):
         """
-        Control variables
+        Control variables.
         """
         if self.array.shape[-1] <= 4: return None
         D = self.array[...,4:]
@@ -313,7 +313,7 @@ class NURBS(object):
 
     def spans(self, *axes):
         """
-        Non-empty span indices
+        Non-empty span indices.
         """
         if not axes: axes = range(self.dim)
         knots  = self.knots
@@ -329,7 +329,7 @@ class NURBS(object):
 
     def breaks(self, *axes):
         """
-        Breaks (unique knot values)
+        Breaks (unique knot values).
         """
         if not axes: axes = range(self.dim)
         knots  = self.knots
@@ -357,7 +357,7 @@ class NURBS(object):
         --------
 
         Create a random curve, copy the curve, change the control points,
-        demonstrate that now c1 and c2 are different
+        demonstrate that now c1 and c2 are different.
 
         >>> C = np.random.rand(5,2)
         >>> U = [0,0,1,2,3,4,4]
@@ -386,7 +386,7 @@ class NURBS(object):
         --------
 
         Create a random curve, copy the curve, change the control points,
-        demonstrate that changing c2 changes c1
+        demonstrate that changing c2 changes c1.
 
         >>> C = np.random.rand(5,2)
         >>> U = [0,0,1,2,3,4,4]
@@ -411,13 +411,13 @@ class NURBS(object):
         A NURBS object can be scaled, rotated, or translated by
         applying the tranformation to the control points. To contruct
         composite transformations, consult the docstrings in
-        transform.py.
+        :mod:`igakit.transform`.
 
         Parameters
         ----------
         trans : array_like
-              a matrix or transformation which scales, rotates, and/or
-              translates a NURBS object.
+            a matrix or transformation which scales, rotates,
+            and/or translates a NURBS object.
 
         """
         if not isinstance(trans, transform):
@@ -455,8 +455,8 @@ class NURBS(object):
         Parameters
         ----------
         axes : sequence of ints, optional
-           By default, reverse order of the axes, otherwise permute
-           the axes according to the values given.
+            By default, reverse order of the axes, otherwise permute
+            the axes according to the values given.
 
         Examples
         --------
@@ -552,7 +552,7 @@ class NURBS(object):
         Parameters
         ----------
         axes : int
-              axis indices to reverse separated by commas
+            axis indices to reverse separated by commas
 
         Examples
         --------
@@ -820,6 +820,11 @@ class NURBS(object):
 
     def clamp(self, *axes, **kargs):
         """
+
+        Examples
+        --------
+
+        Create a random curve, unclamp, check error:
 
         >>> C = np.random.rand(3,3)
         >>> U = [0,0,0,1,1,1]
@@ -1292,9 +1297,9 @@ class NURBS(object):
         Parameters
         ----------
         axis : int
-              index of axis along which to extract boundary
+            index of axis along which to extract boundary
         side : int
-              side of axis from which to extract the boundary
+            side of axis from which to extract the boundary
 
         """
         assert self.dim > 1

@@ -5,16 +5,17 @@ PACKAGE=igakit
 build:
 	$(PYTHON) setup.py build
 
+BACKEND=none
 .PHONY: testdemo
 testdemo:
-	$(PYTHON) demo/plot_crv.py none
-	$(PYTHON) demo/plot_srf.py none
-	$(PYTHON) demo/plot_vol.py none
-	$(PYTHON) demo/pipe.py     none
-	$(PYTHON) demo/bentpipe.py none
-	$(PYTHON) demo/unclamp.py  none
-	$(PYTHON) demo/sweep.py    none
-	$(PYTHON) demo/ruled.py    none
+	$(PYTHON) demo/plot_crv.py $(BACKEND)
+	$(PYTHON) demo/plot_srf.py $(BACKEND)
+	$(PYTHON) demo/plot_vol.py $(BACKEND)
+	$(PYTHON) demo/pipe.py     $(BACKEND)
+	$(PYTHON) demo/bentpipe.py $(BACKEND)
+	$(PYTHON) demo/unclamp.py  $(BACKEND)
+	$(PYTHON) demo/sweep.py    $(BACKEND)
+	$(PYTHON) demo/ruled.py    $(BACKEND)
 .PHONY: doctest
 doctest:
 	$(PYTHON) -m doctest src/igakit/transform.py

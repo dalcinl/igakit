@@ -16,6 +16,7 @@ testdemo:
 	$(PYTHON) demo/unclamp.py  $(BACKEND)
 	$(PYTHON) demo/sweep.py    $(BACKEND)
 	$(PYTHON) demo/ruled.py    $(BACKEND)
+	$(PYTHON) demo/revolve.py  $(BACKEND)
 .PHONY: doctest
 doctest:
 	$(PYTHON) -m doctest src/igakit/transform.py

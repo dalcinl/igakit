@@ -321,7 +321,10 @@ class Plotter(object):
 
     def get_backend(self):
         if self._backend is None:
-            self.use('mayavi')
+            try:
+                self.use('mayavi')
+            except ImportError:
+                self.use('matplotlib')
         return self._backend
 
     backend = property(get_backend, set_backend)

@@ -65,7 +65,7 @@ def test_io_3d():
 
 def test_io_vtk():
     rw = VTK()
-    L = line((1,0), (2,0)).refine([0.5])
+    L = line((1,0), (2,0)).refine(0, [0.5])
     S = revolve(L, point=(0,0), axis=2, angle=3*Pi/2)
     V = extrude(S, displ=1, axis=2)
     uniform = lambda U: np.linspace(U[0], U[-1], 32)

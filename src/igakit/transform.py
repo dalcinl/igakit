@@ -110,7 +110,7 @@ class transform(object):
             R.flat[[3,6,7]] = sin_a*u_lower
             R += (1-cos_a)*u_outer
         else:
-            axis = (0,1,2)[axis]
+            axis = (0,1,2)[int(axis)]
             if axis == 0:
                 R[1, [1,2]] = [ cos_a, -sin_a]
                 R[2, [1,2]] = [ sin_a,  cos_a]

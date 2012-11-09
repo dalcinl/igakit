@@ -313,16 +313,14 @@ class NURBS(object):
         """
         Breaks (unique knot values)
         """
-        try: np_unique = np.unique1d
-        except AttributeError: np_unique = np.unique
-        if not axes: axes = tuple(range(self.dim))
+        if not axes: axes = range(self.dim)
         knots  = self.knots
         degree = self.degree
         breaks = []
         for ax in axes:
             U = knots[ax]
             p = degree[ax]
-            u = np_unique(U[p:-p])
+            u = np.unique(U[p:-p])
             breaks.append(u)
         return breaks
 
@@ -949,18 +947,20 @@ class NURBS(object):
         self._knots = tuple(knots)
         return self
 
-    def refine(self, u, *vw, **kargs):
+    def refine(self, axis, values):
         """
         Knot refine a NURBS object.
 
-        Given a list of knots to insert in each parameter direction,
-        refine the curve by knot refinement. The routine both refines
-        the NURBS object in place and returns the object.
+        Given a list of knots to insert in a parameter direction,
+        refine the curve by knot refinement. The routine operates
+        on the NURBS object in-place and returns the object.
 
         Parameters
         ----------
-        u, v, w : float or array_like or None
-            Knots to insert in each parameter direction
+        axis : int
+            Parameter direction to refine
+        values : float or array_like
+            Knots to insert
 
         Examples
         --------
@@ -974,8 +974,8 @@ class NURBS(object):
         (4, 3)
         >>> u = [0.25, 0.50, 0.75, 0.75]
         >>> v = [0.33, 0.33, 0.67, 0.67]
-        >>> s2 = s1.clone().refine(u, v)
-        >>> s3 = s1.clone().refine(u, axis=0).refine(u, axis=1)
+        >>> s2 = s1.clone().refine(0, u).refine(1, v)
+        >>> s3 = s1.clone().refine(0, u).refine(1, u)
         >>> s2.shape
         (8, 7)
         >>> s3.shape
@@ -990,34 +990,25 @@ class NURBS(object):
         True
 
         """
-        axis = kargs.pop('axis', None)
-        if axis is None:
-            uvw = (u,) + vw
-            assert len(uvw) == self.dim
-            for ax, u in enumerate(uvw):
-                self.refine(u, axis=ax)
-            return self
-        #
         def Arg(p, U, u):
             u.sort(kind='heapsort')
             assert u[ 0] >= U[p]
             assert u[-1] <= U[-p-1]
             tmp = np.concatenate((u, U[1:-1]))
-            try: np_unique = np.unique1d
-            except AttributeError: np_unique = np.unique
+            try: np_unique = np.lib.arraysetops.unique
+            except AttributeError: np_unique = np.unique1d
             uu, i = np_unique(tmp, return_inverse=True)
-            s = np.bincount(i)
-            assert s.max() <= p
+            mult = np.bincount(i)
+            assert mult.max() <= p
             return u
         #
-        assert len(vw) == 0
+        if values is None: return self
+        values = np.asarray(values, dtype='d').ravel()
+        if values.size == 0: return self
         axis = range(self.dim)[axis]
-        if u is None: return self
-        u = np.asarray(u, dtype='d').ravel()
-        if u.size == 0: return self
         p = self.degree[axis]
         U = self.knots[axis]
-        u = Arg(p, U, u)
+        u = Arg(p, U, values)
         array = self.array.view()
         knots = list(self.knots)
         #
@@ -1034,18 +1025,20 @@ class NURBS(object):
         self._knots = tuple(knots)
         return self
 
-    def elevate(self, t, *sr, **kargs):
+    def elevate(self, axis, times=1):
         """
         Degree elevate a NURBS object.
 
-        Given a list of polynomial degrees to elevate in each
-        parameter direction, refine the curve. The routine both
-        refines the NURBS object in place and returns the object.
+        Given a polynomial degree to elevate in a parameter
+        direction, degree-elevate the curve. The routine operates
+        on the NURBS object in-place and returns the object.
 
         Parameters
         ----------
-        t, s, r : int or None
-            Polynomial orders to elevate by in each parametric direction.
+        axis : int
+            Parameter direction to degree-elevate
+        times : int, optional
+            Polynomial order to elevate
 
         Examples
         --------
@@ -1057,7 +1050,7 @@ class NURBS(object):
         >>> c1 = NURBS([U], C)
         >>> c1.degree
         (2,)
-        >>> c2 = c1.clone().elevate(2)
+        >>> c2 = c1.clone().elevate(0, 2)
         >>> c2.degree
         (4,)
         >>> u = np.linspace(0,1,100)
@@ -1074,7 +1067,7 @@ class NURBS(object):
         >>> s1 = NURBS([U,V], C)
         >>> s1.degree
         (2, 1)
-        >>> s2 = s1.clone().elevate(1, axis=0).elevate(1, axis=1)
+        >>> s2 = s1.clone().elevate(0, 1).elevate(1, 1)
         >>> s2.degree
         (3, 2)
         >>> u = v = np.linspace(0,1,100)
@@ -1084,22 +1077,15 @@ class NURBS(object):
         True
 
         """
-        axis = kargs.pop('axis', None)
-        if axis is None:
-            tsr = (t,) + sr
-            assert len(tsr) == self.dim
-            for ax, t in enumerate(tsr):
-                self.elevate(t, axis=ax)
-            return self
         #
-        assert len(sr) == 0
+        if times is None: return self
+        times = int(times)
+        assert times >= 0
+        if times == 0: return self
         axis = range(self.dim)[axis]
-        if t is None: return self
-        t = int(t)
-        assert t >= 0
-        if t == 0: return self
         p = self.degree[axis]
         U = self.knots[axis]
+        t = times
         array = self.array.view()
         knots = list(self.knots)
         #
@@ -1197,9 +1183,7 @@ class NURBS(object):
         u = np.repeat([u0,u1],[t0,t1]).astype('d')
         #
         nrb = self.clone()
-        uvw = [None] * dim
-        uvw[axis] = u
-        nrb.refine(*uvw)
+        nrb.refine(axis, u)
         array = nrb.array
         knots = nrb.knots
         #
@@ -1308,7 +1292,7 @@ class NURBS(object):
 
     #
 
-    def evaluate(self, u, *vw, **kwargs):
+    def evaluate(self, u=None, v=None, w=None, **kwargs):
         """
         Evaluate the NURBS object at the given parametric values.
 
@@ -1331,9 +1315,21 @@ class NURBS(object):
         [[-1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]
 
         """
-        uvw = (u,) + vw
-        assert len(uvw) == self.dim
-        uvw = [np.asarray(a, dtype='d') for a in uvw]
+        def Arg(p, U, u):
+            u = np.asarray(u, dtype='d')
+            assert u.min() >= U[p]
+            assert u.max() <= U[-p-1]
+            return u
+        #
+        dim = self.dim
+        uvw = [u,v,w][:dim]
+        for i, a in enumerate(uvw):
+            if a is None:
+                uvw[i] = self.breaks(i)
+            else:
+                U = self.knots[i]
+                p = self.degree[i]
+                uvw[i] = Arg(p, U, a)
         #
         fields = kwargs.get('fields', None)
         if (fields is None or
@@ -1368,7 +1364,7 @@ class NURBS(object):
         C = CwD[...,:3] / w
         D = CwD[...,4:] / w
         #
-        shape = list(C.shape[:-1]) 
+        shape = list(C.shape[:-1])
         remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
         for i in reversed(remove): del shape[i]
         C.shape = D.shape = shape + [-1]

@@ -202,7 +202,7 @@ def trilinear(points=None):
 # -----
 
 def grid(shape, degree=2, continuity=None,
-             limits=(0.0, 1.0), wrap=False):
+         limits=(0.0, 1.0), wrap=False):
     """
     Constructs a NURBS grid with equally-spaced knot vectors
     and control points built from Greville coordinates.
@@ -310,11 +310,11 @@ def compat(*nurbs, **kargs):
         for i, nrb in enumerate(nurbs):
             for j, axis in enumerate(axes):
                 t = elevate[i,j]
-                nrb.elevate(t, axis=axis)
+                nrb.elevate(axis, t)
     #
     def MergeKnots(nurbs, axes):
-        try:  np_unique = np.unique1d
-        except AttributeError: np_unique = np.unique
+        try: np_unique = np.lib.arraysetops.unique
+        except AttributeError: np_unique = np.unique1d
         m, n = len(nurbs), len(axes)
         insert = np.empty((m, n), dtype=object)
         for j, axis in enumerate(axes):
@@ -329,7 +329,7 @@ def compat(*nurbs, **kargs):
                 mults.append(s.astype('i'))
             # Merge breaks and multiplicities
             masks = []
-            u = np_unique(np.concatenate(breaks))
+            u = np.unique(np.concatenate(breaks))
             s = np.zeros(u.size, dtype='i')
             for (ui, si) in zip(breaks, mults):
                 mask = np.in1d(u, ui)
@@ -344,7 +344,7 @@ def compat(*nurbs, **kargs):
         for i, nrb in enumerate(nurbs):
             for j, axis in enumerate(axes):
                 u = insert[i,j]
-                nrb.refine(u, axis=axis)
+                nrb.refine(axis, u)
     #
     if len(nurbs) == 1:
         if not isinstance(nurbs[0], NURBS):
@@ -431,7 +431,7 @@ def revolve(nrb, point, axis, angle=None):
     assert 1 <= axis.size <= 3
     if axis.ndim == 0:
         v = np.zeros(3, dtype='d')
-        axis = (0,1,2)[axis]
+        axis = (0,1,2)[int(axis)]
         v[axis] = 1
     else:
         v = np.zeros(3, dtype='d')
@@ -623,8 +623,8 @@ def join(nrb1, nrb2, axis):
     nrb2.remap(axis, a+u, b+u)
 
     p = max(p1, p2)
-    nrb1.elevate(p-p1, axis=axis)
-    nrb2.elevate(p-p2, axis=axis)
+    nrb1.elevate(axis, p-p1)
+    nrb2.elevate(axis, p-p2)
 
     A1 = nrb1.array
     A2 = nrb2.array

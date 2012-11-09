@@ -274,17 +274,12 @@ class VTK(object):
         vectors : dict or sequence or 2-tuple, optional
 
         """
-        try:  unique = np.unique1d
-        except AttributeError: unique = np.unique
         if sampler is None:
-            sampler = lambda U: U
+            sampler = lambda u: u
         dim  = nurbs.dim
-        degs = nurbs.degree
-        knts = nurbs.knots
-        uvw = [sampler(unique(U[p:-p]))
-               for p, U in zip(degs, knts)]
+        uvw = [sampler(u) for u in nurbs.breaks()]
         flag = bool(scalars or vectors)
-        out = nurbs.evaluate(*uvw, fields=flag)
+        out = nurbs.evaluate(*uvw, **dict(fields=flag))
         if flag: C, F = out
         else:    C, F = out, out[..., 0:0]
 

@@ -93,7 +93,8 @@ def test_vol_ext(plot=False):
 def test_vol_degelv(plot=False):
     nrb = make_vol()
     assert nrb.degree == (2, 1, 1)
-    nrb.elevate(0, 1, 1)
+    for i, t in enumerate((0, 1, 1)):
+        nrb.elevate(i, t)
     assert nrb.degree == (2, 2, 2)
     if plot:
         plt.figure()
@@ -104,9 +105,9 @@ def test_vol_degelv(plot=False):
 def test_vol_kntins(plot=False):
     nrb = make_vol()
     assert nrb.shape == (3, 2, 3)
-    nrb.refine([0.25, 0.5, 0.75],
-               [0.25, 0.5, 0.75],
-               [0.25,      0.75])
+    nrb.refine(0, [0.25, 0.5, 0.75])
+    nrb.refine(1, [0.25, 0.5, 0.75])
+    nrb.refine(2, [0.25,      0.75])
     assert nrb.shape == (3+3, 2+3, 3+2)
     if plot:
         plt.figure()
@@ -116,10 +117,12 @@ def test_vol_kntins(plot=False):
 
 def test_vol_degelv_kntins(plot=False):
     nrb = make_vol()
-    nrb.elevate(0, 1, 1)
-    nrb.refine([0.25, 0.5, 0.75],
-               [0.25, 0.5, 0.75],
-               [0.25,      0.75])
+    for i, t in enumerate((0, 1, 1)):
+        nrb.elevate(i, t)
+    for i, u in enumerate(([0.25, 0.5, 0.75],
+                           [0.25, 0.5, 0.75],
+                           [0.25,      0.75])):
+        nrb.refine(i, u)
     if plot:
         plt.figure()
         nrb.plot()
@@ -132,8 +135,8 @@ def test_evaluate():
     vol = make_vol()
     for nrb in (crv, srf, vol):
         C = nrb.evaluate(*nrb.knots)
-        C2, D2 = nrb.evaluate(*nrb.knots, fields=nrb.points)
-        C3, D3 = nrb.evaluate(*nrb.knots, fields=nrb.weights)
+        C2, D2 = nrb.evaluate(*nrb.knots, **dict(fields=nrb.points))
+        C3, D3 = nrb.evaluate(*nrb.knots, **dict(fields=nrb.weights))
         assert np.allclose(C, C2)
         assert np.allclose(C, C3)
         assert np.allclose(C, D2)

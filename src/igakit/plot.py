@@ -1,8 +1,4 @@
 import numpy as np
-try:
-    _np_unique = np.unique1d
-except AttributeError:
-    _np_unique = np.unique
 
 class Plotter(object):
 
@@ -109,8 +105,7 @@ class Plotter(object):
         return grd
 
     def kpoint(self, nurbs, **kwargs):
-        uvw = [_np_unique(U[p:-p]) for (p, U)
-               in zip(nurbs.degree, nurbs.knots)]
+        uvw = nurbs.breaks()
         C = nurbs.evaluate(*uvw)
         x, y, z = C.T
         #
@@ -135,8 +130,7 @@ class Plotter(object):
         elif not isinstance(axes, (list, tuple)):
             axes = (axes,)
         #
-        uvw = [_np_unique(U[p:-p]) for (p, U)
-               in zip(nurbs.degree, nurbs.knots)]
+        uvw = nurbs.breaks()
         lines = []
         for axis in axes:
             u = uvw[axis]
@@ -171,13 +165,9 @@ class Plotter(object):
         elif not isinstance(axes, (list, tuple)):
             axes = (axes,)
         #
-        degree = nurbs.degree
-        knots = nurbs.knots
         surfs = []
         for axis in axes:
-            p = degree[axis]
-            U = knots[axis]
-            for u in _np_unique(U[p:-p]):
+            for u in nurbs.breaks(axis):
                 nrb = nurbs.extract(axis, u)
                 resolution = self.backend._resolution[2]
                 uvw = [np.linspace(U[p], U[-p-1], resolution)

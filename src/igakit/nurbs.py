@@ -309,6 +309,23 @@ class NURBS(object):
         w = self.weights[...,np.newaxis]
         return D / w
 
+    def breaks(self, *axes):
+        """
+        Breaks (unique knot values)
+        """
+        try: np_unique = np.unique1d
+        except AttributeError: np_unique = np.unique
+        if not axes: axes = tuple(range(self.dim))
+        knots  = self.knots
+        degree = self.degree
+        breaks = []
+        for ax in axes:
+            U = knots[ax]
+            p = degree[ax]
+            u = np_unique(U[p:-p])
+            breaks.append(u)
+        return breaks
+
     #
 
     def copy(self):
@@ -986,7 +1003,7 @@ class NURBS(object):
             assert u[ 0] >= U[p]
             assert u[-1] <= U[-p-1]
             tmp = np.concatenate((u, U[1:-1]))
-            try:  np_unique = np.unique1d
+            try: np_unique = np.unique1d
             except AttributeError: np_unique = np.unique
             uu, i = np_unique(tmp, return_inverse=True)
             s = np.bincount(i)

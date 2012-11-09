@@ -1292,7 +1292,7 @@ class NURBS(object):
 
     #
 
-    def evaluate(self, u=None, v=None, w=None, **kwargs):
+    def evaluate(self, u=None, v=None, w=None, fields=None):
         """
         Evaluate the NURBS object at the given parametric values.
 
@@ -1331,9 +1331,7 @@ class NURBS(object):
                 p = self.degree[i]
                 uvw[i] = Arg(p, U, a)
         #
-        fields = kwargs.get('fields', None)
-        if (fields is None or
-            isinstance(fields, bool)):
+        if fields is None or isinstance(fields, bool):
             F = None
         else:
             F = np.asarray(fields, dtype='d')
@@ -1359,23 +1357,20 @@ class NURBS(object):
         arglist.extend(uvw)
         #
         Evaluate = _api[self.dim].Evaluate
-        CwD = Evaluate(*arglist)
-        w = CwD[...,3,np.newaxis]
-        C = CwD[...,:3] / w
-        D = CwD[...,4:] / w
+        CwF = Evaluate(*arglist)
+        w = CwF[...,3,np.newaxis]
+        C = CwF[...,:3] / w
+        F = CwF[...,4:] / w
         #
         shape = list(C.shape[:-1])
         remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
         for i in reversed(remove): del shape[i]
-        C.shape = D.shape = shape + [-1]
+        C.shape = F.shape = shape + [-1]
         #
-        if fields is False:
-            return C
-        if fields is True:
-            return (C, D)
-        if D.shape[-1] == 0:
-            return C
-        return (C, D)
+        if fields is False: return C
+        if fields is True:  return C, F
+        if F.shape[-1]==0:  return C
+        else:               return C, F
 
     #
 

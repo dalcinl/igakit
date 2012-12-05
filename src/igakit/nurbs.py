@@ -1,14 +1,8 @@
 import numpy as np
 from igakit.transform import transform
-from igakit import igalib
+from igakit import igalib as _igalib
 
-_bsp = igalib.bsp
-_api = {
-    0 : igalib.bsp,
-    1 : igalib.crv,
-    2 : igalib.srf,
-    3 : igalib.vol,
-    }
+_bsp = _igalib.bsp
 
 __all__ = ['NURBS', 'transform']
 
@@ -1379,7 +1373,7 @@ class NURBS(object):
         arglist.append(array)
         arglist.extend(uvw)
         #
-        Evaluate = _api[self.dim].Evaluate
+        Evaluate = getattr(_bsp, 'Evaluate%d' % self.dim)
         CwF = Evaluate(*arglist)
         w = CwF[...,3,np.newaxis]
         C = CwF[...,:3] / w

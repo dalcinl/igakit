@@ -858,6 +858,133 @@ subroutine Extract(d,n,p,U,Pw,x,Cw)
   call CornerCut(d,n,p,U,Pw,x,Cw)
 end subroutine Extract
 
+subroutine Evaluate1(d,n,p,U,Pw,r,X,Cw)
+  use bspline
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: n, p
+  real   (kind=8), intent(in)  :: U(0:n+p+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:n)
+  integer(kind=4), intent(in)  :: r
+  real   (kind=8), intent(in)  :: X(0:r)
+  real   (kind=8), intent(out) :: Cw(d,0:r)
+  integer(kind=4) :: i, j, span
+  real   (kind=8) :: basis(0:p), C(d)
+  !
+  do i = 0, r
+     span = FindSpan(n,p,X(i),U)
+     call BasisFuns(span,X(i),p,U,basis)
+     !
+     C = 0.0
+     do j = 0, p
+        C = C + basis(j)*Pw(:,span-p+j)
+     end do
+     Cw(:,i) = C
+     !
+  end do
+  !
+end subroutine Evaluate1
+
+subroutine Evaluate2(d,nx,px,Ux,ny,py,Uy,Pw,rx,X,ry,Y,Cw)
+  use bspline
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx, ny
+  integer(kind=4), intent(in)  :: px, py
+  integer(kind=4), intent(in)  :: rx, ry
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Uy(0:ny+py+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:ny,0:nx)
+  real   (kind=8), intent(in)  :: X(0:rx), Y(0:ry)
+  real   (kind=8), intent(out) :: Cw(d,0:ry,0:rx)
+  integer(kind=4) :: ix, jx, iy, jy, ox, oy
+  integer(kind=4) :: spanx(0:rx), spany(0:ry)
+  real   (kind=8) :: basisx(0:px,0:rx), basisy(0:py,0:ry)
+  real   (kind=8) :: M, C(d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call BasisFuns(spanx(ix),X(ix),px,Ux,basisx(:,ix))
+  end do
+  do iy = 0, ry
+     spany(iy) = FindSpan(ny,py,Y(iy),Uy)
+     call BasisFuns(spany(iy),Y(iy),py,Uy,basisy(:,iy))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     do iy = 0, ry
+        oy = spany(iy) - py
+        ! ---
+        C = 0.0
+        do jx = 0, px
+           do jy = 0, py
+              M = basisx(jx,ix) * basisy(jy,iy)
+              C = C + M * Pw(:,oy+jy,ox+jx)
+           end do
+        end do
+        Cw(:,iy,ix) = C
+        ! ---
+     end do
+  end do
+  !
+end subroutine Evaluate2
+
+subroutine Evaluate3(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,rx,X,ry,Y,rz,Z,Cw)
+  use bspline
+  implicit none
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx, ny, nz
+  integer(kind=4), intent(in)  :: px, py, pz
+  integer(kind=4), intent(in)  :: rx, ry, rz
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Uy(0:ny+py+1)
+  real   (kind=8), intent(in)  :: Uz(0:nz+pz+1)
+  real   (kind=8), intent(in)  :: Pw(d,0:nz,0:ny,0:nx)
+  real   (kind=8), intent(in)  :: X(0:rx), Y(0:ry), Z(0:rz)
+  real   (kind=8), intent(out) :: Cw(d,0:rz,0:ry,0:rx)
+  integer(kind=4) :: ix, jx, iy, jy, iz, jz, ox, oy, oz
+  integer(kind=4) :: spanx(0:rx), spany(0:ry), spanz(0:rz)
+  real   (kind=8) :: basisx(0:px,0:rx), basisy(0:py,0:ry), basisz(0:pz,0:rz)
+  real   (kind=8) :: M, C(d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call BasisFuns(spanx(ix),X(ix),px,Ux,basisx(:,ix))
+  end do
+  do iy = 0, ry
+     spany(iy) = FindSpan(ny,py,Y(iy),Uy)
+     call BasisFuns(spany(iy),Y(iy),py,Uy,basisy(:,iy))
+  end do
+  do iz = 0, rz
+     spanz(iz) = FindSpan(nz,pz,Z(iz),Uz)
+     call BasisFuns(spanz(iz),Z(iz),pz,Uz,basisz(:,iz))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     do iy = 0, ry
+        oy = spany(iy) - py
+        do iz = 0, rz
+           oz = spanz(iz) - pz
+           ! ---
+           C = 0.0
+           do jx = 0, px
+              do jy = 0, py
+                 do jz = 0, pz
+                    M = basisx(jx,ix) * basisy(jy,iy) * basisz(jz,iz)
+                    C = C + M * Pw(:,oz+jz,oy+jy,ox+jx)
+                 end do
+              end do
+           end do
+           Cw(:,iz,iy,ix) = C
+           ! ---
+        end do
+     end do
+  end do
+  !
+end subroutine Evaluate3
+
 end module BSp
 
 !

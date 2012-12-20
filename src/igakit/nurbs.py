@@ -182,7 +182,7 @@ class NURBS(object):
                     p += 1
                 degs[i] = p
             Greville = _bsp.Greville
-            axes = [Greville(p, U) for p, U in zip(degs,knots)]
+            axes = [Greville(p, U) for p, U in zip(degs, knots)]
             shape = [len(x) for x in axes]
             Cw = np.zeros(shape+[4], dtype='d')
             for i, x in enumerate(axes):
@@ -325,6 +325,8 @@ class NURBS(object):
         """
         Breaks (unique knot values).
         """
+        try: np_unique = np.lib.arraysetops.unique
+        except AttributeError: np_unique = np.unique1d
         if not axes: axes = range(self.dim)
         knots  = self.knots
         degree = self.degree
@@ -332,7 +334,7 @@ class NURBS(object):
         for ax in axes:
             p = degree[ax]
             U = knots[ax]
-            u = np.unique(U[p:-p])
+            u = np_unique(U[p:-p])
             breaks.append(u)
         return breaks
 
@@ -1014,7 +1016,7 @@ class NURBS(object):
             tmp = np.concatenate((u, U[1:-1]))
             try: np_unique = np.lib.arraysetops.unique
             except AttributeError: np_unique = np.unique1d
-            uu, i = np_unique(tmp, return_inverse=True)
+            _, i = np_unique(tmp, return_inverse=True)
             mult = np.bincount(i)
             assert mult.max() <= p
             return u

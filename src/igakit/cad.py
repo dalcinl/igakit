@@ -236,7 +236,7 @@ def grid(shape, degree=2, continuity=None,
     if continuity.ndim == 0:
         continuity = continuity.repeat(dim)
     assert continuity.shape == (dim,)
-    continuity[continuity<0] = degree + continuity
+    continuity[continuity<0] += degree[continuity<0]
     #
     limits = np.asarray(limits, dtype='d')
     if limits.ndim == 1:

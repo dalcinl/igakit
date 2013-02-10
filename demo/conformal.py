@@ -19,15 +19,16 @@ def ConformalProjectionError(srf):
     error : float, value of the integral
 
     """
-    W   = srf.control[:,:,-1]    
+    W   = srf.control[:,:,-1]
 
     Ou,Ju,Wu,Xu,Nu = iga.BasisData(srf.degree[0],srf.knots[0])
     Ov,Jv,Wv,Xv,Nv = iga.BasisData(srf.degree[1],srf.knots[1])
 
+    outer = np.outer
     error = 0.
     for eu in range(len(Ou)):
         for ev in range(len(Ov)):
-            
+
             Lu,Ru = Ou[eu],Ou[eu]+srf.degree[0]+1
             Lv,Rv = Ov[ev],Ov[ev]+srf.degree[1]+1
             Wl    = W[Lu:Ru,Lv:Rv]
@@ -35,16 +36,17 @@ def ConformalProjectionError(srf):
             for qu in range(len(Wu)):
                 for qv in range(len(Wv)):
 
-                    N   = np.outer(Nu[eu,qu,:,0],Nv[ev,qv,:,0])
-                    dNu = np.outer(Nu[eu,qu,:,1],Nv[ev,qv,:,0])
-                    dNv = np.outer(Nu[eu,qu,:,0],Nv[ev,qv,:,1])
-                    
+                    N   = outer(Nu[eu,qu,:,0],Nv[ev,qv,:,0])
+                    dNu = outer(Nu[eu,qu,:,1],Nv[ev,qv,:,0])
+                    dNv = outer(Nu[eu,qu,:,0],Nv[ev,qv,:,1])
+
                     w   = (  N*Wl).sum()
                     dwu = (dNu*Wl).sum()
                     dwv = (dNv*Wl).sum()
 
-                    dRu = -N*Wl*dwu / w**2 + dNu*Wl / w
-                    dRv = -N*Wl*dwv / w**2 + dNv*Wl / w
+                    R   =  N*Wl / w
+                    dRu = (-R*dwu + dNu*Wl) / w
+                    dRv = (-R*dwv + dNv*Wl) / w
 
                     dXdu = (srf.control[Lu:Ru,Lv:Rv,0]*dRu).sum()
                     dXdv = (srf.control[Lu:Ru,Lv:Rv,0]*dRv).sum()
@@ -75,7 +77,7 @@ def QuasiConformalProjection(srf):
     conf_srf : NURBS, the reparameterized surface
 
     """
-    W   = srf.control[:,:,-1]    
+    W   = srf.control[:,:,-1]
 
     Ou,Ju,Wu,Xu,Nu = iga.BasisData(srf.degree[0],srf.knots[0])
     Ov,Jv,Wv,Xv,Nv = iga.BasisData(srf.degree[1],srf.knots[1])
@@ -84,9 +86,10 @@ def QuasiConformalProjection(srf):
     M = np.zeros((2*shift,2*shift))
     F = np.zeros(2*shift)
 
+    outer = np.outer
     for eu in range(len(Ou)):
         for ev in range(len(Ov)):
-            
+
             Lu,Ru = Ou[eu],Ou[eu]+srf.degree[0]+1
             Lv,Rv = Ov[ev],Ov[ev]+srf.degree[1]+1
             Wl    = W[Lu:Ru,Lv:Rv]
@@ -94,30 +97,29 @@ def QuasiConformalProjection(srf):
             for qu in range(len(Wu)):
                 for qv in range(len(Wv)):
 
-                    N   = np.outer(Nu[eu,qu,:,0],Nv[ev,qv,:,0])
-                    dNu = np.outer(Nu[eu,qu,:,1],Nv[ev,qv,:,0])
-                    dNv = np.outer(Nu[eu,qu,:,0],Nv[ev,qv,:,1])
-                    
+                    N   = outer(Nu[eu,qu,:,0],Nv[ev,qv,:,0])
+                    dNu = outer(Nu[eu,qu,:,1],Nv[ev,qv,:,0])
+                    dNv = outer(Nu[eu,qu,:,0],Nv[ev,qv,:,1])
+
                     w   = (  N*Wl).sum()
                     dwu = (dNu*Wl).sum()
                     dwv = (dNv*Wl).sum()
 
                     R   =  N*Wl / w
-                    dRu = -N*Wl*dwu / w**2 + dNu*Wl / w
-                    dRv = -N*Wl*dwv / w**2 + dNv*Wl / w
+                    dRu = (-R*dwu + dNu*Wl) / w
+                    dRv = (-R*dwv + dNv*Wl) / w
 
-                    R   = R.reshape((-1,1),order='f')
                     dRu = dRu.reshape((-1,1),order='f')
                     dRv = dRv.reshape((-1,1),order='f')
 
                     wgt = Ju[eu]*Ju[eu]*Wu[qu]*Wv[qv]
-                    m00 = ( np.outer(dRu,dRu)+np.outer(dRv,dRv))*wgt
-                    m01 = (-np.outer(dRu,dRv)+np.outer(dRv,dRu))*wgt
+                    m00 = ( outer(dRu,dRu)+outer(dRv,dRv))*wgt
+                    m01 = (-outer(dRu,dRv)+outer(dRv,dRu))*wgt
 
-                    ind  = np.outer(np.ones(Ru-Lu,dtype='int'),range(Lv,Rv))*srf.shape[0]
-                    ind += np.outer(range(Lu,Ru),np.ones(Rv-Lv,dtype='int'))
+                    ind  = outer(np.ones(Ru-Lu,dtype='int'),range(Lv,Rv))*srf.shape[0]
+                    ind += outer(range(Lu,Ru),np.ones(Rv-Lv,dtype='int'))
                     ind  = ind.reshape((-1,1),order='f')
-                    
+
                     M[      ind,      ind[:,0]] += m00
                     M[shift+ind,      ind[:,0]] -= m01
                     M[      ind,shift+ind[:,0]] += m01
@@ -140,7 +142,7 @@ def QuasiConformalProjection(srf):
                 M[:,col] = M[col,:] = 0
                 M[col,col] = 1
                 F[col] = srf.control[side,dof,c]
-    
+
     U = np.linalg.solve(M,F)
 
     conf_srf = srf.copy()

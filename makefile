@@ -49,7 +49,7 @@ uninstall_home:
 	-$(RM) -r $(HOME)/lib64/python/$(PACKAGE)*
 
 
-.PHONY: distclean
+.PHONY: clean distclean
 clean:
 	$(PYTHON) setup.py -q clean
 	-$(RM) -r build/src.*

@@ -34,19 +34,19 @@ testall: test testdemo
 
 
 .PHONY: install install_home install_user
-install: install_home
-install_home:
-	$(PYTHON) setup.py install --home=${HOME}
+install: install_user
 install_user:
 	$(PYTHON) setup.py install --user
+install_home:
+	$(PYTHON) setup.py install --home=${HOME}
 
 .PHONY: uninstall uninstall_home uninstall_user
-uninstall: uninstall_home uninstall_user
+uninstall: uninstall_user uninstall_home
+uninstall_user:
+	-$(RM) -r `$(PYTHON) -m site --user-site`/$(PACKAGE)*
 uninstall_home:
 	-$(RM) -r $(HOME)/lib/python/$(PACKAGE)*
 	-$(RM) -r $(HOME)/lib64/python/$(PACKAGE)*
-uninstall_user:
-	-$(RM) -r `$(PYTHON) -m site --user-site`/$(PACKAGE)*
 
 
 .PHONY: distclean

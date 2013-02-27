@@ -261,17 +261,19 @@ class VTK(object):
         pass
 
     def write(self, filename, nurbs,
-              control=True, sampler=None,
-              scalars=(), vectors=()):
+              control=True, fields=None,
+              scalars=(), vectors=(),
+              sampler=None):
         """
         Parameters
         ----------
         filename : string
         nurbs : NURBS
         control : bool, optional
-        sampler : callable, optional
+        fields : array, optional
         scalars : dict or sequence of 2-tuple, optional
         vectors : dict or sequence or 2-tuple, optional
+        sampler : callable, optional
 
         """
         if sampler is None:
@@ -279,7 +281,9 @@ class VTK(object):
         dim  = nurbs.dim
         uvw = [sampler(u) for u in nurbs.breaks()]
         flag = bool(scalars or vectors)
-        out = nurbs.evaluate(*uvw, **dict(fields=flag))
+        if not flag: fields = flag
+        elif fields is None: fields = flag
+        out = nurbs.evaluate(*uvw, **dict(fields=fields))
         if flag: C, F = out
         else:    C, F = out, out[..., 0:0]
 

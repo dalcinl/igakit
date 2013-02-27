@@ -76,15 +76,30 @@ def test_io_vtk():
         rw.write(fn, V)
         for N in (L, S, V):
             F = np.random.random(N.shape+(4,))
-            N = NURBS(N.knots, N.control, fields=F)
-            for control in (False, True):
-                for sampler in (None, uniform):
-                    rw.write(fn, N,
+            for sampler in (None, uniform):
+                for control in (False, True):
+                    rw.write(fn, N, fields=None,
                              control=control, sampler=sampler)
-                    rw.write(fn, N,
+                    rw.write(fn, N, fields=F,
                              control=control, sampler=sampler,
                              scalars=[(None,0),('',1),("my scalar",2)],
                              vectors=dict(u=[0],v=[0,1],w=[0,1,2]))
+
+            N = NURBS(N.knots, N.control, fields=F)
+            for sampler in (None, uniform):
+                for control in (False, True):
+                    for fields in (None, F):
+                        rw.write(fn, N, fields=fields,
+                                 control=control, sampler=sampler)
+                        rw.write(fn, N, fields=fields,
+                                 control=control, sampler=sampler,
+                                 scalars=[(None,0),('',1),("my scalar",2)],
+                                 vectors=dict(u=[0],v=[0,1],w=[0,1,2]))
+                        rw.write(fn, N, fields=fields,
+                                 control=control, sampler=sampler,
+                                 scalars=[(None,0),('',1),("my scalar",2)],
+                                 vectors=dict(u=[0],v=[0,1],w=[0,1,2]))
+
     finally:
         os.remove(fn)
 

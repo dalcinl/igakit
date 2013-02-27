@@ -1001,7 +1001,7 @@ subroutine KnotVector(E,p,C,Ui,Uf,wrap,m,U)
   logical(kind=4), intent(in)  :: wrap
   integer(kind=4), intent(in)  :: m
   real   (kind=8), intent(out) :: U(0:m)
-  integer(kind=4) :: i, j, k
+  integer(kind=4) :: i, j, k, n
   real   (kind=8) :: dU
   dU = (Uf-Ui)/E
   k = p+1
@@ -1016,8 +1016,9 @@ subroutine KnotVector(E,p,C,Ui,Uf,wrap,m,U)
      U(m-k) = Uf
   end do
   if (wrap) then
+     n = m-(p+1)
      do k = 0, C
-        U(k)     = Ui - Uf + U(m-C-(p+1)+k)
+        U(C-k)   = Ui - Uf + U(n-k)
         U(m-C+k) = Uf - Ui + U(p+1+k)
      end do
   end if

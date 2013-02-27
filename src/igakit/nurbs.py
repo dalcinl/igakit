@@ -305,38 +305,32 @@ class NURBS(object):
 
     #
 
-    def spans(self, *axes):
+    def spans(self, axis=None):
         """
         Non-empty span indices.
         """
-        if not axes: axes = range(self.dim)
-        knots  = self.knots
-        degree = self.degree
+        axes = range(self.dim)
+        if axis is None:
+            return [self.spans(i) for i in axes]
+        i = axes[axis]
+        p = self.degree[i]
+        U = self.knots[i]
         SpanIndex = _bsp.SpanIndex
-        spans = []
-        for ax in axes:
-            p = degree[ax]
-            U = knots[ax]
-            s = SpanIndex(p, U)
-            spans.append(s)
-        return spans
+        return SpanIndex(p, U)
 
-    def breaks(self, *axes):
+    def breaks(self, axis=None):
         """
         Breaks (unique knot values).
         """
         try: np_unique = np.lib.arraysetops.unique
         except AttributeError: np_unique = np.unique1d
-        if not axes: axes = range(self.dim)
-        knots  = self.knots
-        degree = self.degree
-        breaks = []
-        for ax in axes:
-            p = degree[ax]
-            U = knots[ax]
-            u = np_unique(U[p:-p])
-            breaks.append(u)
-        return breaks
+        axes = range(self.dim)
+        if axis is None:
+            return [self.breaks(i) for i in axes]
+        i = axes[axis]
+        p = self.degree[i]
+        U = self.knots[i]
+        return np_unique(U[p:-p])
 
     #
 

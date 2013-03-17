@@ -124,7 +124,7 @@ class PetIGA(object):
             fields  = bool(info & 0x2)
             dim = _read(fh, I)
             assert 1 <= dim <= 3
-            knots, sizes = [], []
+            knots, degrs, sizes = [], [], []
             for i in range(dim):
                 p = _read(fh, I)
                 assert p >= 1
@@ -133,8 +133,9 @@ class PetIGA(object):
                 assert n >= 2
                 U = _read(fh, R, m)
                 assert len(U) == m
-                knots.append(U)
+                degrs.append(p)
                 sizes.append(n)
+                knots.append(U)
             if control:
                 nsd = _read(fh, I)
                 assert dim <= nsd <= 3
@@ -167,7 +168,17 @@ class PetIGA(object):
             control[..., :nsd] = Cw[..., :-1]
             control[...,   -1] = Cw[...,  -1]
         else:
-            control = None
+            from igakit.igalib import bsp
+            shape = sizes + [4]
+            Cw = np.zeros(shape, dtype=S)
+            for i in range(dim):
+                X = bsp.Greville(degrs[i], knots[i])
+                I = [np.newaxis] * dim
+                I[i] = slice(None)
+                I = tuple(I)
+                Cw[...,i] = X[I]
+            Cw[...,3] = 1
+            control = Cw
         #
         if fields:
             shape = [npd] + sizes

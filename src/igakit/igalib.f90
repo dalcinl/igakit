@@ -366,13 +366,13 @@ subroutine ClampKnot(d,n,p,U,Pw,l,r)
   if (l) then ! Clamp at left end
      k = p
      s = FindMult(p,U(p),p,U)
-     call KntIns(d,n,p,U,Pw,k,s)
+     if (s < p) call KntIns(d,n,p,U,Pw,k,s)
      U(0:p-1) = U(p)
   end if
   if (r) then ! Clamp at right end
      k = n+1
      s = FindMult(n,U(n+1),p,U)
-     call KntIns(d,n,p,U,Pw,k,s)
+     if (s < p) call KntIns(d,n,p,U,Pw,k,s)
      U(n+2:n+p+1) = U(n+1)
   end if
 contains
@@ -385,7 +385,6 @@ contains
       integer(kind=4), intent(in)    :: k, s
       integer(kind=4) :: r, i, j, idx
       real   (kind=8) :: uu, alpha, Rw(d,0:p), Qw(d,0:2*p)
-      if (s >= p) return
       uu = U(k)
       r = p-s
       Qw(:,0) = Pw(:,k-p)
@@ -407,36 +406,38 @@ contains
     end subroutine KntIns
 end subroutine ClampKnot
 
-subroutine UnclampKnot(d,n,p,U,Pw,l,r)
+subroutine UnclampKnot(d,n,p,U,Pw,C,l,r)
   implicit none
   integer(kind=4), intent(in)    :: d
   integer(kind=4), intent(in)    :: n, p
   real   (kind=8), intent(inout) :: U(0:n+p+1)
   real   (kind=8), intent(inout) :: Pw(d,0:n)
+  integer(kind=4), intent(in)    :: C
   logical(kind=4), intent(in)    :: l, r
-  integer(kind=4) :: i, j, k
+  integer(kind=4) :: m, i, j
   real   (kind=8) :: alpha
   if (l) then ! Unclamp at left end
-     do i = 0, p-2
-        U(p-i-1) = U(p-i) - (U(n-i+1)-U(n-i))
-        k = p-1
+     do i = 0, C
+        U(C-i) = U(p) - U(n+1) + U(n-i)
+     end do
+     do i = p-C-1, p-2
         do j = i, 0, -1
-           alpha = (U(p)-U(k))/(U(p+j+1)-U(k))
+           alpha = (U(p)-U(p+j-i-1))/(U(p+j+1)-U(p+j-i-1))
            Pw(:,j) = (Pw(:,j)-alpha*Pw(:,j+1))/(1-alpha)
-           k = k-1
         end do
      end do
-     U(0) = U(1) - (U(n-p+2)-U(n-p+1)) ! Set first knot
   end if
   if (r) then ! Unclamp at right end
-     do i = 0, p-2
-        U(n+i+2) = U(n+i+1) + (U(p+i+1)-U(p+i))
+     m = n+p+1
+     do i = 0, C
+        U(m-C+i) = U(n+1) - U(p) + U(p+i+1)
+     end do
+     do i = p-C-1, p-2
         do j = i, 0, -1
            alpha = (U(n+1)-U(n-j))/(U(n-j+i+2)-U(n-j))
            Pw(:,n-j) = (Pw(:,n-j)-(1-alpha)*Pw(:,n-j-1))/alpha
         end do
      end do
-     U(n+p+1) = U(n+p) + (U(2*p)-U(2*p-1)) ! Set last knot
   end if
 end subroutine UnclampKnot
 
@@ -803,19 +804,21 @@ subroutine Clamp(d,n,p,U,Pw,l,r,V,Qw)
   call ClampKnot(d,n,p,V,Qw,l,r)
 end subroutine Clamp
 
-subroutine Unclamp(d,n,p,U,Pw,l,r,V,Qw)
+subroutine Unclamp(d,n,p,U,Pw,C,l,r,V,Qw)
   use bspline
   implicit none
   integer(kind=4), intent(in)  :: d
   integer(kind=4), intent(in)  :: n, p
   real   (kind=8), intent(in)  :: U(0:n+p+1)
   real   (kind=8), intent(in)  :: Pw(d,0:n)
+  integer(kind=4), intent(in)  :: C
   logical(kind=4), intent(in)  :: l, r
   real   (kind=8), intent(out) :: V(0:n+p+1)
   real   (kind=8), intent(out) :: Qw(d,0:n)
   V  = U
   Qw = Pw
-  call UnclampKnot(d,n,p,V,Qw,l,r)
+  call ClampKnot(d,n,p,V,Qw,l,r)
+  call UnclampKnot(d,n,p,V,Qw,C,l,r)
 end subroutine Unclamp
 
 subroutine RefineKnotVector(d,n,p,U,Pw,r,X,Ubar,Qw)

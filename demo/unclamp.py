@@ -1,7 +1,7 @@
 from igakit.cad import *
 
 c1 = circle(radius=1, angle=Pi/2)
-c2 = c1.copy().unclamp()
+c2 = c1.copy().unclamp(0)
 
 from igakit.plot import plt
 import sys

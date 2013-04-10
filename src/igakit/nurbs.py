@@ -16,16 +16,16 @@ class NURBS(object):
 
     Parameters
     ----------
-    control : array_like or 2-tuple of array_like
-        Control points and optional rational weights.
     knots : sequence of array_like
         Knot vectors. The number of knot vectors will define what kind
         of NURBS object is created (1=curve, 2=surface, 3=volume).
+    control : array_like or 2-tuple of array_like
+        Control points and optional rational weights.
+    fields : array_like, optional
+       Additional fields.
     weights : array_like, optional
        Rational weights. If weights are omitted, the object will be
        non-rational (B-spline).
-    fields : array_like, optional
-       Additional fields.
 
     Attributes
     ----------
@@ -1195,6 +1195,13 @@ class NURBS(object):
         """
         Extract lower dimensional NURBS object.
 
+        Parameters
+        ----------
+        axis: int
+            index of axis along which to extract.
+        value: float
+            parametric value from which to extract.
+
         Examples
         --------
 
@@ -1261,9 +1268,9 @@ class NURBS(object):
         Parameters
         ----------
         axis : int
-            index of axis along which to extract boundary
+            index of axis along which to extract boundary.
         side : int
-            side of axis from which to extract the boundary
+            side of axis from which to extract the boundary.
 
         """
         assert self.dim > 1

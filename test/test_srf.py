@@ -1,10 +1,9 @@
 import bootstrap
 import numpy as np
-from igakit.igalib import srf
+from igakit.nurbs  import NURBS
+from igakit.igalib import bsp
 
-def test_srf_ev(VERB=0, PLOT=0):
-    if VERB: print(srf.Evaluate.__doc__)
-
+def test_srf_ev(PLOT=0):
     p = 2
     q = 1
     U = np.asarray([0,0,0, 1,1,1], dtype=float)
@@ -23,8 +22,8 @@ def test_srf_ev(VERB=0, PLOT=0):
     u = np.linspace(U[0], U[-1], 31)
     v = np.linspace(V[0], V[-1], 10)
 
-    Cw = srf.Evaluate(p,U,q,V,Pw,u,v)
-    Dw = srf.Evaluate(p,U,q,V,Pw,U,V)
+    Cw = bsp.Evaluate2(p,U,q,V,Pw,u,v)
+    Dw = bsp.Evaluate2(p,U,q,V,Pw,U,V)
 
     P = Pw[:,:,:2] / Pw[:,:,2, None]
     C = Cw[:,:,:2] / Cw[:,:,2, None]
@@ -54,43 +53,42 @@ def test_srf_ev(VERB=0, PLOT=0):
 
     plt.axis("equal")
 
-def test_srf_ki(VERB=0, PLOT=0):
-    if VERB: print(srf.RefineKnotVector.__doc__)
-
+def test_srf_ki(PLOT=0):
     p = 2
     q = 1
-
     U = np.asarray([0,0,0, 1,1,1], dtype=float)
     V = np.asarray([0,0,     1,1], dtype=float)
-
     n = len(U)-1-(p+1)
     m = len(V)-1-(q+1)
-    Pw = np.zeros((n+1,m+1,3))
-    Pw[0,0,:] = [0.0, 0.5, 1.0]
-    Pw[1,0,:] = [0.5, 0.5, 1.0]
-    Pw[2,0,:] = [0.5, 0.0, 1.0]
-    Pw[0,1,:] = [0.0, 1.0, 1.0]
-    Pw[1,1,:] = [1.0, 1.0, 1.0]
-    Pw[2,1,:] = [1.0, 0.0, 1.0]
+    Pw = np.zeros((n+1,m+1,4))
+    Pw[0,0,:] = [0.0, 0.5, 0.0, 1.0]
+    Pw[1,0,:] = [0.5, 0.5, 0.0, 1.0]
+    Pw[2,0,:] = [0.5, 0.0, 0.0, 1.0]
+    Pw[0,1,:] = [0.0, 1.0, 0.0, 1.0]
+    Pw[1,1,:] = [1.0, 1.0, 0.0, 1.0]
+    Pw[2,1,:] = [1.0, 0.0, 0.0, 1.0]
     Pw[1,:,:] *= np.sqrt(2)/2
+    nurbs = NURBS([U,V],Pw)
 
     X = np.asarray([])
     Y = np.asarray([])
-    Ubar, Vbar, Qw = srf.RefineKnotVector(p,U,q,V,Pw,X,Y)
+    nrb = nurbs.copy().refine(0,X).refine(1,Y)
+    (Ubar, Vbar), Qw = nrb.knots, nrb.control
     assert np.allclose(U,  Ubar)
     assert np.allclose(V,  Vbar)
     assert np.allclose(Pw, Qw)
 
     X = np.asarray([.25, 0.5])#;X = np.asarray([])
     Y = np.asarray([0.5, .75])#;Y = np.asarray([])
-    Ubar, Vbar, Qw = srf.RefineKnotVector(p,U,q,V,Pw,X,Y)
+    nrb = nurbs.refine(0,X).refine(1,Y)
+    (Ubar, Vbar), Qw = nrb.knots, nrb.control
 
     u = np.linspace(Ubar[0], Ubar[-1], 31)
     v = np.linspace(Vbar[0], Vbar[-1], 10)
-    Cw = srf.Evaluate(p,Ubar,q,Vbar,Qw,u,v)
+    Cw = bsp.Evaluate2(p,Ubar,q,Vbar,Qw,u,v)
 
-    Q = Qw[:,:,:2] / Qw[:,:,2, None]
-    C = Cw[:,:,:2] / Cw[:,:,2, None]
+    Q = Qw[:,:,:2] / Qw[:,:,3,None]
+    C = Cw[:,:,:2] / Cw[:,:,3,None]
 
     if not PLOT: return
     plt.figure()
@@ -112,41 +110,40 @@ def test_srf_ki(VERB=0, PLOT=0):
 
     plt.axis("equal")
 
-def test_srf_de(VERB=0, PLOT=0):
-    if VERB: print(srf.DegreeElevate.__doc__)
-
+def test_srf_de(PLOT=0):
     p = 2
     q = 1
     U = np.asarray([0,0,0, 1,1,1], dtype=float)
     V = np.asarray([0,0,     1,1], dtype=float)
     n = len(U)-1-(p+1)
     m = len(V)-1-(q+1)
-    Pw = np.zeros((n+1,m+1,3))
-    Pw[0,0,:] = [0.0, 0.5, 1.0]
-    Pw[1,0,:] = [0.5, 0.5, 1.0]
-    Pw[2,0,:] = [0.5, 0.0, 1.0]
-    Pw[0,1,:] = [0.0, 1.0, 1.0]
-    Pw[1,1,:] = [1.0, 1.0, 1.0]
-    Pw[2,1,:] = [1.0, 0.0, 1.0]
+    Pw = np.zeros((n+1,m+1,4))
+    Pw[0,0,:] = [0.0, 0.5, 0.0, 1.0]
+    Pw[1,0,:] = [0.5, 0.5, 0.0, 1.0]
+    Pw[2,0,:] = [0.5, 0.0, 0.0, 1.0]
+    Pw[0,1,:] = [0.0, 1.0, 0.0, 1.0]
+    Pw[1,1,:] = [1.0, 1.0, 0.0, 1.0]
+    Pw[2,1,:] = [1.0, 0.0, 0.0, 1.0]
     Pw[1,:,:] *= np.sqrt(2)/2
+    nurbs = NURBS([U,V],Pw)
 
-    #X = np.asarray([.25])
-    #Y = np.asarray([.75])
-    #U, V, Pw = srf.RefineKnotVector(p,U,q,V,Pw,X,Y)
+    nrb = nurbs.copy().elevate(0,0).elevate(1,0)
+    (Uh, Vh), Qw = nrb.knots, nrb.control
+    nrb = nurbs.copy().elevate(0,1).elevate(1,0)
+    (Uh, Vh), Qw = nrb.knots, nrb.control
+    nrb = nurbs.copy().elevate(0,0).elevate(1,1)
+    (Uh, Vh), Qw = nrb.knots, nrb.control
 
-    Uh, Vh, Qw = srf.DegreeElevate(p,U,q,V,Pw,0,0)
-    Uh, Vh, Qw = srf.DegreeElevate(p,U,q,V,Pw,1,0)
-    Uh, Vh, Qw = srf.DegreeElevate(p,U,q,V,Pw,0,1)
     r, s = 1, 2
-    Uh, Vh, Qw = srf.DegreeElevate(p,U,q,V,Pw,r,s)
+    nrb = nurbs.copy().elevate(0,r).elevate(1,s)
+    (Uh, Vh), Qw = nrb.knots, nrb.control
     ph = p+r; qh = q+s;
-
     u = np.linspace(Uh[0], Uh[-1], 31)
     v = np.linspace(Vh[0], Vh[-1], 10)
-    Cw = srf.Evaluate(ph,Uh,qh,Vh,Qw,u,v)
+    Cw = bsp.Evaluate2(ph,Uh,qh,Vh,Qw,u,v)
 
-    Q = Qw[:,:,:2] / Qw[:,:,2, None]
-    C = Cw[:,:,:2] / Cw[:,:,2, None]
+    Q = Qw[:,:,:2] / Qw[:,:,3, None]
+    C = Cw[:,:,:2] / Cw[:,:,3, None]
 
     if not PLOT: return
     plt.figure()
@@ -169,13 +166,12 @@ def test_srf_de(VERB=0, PLOT=0):
     plt.axis("equal")
 
 if __name__ == '__main__':
-    VERB=1
     try:
         from matplotlib import pylab as plt
         PLOT=1
     except ImportError:
         PLOT=0
-    if 1: test_srf_ev(VERB=VERB, PLOT=PLOT)
-    if 1: test_srf_ki(VERB=VERB, PLOT=PLOT)
-    if 1: test_srf_de(VERB=VERB, PLOT=PLOT)
+    if 1: test_srf_ev(PLOT=PLOT)
+    if 1: test_srf_ki(PLOT=PLOT)
+    if 1: test_srf_de(PLOT=PLOT)
     if PLOT: plt.show()

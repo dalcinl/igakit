@@ -1,9 +1,9 @@
 import bootstrap
 import numpy as np
-from igakit.igalib import vol
+from igakit.nurbs  import NURBS
+from igakit.igalib import bsp
 
-def test_vol_ki(VERB=0, PLOT=0):
-    if VERB: print(vol.RefineKnotVector.__doc__)
+def test_vol_ki(PLOT=0):
 
     px = 2
     py = 1
@@ -35,14 +35,13 @@ def test_vol_ki(VERB=0, PLOT=0):
 
     Pw[1,:,:,:] *= np.sqrt(2)/2
 
+    nurbs = NURBS([Ux,Uy,Uz],Pw)
+
     X = np.asarray([], dtype=float)
     Y = np.asarray([], dtype=float)
     Z = np.asarray([], dtype=float)
-    Vx, Vy, Vz, Qw = vol.RefineKnotVector(px,Ux,
-                                          py,Uy,
-                                          pz,Uz,
-                                          Pw,
-                                          X,Y,Z)
+    nrb = nurbs.copy().refine(0,X).refine(1,Y).refine(2,Z)
+    (Vx, Vy, Vz), Qw = nrb.knots, nrb.control
     assert np.allclose(Ux, Vx)
     assert np.allclose(Uy, Vy)
     assert np.allclose(Uz, Vz)
@@ -51,15 +50,12 @@ def test_vol_ki(VERB=0, PLOT=0):
     X = np.asarray([0.25, 0.50])
     Y = np.asarray([0.50, 0.75])
     Z = np.asarray([0.25, 0.75])
-    Vx, Vy, Vz, Qw = vol.RefineKnotVector(px,Ux,
-                                          py,Uy,
-                                          pz,Uz,
-                                          Pw,
-                                          X,Y,Z)
+    nrb = nurbs.copy().refine(0,X).refine(1,Y).refine(2,Z)
+    (Vx, Vy, Vz), Qw = nrb.knots, nrb.control
     x = np.linspace(Vx[0], Vx[-1], 15)
     y = np.linspace(Vy[0], Vy[-1], 5)
     z = np.linspace(Vy[0], Vy[-1], 4)
-    Cw = vol.Evaluate(px,Vx,py,Vy,pz,Vz,Qw,x,y,z)
+    Cw = bsp.Evaluate3(px,Vx,py,Vy,pz,Vz,Qw,x,y,z)
 
     Q = Qw[:,:,:,:3] / Qw[:,:,:,3,None]
     C = Cw[:,:,:,:3] / Cw[:,:,:,3,None]
@@ -89,8 +85,7 @@ def test_vol_ki(VERB=0, PLOT=0):
 
     plt.axis("equal")
 
-def test_vol_de(VERB=0, PLOT=0):
-    if VERB: print(vol.DegreeElevate.__doc__)
+def test_vol_de(PLOT=0):
 
     px = 2
     py = 1
@@ -122,22 +117,18 @@ def test_vol_de(VERB=0, PLOT=0):
 
     Pw[1,:,:,:] *= np.sqrt(2)/2
 
-    Vx, Vy, Vz, Qw = vol.DegreeElevate(px,Ux,
-                                       py,Uy,
-                                       pz,Uz,
-                                       Pw,
-                                       0,0,0)
+    nurbs = NURBS([Ux,Uy,Uz],Pw)
+
+    nrb = nurbs.copy().elevate(0,0).elevate(1,0).elevate(2,0)
+    (Vx, Vy, Vz), Qw = nrb.knots, nrb.control
     assert np.allclose(Ux, Vx)
     assert np.allclose(Uy, Vy)
     assert np.allclose(Uz, Vz)
     assert np.allclose(Pw, Qw)
 
     tx, ty, tz = 1, 2, 2
-    Vx, Vy, Vz, Qw = vol.DegreeElevate(px,Ux,
-                                       py,Uy,
-                                       pz,Uz,
-                                       Pw,
-                                       tx,ty,tz)
+    nrb = nurbs.copy().elevate(0,tx).elevate(1,ty).elevate(2,tz)
+    (Vx, Vy, Vz), Qw = nrb.knots, nrb.control
     qx = px + tx
     qy = py + ty
     qz = pz + tz
@@ -145,7 +136,7 @@ def test_vol_de(VERB=0, PLOT=0):
     x = np.linspace(Vx[0], Vx[-1], 15)
     y = np.linspace(Vy[0], Vy[-1], 5)
     z = np.linspace(Vz[0], Vz[-1], 4)
-    Cw = vol.Evaluate(qx,Vx,qy,Vy,qz,Vz,Qw,x,y,z)
+    Cw = bsp.Evaluate3(qx,Vx,qy,Vy,qz,Vz,Qw,x,y,z)
 
     Q = Qw[:,:,:,:3] / Qw[:,:,:,3,None]
     C = Cw[:,:,:,:3] / Cw[:,:,:,3,None]
@@ -177,13 +168,12 @@ def test_vol_de(VERB=0, PLOT=0):
 
 
 if __name__ == '__main__':
-    VERB=1
     try:
         from matplotlib import pylab as plt
         from mpl_toolkits.mplot3d import Axes3D
         PLOT=1
     except ImportError:
         PLOT=0
-    if 1: test_vol_ki(VERB=VERB, PLOT=PLOT)
-    if 1: test_vol_de(VERB=VERB, PLOT=PLOT)
+    if 1: test_vol_ki(PLOT=PLOT)
+    if 1: test_vol_de(PLOT=PLOT)
     if PLOT: plt.show()

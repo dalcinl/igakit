@@ -1,7 +1,7 @@
 import bootstrap
 import numpy as np
 from igakit.igalib import iga
-from igakit.igalib import srf
+from igakit.igalib import bsp
 
 def test_iga_bd1(VERB=0, PLOT=0):
     if VERB: print(iga.BasisData.__doc__)
@@ -180,7 +180,7 @@ def test_fem_2d(VERB=0, PLOT=0):
     # interpolate solution
     x = np.linspace(Ux[0],Ux[-1],25)
     y = np.linspace(Uy[0],Uy[-1],25)
-    z = srf.Evaluate(px,Ux,py,Uy,X,x,y)
+    z = bsp.Evaluate2(px,Ux,py,Uy,X,x,y)
     x, y = np.meshgrid(x,y)
     z.shape = z.shape[:-1]
 
@@ -267,7 +267,7 @@ def test_col_2d(VERB=0, PLOT=0):
     # interpolate solution
     x = np.linspace(Ux[0],Ux[-1],25)
     y = np.linspace(Uy[0],Uy[-1],25)
-    z = srf.Evaluate(px,Ux,py,Uy,X,x,y)
+    z = bsp.Evaluate2(px,Ux,py,Uy,X,x,y)
     x, y = np.meshgrid(x,y)
     z.shape = z.shape[:-1]
 

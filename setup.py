@@ -25,8 +25,10 @@ def setup_package():
                       sources = ['src/igakit/igalib.pyf', 
                                  'src/igakit/igalib.f90'],
                       f2py_options = ['--quiet'],
-                      define_macros = [#('F2PY_REPORT_ATEXIT', 0),
-                                       ('F2PY_REPORT_ON_ARRAY_COPY', 0)]),
+                      define_macros = [('F2PY_REPORT_ON_ARRAY_COPY', 0),
+                                       #('F2PY_REPORT_ATEXIT', 0),
+                                       ]
+                      ),
             ],
           )
     

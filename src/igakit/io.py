@@ -326,41 +326,42 @@ class VTK(object):
             vectors[i] = (name, array)
 
         fh = open(filename, 'wb')
+        fh_write = lambda s: fh.write(s.encode('ascii'))
 
         header = '# vtk DataFile Version %d.%d'
         version = (2, 0)
-        fh.write(header % version)
-        fh.write('\n')
+        fh_write(header % version)
+        fh_write('\n')
         title = self.title
-        fh.write(title[:255])
-        fh.write('\n')
+        fh_write(title[:255])
+        fh_write('\n')
 
         format = 'BINARY'
-        fh.write(format)
-        fh.write('\n')
+        fh_write(format)
+        fh_write('\n')
 
         if control:
             dataset_type = 'STRUCTURED_GRID'
-            fh.write('DATASET %s' % dataset_type);
-            fh.write('\n')
-            fh.write('DIMENSIONS %d %d %d' % dimensions)
-            fh.write('\n')
-            fh.write('POINTS %d %s' % (len(points), 'double'))
-            fh.write('\n')
+            fh_write('DATASET %s' % dataset_type);
+            fh_write('\n')
+            fh_write('DIMENSIONS %d %d %d' % dimensions)
+            fh_write('\n')
+            fh_write('POINTS %d %s' % (len(points), 'double'))
+            fh_write('\n')
             points.astype('>d').tofile(fh)
-            fh.write('\n')
+            fh_write('\n')
         else:
             dataset_type = 'RECTILINEAR_GRID'
-            fh.write('DATASET %s' % dataset_type);
-            fh.write('\n')
-            fh.write('DIMENSIONS %d %d %d' % dimensions)
-            fh.write('\n')
+            fh_write('DATASET %s' % dataset_type);
+            fh_write('\n')
+            fh_write('DIMENSIONS %d %d %d' % dimensions)
+            fh_write('\n')
             for X, array in zip("XYZ", coordinates):
                 label = X+'_COORDINATES'
-                fh.write('%s %s %s' % (label, len(array), 'double'))
-                fh.write('\n')
+                fh_write('%s %s %s' % (label, len(array), 'double'))
+                fh_write('\n')
                 array.astype('>d').tofile(fh)
-                fh.write('\n')
+                fh_write('\n')
 
         if (not scalars and
             not vectors):
@@ -369,30 +370,30 @@ class VTK(object):
             return
 
         data_type = 'POINT_DATA'
-        fh.write('%s %d' % (data_type, len(points)))
-        fh.write('\n')
+        fh_write('%s %d' % (data_type, len(points)))
+        fh_write('\n')
 
         for i, (name, array) in enumerate(scalars):
             attr_type = 'SCALARS'
             attr_name = name or (attr_type.lower() + str(i))
             attr_name = attr_name.replace(' ', '_')
-            fh.write('%s %s %s' %(attr_type, attr_name, 'double'))
-            fh.write('\n')
+            fh_write('%s %s %s' %(attr_type, attr_name, 'double'))
+            fh_write('\n')
             lookup_table = 'default'
             lookup_table = lookup_table.replace(' ', '_')
-            fh.write('LOOKUP_TABLE %s' % lookup_table)
-            fh.write('\n')
+            fh_write('LOOKUP_TABLE %s' % lookup_table)
+            fh_write('\n')
             array.astype('>d').tofile(fh)
-            fh.write('\n')
+            fh_write('\n')
 
         for i, (name, array) in enumerate(vectors):
             attr_type = 'VECTORS'
             attr_name = name or (attr_type.lower() + str(i))
             attr_name = attr_name.replace(' ', '_')
-            fh.write('%s %s %s' %(attr_type, attr_name, 'double'))
-            fh.write('\n')
+            fh_write('%s %s %s' %(attr_type, attr_name, 'double'))
+            fh_write('\n')
             array.astype('>d').tofile(fh)
-            fh.write('\n')
+            fh_write('\n')
 
         fh.flush()
         fh.close()

@@ -22,8 +22,9 @@ def setup_package():
           package_dir = {'igakit' : 'src/igakit'},
           ext_modules  = [
             Extension('igakit.igalib',
-                      sources = ['src/igakit/igalib.pyf', 
-                                 'src/igakit/igalib.f90'],
+                      sources = ['src/igakit/igalib.pyf',
+                                 'src/igakit/igalib.f90',
+                                 ],
                       f2py_options = ['--quiet'],
                       define_macros = [('F2PY_REPORT_ON_ARRAY_COPY', 0),
                                        #('F2PY_REPORT_ATEXIT', 0),
@@ -31,6 +32,6 @@ def setup_package():
                       ),
             ],
           )
-    
+
 if __name__ == "__main__":
     setup_package()

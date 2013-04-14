@@ -1223,21 +1223,27 @@ class NURBS(object):
         (4, 3)
         >>> srf.degree
         (3, 2)
-        >>> crv = srf.extract(0,u)
+        >>> crv = srf.extract(1,v)
         >>> crv.shape
-        (3,)
+        (4,)
         >>> crv.degree
-        (2,)
+        (3,)
+        >>> pnt = crv.extract(0,u)
+        >>> pnt.shape
+        ()
+        >>> pnt.degree
+        ()
         >>> p1 = vol.evaluate(u,v,w)
         >>> p2 = srf.evaluate(u,v)
-        >>> p3 = crv.evaluate(v)
+        >>> p3 = crv.evaluate(u)
+        >>> p4 = pnt.evaluate()
         >>> np.allclose(p1, p2, rtol=0, atol=1e-15)
         True
-        >>> np.allclose(p2, p3, rtol=0, atol=1e-15)
+        >>> np.allclose(p1, p3, rtol=0, atol=1e-15)
         True
-
+        >>> np.allclose(p1, p4, rtol=0, atol=1e-15)
+        True
         """
-        assert self.dim > 1
         axis = range(self.dim)[axis]
         p = self.degree[axis]
         U = self.knots[axis]
@@ -1273,7 +1279,6 @@ class NURBS(object):
             side of axis from which to extract the boundary.
 
         """
-        assert self.dim > 1
         assert side in (0, 1)
         axis = range(self.dim)[axis]
         p = self.degree[axis]

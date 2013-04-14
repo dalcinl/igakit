@@ -175,6 +175,13 @@ interface
        real   (kind=8), intent(c,out) :: Cw(d)
      end subroutine Extract
 
+     subroutine Evaluate0(d,Pw,Cw)
+       !f2py threadsafe
+       integer(kind=4), intent(hide), check(d>=1) :: d
+       real   (kind=8), intent(in)  :: Pw(d)
+       real   (kind=8), intent(out) :: Cw(d)
+     end subroutine Evaluate0
+
      subroutine Evaluate1(d,n,p,U,Pw,r,X,Cw)
        !f2py threadsafe
        integer(kind=4), intent(hide), check(d>=1) :: d

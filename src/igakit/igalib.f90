@@ -861,6 +861,13 @@ subroutine Extract(d,n,p,U,Pw,x,Cw)
   call CornerCut(d,n,p,U,Pw,x,Cw)
 end subroutine Extract
 
+subroutine Evaluate0(d,Pw,Cw)
+  integer(kind=4), intent(in)  :: d
+  real   (kind=8), intent(in)  :: Pw(d)
+  real   (kind=8), intent(out) :: Cw(d)
+  Cw = Pw
+end subroutine Evaluate0
+
 subroutine Evaluate1(d,n,p,U,Pw,r,X,Cw)
   use bspline
   implicit none

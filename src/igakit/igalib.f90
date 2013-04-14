@@ -362,46 +362,48 @@ subroutine ClampKnot(d,n,p,U,Pw,l,r)
   real   (kind=8), intent(inout) :: U(0:n+p+1)
   real   (kind=8), intent(inout) :: Pw(d,0:n)
   logical(kind=4), intent(in)    :: l, r
+  real   (kind=8) :: uu
   integer(kind=4) :: k, s
   if (l) then ! Clamp at left end
+     uu = U(p)
+     s = FindMult(p,uu,p,U)
      k = p
-     s = FindMult(p,U(p),p,U)
-     if (s < p) call KntIns(d,n,p,U,Pw,k,s)
+     if (s < p) call KntIns(d,n,p,U,Pw,uu,k,p-s)
      U(0:p-1) = U(p)
   end if
   if (r) then ! Clamp at right end
-     k = n+1
-     s = FindMult(n,U(n+1),p,U)
-     if (s < p) call KntIns(d,n,p,U,Pw,k,s)
+     uu = U(n+1)
+     s = FindMult(n,uu,p,U)
+     k = n+s
+     if (s < p) call KntIns(d,n,p,U,Pw,uu,k,p-s)
      U(n+2:n+p+1) = U(n+1)
   end if
 contains
-  subroutine KntIns(d,n,p,U,Pw,k,s)
+  subroutine KntIns(d,n,p,U,Pw,uu,k,r)
       implicit none
       integer(kind=4), intent(in)    :: d
       integer(kind=4), intent(in)    :: n, p
       real   (kind=8), intent(in)    :: U(0:n+p+1)
       real   (kind=8), intent(inout) :: Pw(d,0:n)
-      integer(kind=4), intent(in)    :: k, s
-      integer(kind=4) :: r, i, j, idx
-      real   (kind=8) :: uu, alpha, Rw(d,0:p), Qw(d,0:2*p)
-      uu = U(k)
-      r = p-s
-      Qw(:,0) = Pw(:,k-p)
-      Rw(:,0:p-s) = Pw(:,k-p:k-s)
+      real   (kind=8), intent(in)    :: uu
+      integer(kind=4), intent(in)    :: k, r
+      integer(kind=4) :: i, j, idx
+      real   (kind=8) :: alpha, Rw(d,0:r), Qw(d,0:r+r-1)
+      Qw(:,0)   = Pw(:,k-p)
+      Rw(:,0:r) = Pw(:,k-p:k-p+r)
       do j = 1, r
          idx = k-p+j
-         do i = 0, p-j-s
-            alpha = (uu-U(idx+i))/(U(i+k+1)-U(idx+i))
-            Rw(:,i) = alpha*Rw(:,i+1)+(1-alpha)*Rw(:,i)
+         do i = 0, r-j
+            alpha = (uu-U(idx+i))/(U(k+i+1)-U(idx+i))
+            Rw(:,i) = alpha*Rw(:,i+1)+(1.0-alpha)*Rw(:,i)
          end do
-         Qw(:,j) = Rw(:,0)
-         Qw(:,p-j-s+r) = Rw(:,p-j-s)
+         Qw(:,j)     = Rw(:,0)
+         Qw(:,r+r-j) = Rw(:,r-j)
       end do
       if (k == p) then ! left end
-         Pw(:,0:r-1) = Qw(:,r:r+r-1)
+         Pw(:,0:r-1)   = Qw(:,r:r+r-1)
       else             ! right end
-         Pw(:,n-r+1:n) = Qw(:,p-r:p-1)
+         Pw(:,n-r+1:n) = Qw(:,1:r)
       end if
     end subroutine KntIns
 end subroutine ClampKnot

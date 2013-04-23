@@ -5,10 +5,14 @@ from igakit.transform import transform
 # -----
 
 Pi = np.pi
-deg2rad = np.deg2rad
-rad2deg = np.rad2deg
 radians = np.radians
 degrees = np.degrees
+try:
+    deg2rad = np.deg2rad
+    rad2deg = np.rad2deg
+except AttributeError:
+    deg2rad = np.radians
+    rad2deg = np.degrees
 
 # -----
 
@@ -315,6 +319,8 @@ def compat(*nurbs, **kargs):
     def MergeKnots(nurbs, axes):
         try: np_unique = np.lib.arraysetops.unique
         except AttributeError: np_unique = np.unique1d
+        try: np_in1d = np.lib.arraysetops.in1d
+        except AttributeError: np_in1d = np.setmember1d
         m, n = len(nurbs), len(axes)
         insert = np.empty((m, n), dtype=object)
         for j, axis in enumerate(axes):
@@ -332,7 +338,7 @@ def compat(*nurbs, **kargs):
             u = np_unique(np.concatenate(breaks))
             s = np.zeros(u.size, dtype='i')
             for (ui, si) in zip(breaks, mults):
-                mask = np.in1d(u, ui)
+                mask = np_in1d(u, ui)
                 s[mask] = np.maximum(s[mask], si)
                 masks.append(mask)
             # Compute knots to insert

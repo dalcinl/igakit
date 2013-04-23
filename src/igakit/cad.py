@@ -402,7 +402,7 @@ def extrude(nrb, displ, axis=None):
     UVW = nrb.knots + ([0,0,1,1],)
     return NURBS(UVW, Cw)
 
-def revolve(nrb, point, axis, angle=None):
+def revolve(nrb, point, axis=2, angle=None):
     """
     Construct a NURBS surface/volume by
     revolving a NURBS curve/surface.
@@ -411,14 +411,14 @@ def revolve(nrb, point, axis, angle=None):
     ----------
     nrb : NURBS
     point : array_like
-    axis : array_like or int
-    angle : float, optional
+    axis : int or array_like, optional
+    angle : float or 2-tuple of floats, optional
 
     Example
     -------
 
     >>> crv = line(1,2)
-    >>> srf = revolve(crv,  point=0, axis=2, angle=[Pi/2,2*Pi])
+    >>> srf = revolve(crv, point=0, axis=2, angle=[Pi/2,2*Pi])
     >>> vol = revolve(srf, point=3, axis=1, angle=-Pi/2)
 
     """

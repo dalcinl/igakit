@@ -329,7 +329,7 @@ def compat(*nurbs, **kargs):
                 mults.append(s.astype('i'))
             # Merge breaks and multiplicities
             masks = []
-            u = np.unique(np.concatenate(breaks))
+            u = np_unique(np.concatenate(breaks))
             s = np.zeros(u.size, dtype='i')
             for (ui, si) in zip(breaks, mults):
                 mask = np.in1d(u, ui)

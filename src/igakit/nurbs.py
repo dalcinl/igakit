@@ -318,19 +318,28 @@ class NURBS(object):
         SpanIndex = _bsp.SpanIndex
         return SpanIndex(p, U)
 
-    def breaks(self, axis=None):
+    def breaks(self, axis=None, mults=False):
         """
-        Breaks (unique knot values).
+        Breaks (unique knot values) and multiplicities.
         """
         try: np_unique = np.lib.arraysetops.unique
         except AttributeError: np_unique = np.unique1d
         axes = range(self.dim)
         if axis is None:
-            return [self.breaks(i) for i in axes]
+            return [self.breaks(i, mults) for i in axes]
         i = axes[axis]
         p = self.degree[i]
         U = self.knots[i]
-        return np_unique(U[p:-p])
+        if not mults:
+            return np_unique(U[p:-p])
+        u, idx = np_unique(U[p:-p], return_inverse=True)
+        s = np.bincount(idx)
+        FindMult = _bsp.FindMult
+        m = len(U)-1; n = m-p-1;
+        for k, j in ((p, 0), (n, -1)):
+            mult = FindMult(p, U, u[j], k)
+            s[j] = min(mult, p)
+        return u, s
 
     #
 
@@ -780,8 +789,9 @@ class NURBS(object):
         assert U[p] <= value <= U[-p-1]
         #
         mult = _bsp.FindMult(p, U, value)
+        mult = min(mult, p)
         if times is None: times = mult
-        times = min(times, mult, p)
+        times = min(times, mult)
         assert times >= 0
         if times == 0: return self
         if value <= U[p]: return self

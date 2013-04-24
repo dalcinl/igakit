@@ -330,12 +330,9 @@ def compat(*nurbs, **kargs):
             # Knot vector -> breaks & multiplicities
             breaks = []; mults = [];
             for nrb in nurbs:
-                p, U = nrb.degree[axis], nrb.knots[axis]
-                u, i = np_unique(U[p+1:-p-1], return_inverse=True)
-                if i.size: s = np.bincount(i)
-                else:      s = np.empty(0)
-                breaks.append(u.astype('d'))
-                mults.append(s.astype('i'))
+                u, s = nrb.breaks(axis, mults=True)
+                breaks.append(u[1:-1])
+                mults .append(s[1:-1])
             # Merge breaks and multiplicities
             masks = []
             u = np_unique(np.concatenate(breaks))

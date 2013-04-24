@@ -17,6 +17,7 @@ testdemo:
 	$(PYTHON) demo/sweep.py    $(BACKEND)
 	$(PYTHON) demo/ruled.py    $(BACKEND)
 	$(PYTHON) demo/revolve.py  $(BACKEND)
+	$(PYTHON) demo/refine.py   $(BACKEND)
 .PHONY: doctest
 doctest:
 	$(PYTHON) -m doctest src/igakit/transform.py
@@ -41,7 +42,7 @@ install_home:
 	$(PYTHON) setup.py install --home=${HOME}
 
 .PHONY: uninstall uninstall_home uninstall_user
-uninstall: uninstall_user uninstall_home
+uninstall: uninstall_user
 uninstall_user:
 	-$(RM) -r `$(PYTHON) -m site --user-site`/$(PACKAGE)*
 uninstall_home:

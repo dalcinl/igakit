@@ -664,3 +664,97 @@ def join(nrb1, nrb2, axis):
     return nrb
 
 # -----
+
+def refine(nrb, factor=None, degree=None, continuity=None):
+    """
+    Refine a NURBS object by degree elevation and knot insertion.
+
+    Parameters
+    ----------
+    nrb : NURBS
+    factor : int or sequence of int, optional
+    degree : int or sequence of int, optional
+    continuity : int or sequence of int, optional
+
+    """
+    try: np_unique = np.lib.arraysetops.unique
+    except AttributeError: np_unique = np.unique1d
+    def Arg(arg, defval):
+        defval = tuple(defval)
+        dim = len(defval)
+        if arg is None:
+            return defval
+        arg = np.asarray(arg, dtype=object)
+        if arg.ndim == 0:
+            return arg.repeat(dim)
+        assert arg.shape == (dim,)
+        for i, val in enumerate(arg):
+            if val is None:
+                arg[i] = defval[i]
+        return arg
+    #
+    nrb = nrb.clone()
+    dim = nrb.dim
+    # clamping
+    for axis in range(dim):
+        nrb.clamp(axis)
+    # degree elevation
+    degree = Arg(degree, nrb.degree)
+    degree = np.asarray(degree, dtype='i')
+    assert np.all(degree > 0)
+    for axis in range(dim):
+        p = degree[axis]
+        t = p - nrb.degree[axis]
+        if t > 0:
+            nrb.elevate(axis, t)
+        p = nrb.degree[axis]
+        degree[axis] = p
+    # knot refinement
+    factor = Arg(factor, np.ones(dim, 'i'))
+    for i, fact in enumerate(factor):
+        factor[i] = np.asarray(fact, dtype='i')
+        assert np.all(factor[i] > 0)
+    continuity = Arg(continuity, [-1]*dim)
+    continuity = np.asarray(continuity, dtype='i')
+    continuity[continuity<0] += degree[continuity<0]
+    assert np.all(continuity >= 0)
+    assert np.all(continuity < degree)
+    for axis in range(dim):
+        N = factor[axis]
+        C = continuity[axis]
+        p = nrb.degree[axis]
+        # breaks & multiplicities
+        u, s = nrb.breaks(axis, mults=True)
+        # compute knots to insert
+        assert N.ndim == 0 or N.size == u.size-1
+        delta_u = np.ediff1d(u)/N
+        u = u[:-1]; s = s[:-1];
+        if N.ndim == 0:
+            U = u[:,np.newaxis].repeat(N, axis=1)
+            step = np.arange(1, N, dtype='d')
+            U[:,1:] += np.outer(delta_u, step)
+            S = np.empty((s.size, N), dtype='i')
+            S[:,0] = (p-C-s).clip(0, None)
+            S[:,1:] = p-C
+            u = U.ravel()[1:]
+            s = S.ravel()[1:]
+        else:
+            pos = np.empty(N.size+1, dtype='i')
+            pos[0] = 0; np.cumsum(N, out=pos[1:])
+            U = np.empty(pos[-1], dtype='d')
+            S = np.empty(pos[-1], dtype='i')
+            for i, n in enumerate(N):
+                uu = np.arange(n, dtype='d')
+                uu *= delta_u[i]; uu += u[i]
+                a, b = pos[i], pos[i+1]
+                U[a:b] = uu
+                S[a] = max(p-C-s[i], 0)
+                S[a+1:b] = p-C
+            u = U[1:]
+            s = S[1:]
+        # insert knots
+        nrb.refine(axis, u.repeat(s))
+    #
+    return nrb
+
+# -----

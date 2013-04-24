@@ -227,12 +227,13 @@ def grid(shape, degree=2, continuity=None,
     else:
         assert shape.ndim == 1
         dim = shape.shape[0]
-    assert 1 <= dim <= 3
+        assert 1 <= dim <= 3
     #
     degree = np.asarray(degree, dtype='i')
     if degree.ndim == 0:
         degree = degree.repeat(dim)
     assert degree.shape == (dim,)
+    assert np.all(degree > 0)
     #
     if continuity is None:
         continuity = degree - 1
@@ -241,6 +242,8 @@ def grid(shape, degree=2, continuity=None,
         continuity = continuity.repeat(dim)
     assert continuity.shape == (dim,)
     continuity[continuity<0] += degree[continuity<0]
+    assert np.all(continuity >= 0)
+    assert np.all(continuity < degree)
     #
     limits = np.asarray(limits, dtype='d')
     if limits.ndim == 1:

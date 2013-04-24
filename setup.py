@@ -8,16 +8,16 @@ VERSION = '0.1'
 AUTHOR  = 'Lisandro Dalcin'
 EMAIL   = 'dalcinl@gmail.com'
 DESCR   = __doc__.strip()
+URL     = 'https://bitbucket.org/dalcinl/igakit'
+DLURL   = URL + '/get/default.tar.gz'
 
 def setup_package():
     from numpy.distutils.core import setup
     from numpy.distutils.core import Extension
-    setup(name=NAME,
-          version=VERSION,
-          author=AUTHOR,
-          author_email=EMAIL,
-          description=DESCR,
-          long_description=DESCR,
+    setup(name=NAME, version=VERSION,
+          author=AUTHOR, author_email=EMAIL,
+          description=DESCR, long_description=DESCR,
+          url=URL, download_url=DLURL,
           packages = ['igakit'],
           package_dir = {'igakit' : 'src/igakit'},
           ext_modules  = [

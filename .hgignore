@@ -1,2 +1,8 @@
 syntax: glob
 build
+dist
+MANIFEST
+__pycache__
+*.pyc
+*.pyo
+.tox

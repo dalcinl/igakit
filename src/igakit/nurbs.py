@@ -333,7 +333,7 @@ class NURBS(object):
         if not mults:
             return np_unique(U[p:-p])
         u, idx = np_unique(U[p:-p], return_inverse=True)
-        s = np.bincount(idx)
+        s = np.bincount(idx).astype('i')
         FindMult = _bsp.FindMult
         m = len(U)-1; n = m-p-1;
         for k, j in ((p, 0), (n, -1)):

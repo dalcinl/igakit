@@ -341,6 +341,20 @@ class NURBS(object):
             s[j] = min(mult, p)
         return u, s
 
+    def greville(self, axis=None):
+        """
+        Greville abscissae.
+        """
+        axes = range(self.dim)
+        if axis is None:
+            return [self.greville(i) for i in axes]
+        i = axes[axis]
+        p = self.degree[i]
+        U = self.knots[i]
+        Greville = _bsp.Greville
+        u = Greville(p, U)
+        return u
+
     #
 
     def copy(self):

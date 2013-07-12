@@ -294,7 +294,7 @@ class VTK(object):
         flag = bool(scalars or vectors)
         if not flag: fields = flag
         elif fields is None: fields = flag
-        out = nurbs.evaluate(*uvw, **dict(fields=fields))
+        out = nurbs(*uvw, **dict(fields=fields))
         if flag: C, F = out
         else:    C, F = out, out[..., 0:0]
 

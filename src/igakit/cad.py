@@ -46,7 +46,7 @@ def circle(radius=1, center=None, angle=None):
     >>> crv = circle()
     >>> crv.shape
     (9,)
-    >>> P = crv.evaluate([0, 0.25, 0.5, 0.75, 1])
+    >>> P = crv([0, 0.25, 0.5, 0.75, 1])
     >>> assert np.allclose(P[0], ( 1,  0, 0))
     >>> assert np.allclose(P[1], ( 0,  1, 0))
     >>> assert np.allclose(P[2], (-1,  0, 0))
@@ -56,7 +56,7 @@ def circle(radius=1, center=None, angle=None):
     >>> crv = circle(angle=3*Pi/2)
     >>> crv.shape
     (7,)
-    >>> P = crv.evaluate([0, 1/3., 2/3., 1])
+    >>> P = crv([0, 1/3., 2/3., 1])
     >>> assert np.allclose(P[0], ( 1,  0, 0))
     >>> assert np.allclose(P[1], ( 0,  1, 0))
     >>> assert np.allclose(P[2], (-1,  0, 0))
@@ -65,7 +65,7 @@ def circle(radius=1, center=None, angle=None):
     >>> crv = circle(radius=2, center=(1,1), angle=(Pi/2,-Pi/2))
     >>> crv.shape
     (5,)
-    >>> P = crv.evaluate([0, 0.5, 1])
+    >>> P = crv([0, 0.5, 1])
     >>> assert np.allclose(P[0], (1,  3, 0))
     >>> assert np.allclose(P[1], (3,  1, 0))
     >>> assert np.allclose(P[2], (1, -1, 0))
@@ -73,7 +73,7 @@ def circle(radius=1, center=None, angle=None):
     >>> crv = circle(radius=3, center=2, angle=Pi/2)
     >>> crv.shape
     (3,)
-    >>> P = crv.evaluate([0, 1])
+    >>> P = crv([0, 1])
     >>> assert np.allclose(P[0], ( 5, 0, 0))
     >>> assert np.allclose(P[1], ( 2, 3, 0))
 
@@ -561,18 +561,18 @@ def coons(curves):
     p, U = C10.degree[0], C10.knots[0]
     u0, u1 = U[p], U[-p-1]
     P = np.zeros((2,2,3), dtype='d')
-    P[0,0] = C10.evaluate(u0)
-    P[1,0] = C10.evaluate(u1)
-    P[0,1] = C11.evaluate(u0)
-    P[1,1] = C11.evaluate(u1)
+    P[0,0] = C10(u0)
+    P[1,0] = C10(u1)
+    P[0,1] = C11(u0)
+    P[1,1] = C11(u1)
     #
     q, V = C00.degree[0], C00.knots[0]
     v0, v1 = V[q], V[-q-1]
     Q = np.zeros((2,2,3), dtype='d')
-    Q[0,0] = C00.evaluate(v0)
-    Q[0,1] = C00.evaluate(v1)
-    Q[1,0] = C01.evaluate(v0)
-    Q[1,1] = C01.evaluate(v1)
+    Q[0,0] = C00(v0)
+    Q[0,1] = C00(v1)
+    Q[1,0] = C01(v0)
+    Q[1,1] = C01(v1)
     #
     assert np.allclose(P, Q, rtol=0, atol=1e-15)
     #

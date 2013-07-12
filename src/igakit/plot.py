@@ -106,7 +106,7 @@ class Plotter(object):
 
     def kpoint(self, nurbs, **kwargs):
         uvw = nurbs.breaks()
-        C = nurbs.evaluate(*uvw)
+        C = nurbs(*uvw)
         x, y, z = C.T
         #
         options = dict(kwargs)
@@ -138,7 +138,7 @@ class Plotter(object):
             a = np.linspace(u[0], u[-1], resolution)
             abc = list(uvw)
             abc[axis] = a
-            C = nurbs.evaluate(*abc)
+            C = nurbs(*abc)
             C = np.rollaxis(C, axis, -1)
             C = C.reshape((-1, a.size, 3))
             lines.extend(C)
@@ -172,7 +172,7 @@ class Plotter(object):
                 resolution = self.backend._resolution[2]
                 uvw = [np.linspace(U[p], U[-p-1], resolution)
                        for (p, U) in zip(nrb.degree, nrb.knots)]
-                C = nrb.evaluate(*uvw)
+                C = nrb(*uvw)
                 surfs.append(C)
         #
         options = dict(kwargs)
@@ -201,7 +201,7 @@ class Plotter(object):
         resolution = self.backend._resolution[1]
         p, U = nurbs.degree[0], nurbs.knots[0]
         u = np.linspace(U[p], U[-p-1], resolution)
-        C = nurbs.evaluate(u)
+        C = nurbs(u)
         x, y, z = C.T
         #
         options = dict(kwargs)
@@ -237,7 +237,7 @@ class Plotter(object):
             resolution = self.backend._resolution[2]
             uvw = [np.linspace(U[p], U[-p-1], resolution)
                    for (p, U) in zip(nrb.degree, nrb.knots)]
-            C = nrb.evaluate(*uvw)
+            C = nrb(*uvw)
             surfs.append(C)
         #
         options = dict(kwargs)

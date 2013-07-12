@@ -14,7 +14,7 @@ def seg_intersect(x1,x2,x3,x4):
 
 def curve_length(c,res=1000):
     u=np.linspace((c.knots[0])[0],(c.knots[0])[-1],res,endpoint=True)
-    C = c.evaluate(u)
+    C = c(u)
     L=0.
     for i in range(C.shape[0]-1):
         L += np.linalg.norm(C[i+1,:]-C[i,:])
@@ -104,7 +104,7 @@ C^1 by construction. I see the fortran routine but I do not think we
 yet have the python interface.
 """
 u=np.linspace(0,1,1000,endpoint=True)
-c=final.evaluate(u)
+c=final(u)
 plt.plot(x_b[:,0],x_b[:,1],'bo',markersize=ms)
 plt.plot(x_t[:,0],x_t[:,1],'bo',markersize=ms)
 plt.plot(c[:,0],c[:,1],'-y')

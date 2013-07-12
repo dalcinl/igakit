@@ -59,7 +59,7 @@ class NURBS(object):
     >>> U = [0,0,0, 1,1,1]           # knot vector
     >>> crv = NURBS([U], C, weights=w)
     >>> u = np.linspace(0,1,1000)
-    >>> xyz = crv.evaluate(u)
+    >>> xyz = crv(u)
     >>> x, y, z = xyz.T
     >>> r = np.sqrt(x**2+y**2)
     >>> np.allclose(r, 1, rtol=0, atol=1e-15)
@@ -77,7 +77,7 @@ class NURBS(object):
     >>> Cw[2,:] = [1.0, 0.0, 0.0, 1.0]
     >>> crv = NURBS([U], Cw)
     >>> u = np.linspace(0,1,1000)
-    >>> xyz = crv.evaluate(u)
+    >>> xyz = crv(u)
     >>> x, y, z = xyz.T
     >>> r = np.sqrt(x**2+y**2)
     >>> np.allclose(r, 1, rtol=0, atol=1e-15)
@@ -484,12 +484,12 @@ class NURBS(object):
         >>> vol1 = NURBS([U,V,W], C)
         >>> vol2 = vol1.clone().transpose([0,2,1])
         >>> u = 0.25; v = 0.50; w = 0.75
-        >>> xyz1 = vol1.evaluate(u,v,w)
-        >>> xyz2 = vol2.evaluate(u,w,v)
+        >>> xyz1 = vol1(u, v, w)
+        >>> xyz2 = vol2(u, w, v)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
         >>> vol3 = vol1.clone().transpose()
-        >>> xyz3 = vol3.evaluate(w,v,u)
+        >>> xyz3 = vol3(w,v,u)
         >>> np.allclose(xyz1, xyz3, rtol=0, atol=1e-15)
         True
 
@@ -534,9 +534,9 @@ class NURBS(object):
         >>> vol2 = vol1.clone().swap(1,2)
         >>> vol3 = vol1.clone().swap(0,-1)
         >>> u = 0.25; v = 0.50; w = 0.75
-        >>> xyz1 = vol1.evaluate(u,v,w)
-        >>> xyz2 = vol2.evaluate(u,w,v)
-        >>> xyz3 = vol3.evaluate(w,v,u)
+        >>> xyz1 = vol1(u, v, w)
+        >>> xyz2 = vol2(u, w, v)
+        >>> xyz3 = vol3(w, v, u)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
         >>> np.allclose(xyz1, xyz3, rtol=0, atol=1e-15)
@@ -579,7 +579,7 @@ class NURBS(object):
         >>> c2 = c1.copy()
         >>> c2 = c2.reverse()
         >>> u = 0.3
-        >>> (abs(c1.evaluate(u)-c2.evaluate(1.0-u))).max() < 1.0e-15
+        >>> (abs(c1(u)-c2(1.0-u))).max() < 1.0e-15
         True
 
         """
@@ -624,23 +624,23 @@ class NURBS(object):
         >>> C = np.random.rand(6,3)
         >>> U = [0,0,0,0.25,0.75,0.75,1,1,1]
         >>> c0 = NURBS([U], C)
-        >>> v0 = c0.evaluate([0,0.5,1])
+        >>> v0 = c0([0,0.5,1])
         >>> c1 = c0.copy().remap(0, -2, 2)
         >>> c1.knots[0].tolist()
         [-2.0, -2.0, -2.0, -1.0, 1.0, 1.0, 2.0, 2.0, 2.0]
-        >>> v1 = c1.evaluate([-2,0.0,2])
+        >>> v1 = c1([-2,0.0,2])
         >>> np.allclose(v0, v1, rtol=0, atol=1e-15)
         True
         >>> c2 = c0.copy().remap(0, None, 2)
         >>> c2.knots[0].tolist()
         [0.0, 0.0, 0.0, 0.5, 1.5, 1.5, 2.0, 2.0, 2.0]
-        >>> v2 = c2.evaluate([0,1.0,2])
+        >>> v2 = c2([0,1.0,2])
         >>> np.allclose(v0, v2, rtol=0, atol=1e-15)
         True
         >>> c3 = c0.copy().remap(0, -1, None)
         >>> c3.knots[0].tolist()
         [-1.0, -1.0, -1.0, -0.5, 0.5, 0.5, 1.0, 1.0, 1.0]
-        >>> v3 = c3.evaluate([-1,0.0,1])
+        >>> v3 = c3([-1,0.0,1])
         >>> np.allclose(v0, v3, rtol=0, atol=1e-15)
         True
 
@@ -688,10 +688,10 @@ class NURBS(object):
         >>> c3 = c2.clone().insert(0, 0.50, 2)
         >>> c4 = c3.clone().insert(0, 0.75, 3)
         >>> u = np.linspace(0,1,100)
-        >>> xyz1 = c1.evaluate(u)
-        >>> xyz2 = c2.evaluate(u)
-        >>> xyz3 = c3.evaluate(u)
-        >>> xyz4 = c4.evaluate(u)
+        >>> xyz1 = c1(u)
+        >>> xyz2 = c2(u)
+        >>> xyz3 = c3(u)
+        >>> xyz4 = c4(u)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
         >>> np.allclose(xyz1, xyz3, rtol=0, atol=1e-15)
@@ -710,8 +710,8 @@ class NURBS(object):
         >>> s2.shape
         (5, 5)
         >>> u = v = np.linspace(0,1,100)
-        >>> xyz1 = s1.evaluate(u, v)
-        >>> xyz2 = s2.evaluate(u, v)
+        >>> xyz1 = s1(u, v)
+        >>> xyz2 = s2(u, v)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
 
@@ -779,10 +779,10 @@ class NURBS(object):
         >>> c3.shape
         (5,)
         >>> u = np.linspace(0,1,100)
-        >>> xyz1 = c1.evaluate(u)
-        >>> xyz2 = c2.evaluate(u)
-        >>> xyz3 = c3.evaluate(u)
-        >>> xyz4 = c4.evaluate(u)
+        >>> xyz1 = c1(u)
+        >>> xyz2 = c2(u)
+        >>> xyz3 = c3(u)
+        >>> xyz4 = c4(u)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
         >>> np.allclose(xyz1, xyz3, rtol=0, atol=1e-15)
@@ -905,8 +905,8 @@ class NURBS(object):
         >>> c2.knots[0].tolist()
         [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0]
         >>> u = np.linspace(0,1,100)
-        >>> xyz1 = c1.evaluate(u)
-        >>> xyz2 = c2.evaluate(u)
+        >>> xyz1 = c1(u)
+        >>> xyz2 = c2(u)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
 
@@ -914,8 +914,8 @@ class NURBS(object):
         >>> c3.knots[0].tolist()
         [-2.0, -1.0, 0.0, 1.0, 1.0, 1.0]
         >>> u = np.linspace(0,1,100)
-        >>> xyz1 = c1.evaluate(u)
-        >>> xyz2 = c2.evaluate(u)
+        >>> xyz1 = c1(u)
+        >>> xyz2 = c2(u)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
 
@@ -923,8 +923,8 @@ class NURBS(object):
         >>> c4.knots[0].tolist()
         [0.0, 0.0, 0.0, 1.0, 2.0, 3.0]
         >>> u = np.linspace(0,1,100)
-        >>> xyz1 = c1.evaluate(u)
-        >>> xyz2 = c2.evaluate(u)
+        >>> xyz1 = c1(u)
+        >>> xyz2 = c2(u)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
 
@@ -992,9 +992,9 @@ class NURBS(object):
         >>> s3.shape
         (8, 7)
         >>> u = v = np.linspace(0,1,100)
-        >>> xyz1 = s1.evaluate(u, v)
-        >>> xyz2 = s2.evaluate(u, v)
-        >>> xyz3 = s3.evaluate(u, v)
+        >>> xyz1 = s1(u, v)
+        >>> xyz2 = s2(u, v)
+        >>> xyz3 = s3(u, v)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
         >>> np.allclose(xyz1, xyz3, rtol=0, atol=1e-15)
@@ -1065,8 +1065,8 @@ class NURBS(object):
         >>> c2.degree
         (4,)
         >>> u = np.linspace(0,1,100)
-        >>> xyz1 = c1.evaluate(u)
-        >>> xyz2 = c2.evaluate(u)
+        >>> xyz1 = c1(u)
+        >>> xyz2 = c2(u)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
 
@@ -1082,8 +1082,8 @@ class NURBS(object):
         >>> s2.degree
         (3, 2)
         >>> u = v = np.linspace(0,1,100)
-        >>> xyz1 = s1.evaluate(u, v)
-        >>> xyz2 = s2.evaluate(u, v)
+        >>> xyz1 = s1(u, v)
+        >>> xyz2 = s2(u, v)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
 
@@ -1132,8 +1132,8 @@ class NURBS(object):
         >>> crv = NURBS([U], C)
         >>> sub = crv.slice(0,0.5,0.75)
         >>> u = np.linspace(0.5,0.75,100)
-        >>> xyz1 = crv.evaluate(u)
-        >>> xyz2 = sub.evaluate(u)
+        >>> xyz1 = crv(u)
+        >>> xyz2 = sub(u)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=1e-15)
         True
 
@@ -1146,8 +1146,8 @@ class NURBS(object):
         >>> sub = srf.slice(0,1./3,2./3)
         >>> u = np.linspace(1./3,2./3,100)
         >>> v = np.linspace(0,1,100)
-        >>> xyz1 = srf.evaluate(u,v)
-        >>> xyz2 = sub.evaluate(u,v)
+        >>> xyz1 = srf(u, v)
+        >>> xyz2 = sub(u, v)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=2e-15)
         True
 
@@ -1164,8 +1164,8 @@ class NURBS(object):
         >>> u = np.linspace(1./3,2./3,100)
         >>> v = np.linspace(0.25,0.75,100)
         >>> w = np.linspace(0,1,100)
-        >>> xyz1 = vol.evaluate(u,v,w)
-        >>> xyz2 = sub.evaluate(u,v,w)
+        >>> xyz1 = vol(u, v, w)
+        >>> xyz2 = sub(u, v, w)
         >>> np.allclose(xyz1, xyz2, rtol=0, atol=2e-15)
         True
 
@@ -1257,10 +1257,10 @@ class NURBS(object):
         ()
         >>> pnt.degree
         ()
-        >>> p1 = vol.evaluate(u,v,w)
-        >>> p2 = srf.evaluate(u,v)
-        >>> p3 = crv.evaluate(u)
-        >>> p4 = pnt.evaluate()
+        >>> p1 = vol(u, v, w)
+        >>> p2 = srf(u, v)
+        >>> p3 = crv(u)
+        >>> p4 = pnt()
         >>> np.allclose(p1, p2, rtol=0, atol=1e-15)
         True
         >>> np.allclose(p1, p3, rtol=0, atol=1e-15)
@@ -1314,6 +1314,91 @@ class NURBS(object):
         return self.extract(axis, value)
 
     #
+
+    def __call__(self, u=None, v=None, w=None, fields=False):
+        """
+        Evaluate the NURBS object at the given parametric values.
+
+        Parameters
+        ----------
+        u, v, w : float or array_like, optional
+        fields : bool or array_like, optional
+
+        Examples
+        --------
+
+        >>> C = [[-1,0],[0,1],[1,0]]
+        >>> U = [0,0,0,1,1,1]
+        >>> crv = NURBS([U], C)
+        >>> crv(0.5).tolist()
+        [0.0, 0.5, 0.0]
+        >>> crv([0.5]).tolist()
+        [[0.0, 0.5, 0.0]]
+        >>> crv([0,1]).tolist()
+        [[-1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]
+
+        """
+        def Arg(p, U, u):
+            u = np.asarray(u, dtype='d')
+            assert u.min() >= U[p]
+            assert u.max() <= U[-p-1]
+            return u
+        #
+        dim = self.dim
+        uvw = [u,v,w][:dim]
+        for i, a in enumerate(uvw):
+            if a is None:
+                uvw[i] = self.greville(i)
+            else:
+                U = self.knots[i]
+                p = self.degree[i]
+                uvw[i] = Arg(p, U, a)
+        #
+        if fields is True:
+            array = self.array
+        elif fields is False:
+            array = np.ascontiguousarray(self.control)
+            fields = False
+        else:
+            F = np.asarray(fields, dtype='d')
+            fields = True
+            shape = self.shape
+            if F.shape == shape:
+                F = F[...,np.newaxis]
+            else:
+                assert F.ndim-1 == len(shape)
+                assert F.shape[:-1] == shape
+            Cw = self.control
+            w = Cw[...,3,np.newaxis]
+            CwF = np.concatenate([Cw, F*w], axis=-1)
+            array = np.ascontiguousarray(CwF)
+        #
+        arglist = []
+        for p, U in zip(self.degree, self.knots):
+            arglist.extend([p, U])
+        arglist.append(array)
+        arglist.extend(uvw)
+        #
+        Evaluate = getattr(_bsp, 'Evaluate%d' % self.dim)
+        CwF = Evaluate(*arglist)
+        w = CwF[...,3,np.newaxis]
+        C = CwF[...,:3] / w
+        if fields:
+            F = CwF[...,4:] / w
+        else:
+            F = None
+        #
+        shape = list(C.shape[:-1])
+        remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
+        for i in reversed(remove): del shape[i]
+        C.shape = shape + [-1]
+        if fields:
+            F.shape = shape + [-1]
+        #
+        if fields:
+            return C, F
+        else:
+            return C
 
     def evaluate(self, u=None, v=None, w=None, fields=None):
         """

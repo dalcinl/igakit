@@ -11,7 +11,7 @@ def make_crv(p,u):
 def check_crv(c):
     u0, u1 = c.breaks(0)[[0,-1]]
     u = np.linspace(u0,u1,100)
-    x, y, z = c.evaluate(u).T
+    x, y, z = c(u).T
     r = np.hypot(x,y)
     return np.allclose(r, 1)
 

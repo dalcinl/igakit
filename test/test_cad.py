@@ -22,13 +22,13 @@ def test_grid():
                         wrap=w,
                         )
                     u = [(a+b)/2.0 for a, b in L]
-                    x = m.evaluate(*u)
+                    x = m(*u)
                     assert np.allclose(x, u)
                     u = [a for a, b in L]
-                    x = m.evaluate(*u)
+                    x = m(*u)
                     assert np.allclose(x, u)
                     u = [b for a, b in L]
-                    x = m.evaluate(*u)
+                    x = m(*u)
                     assert np.allclose(x, u)
 
 if __name__ == '__main__':

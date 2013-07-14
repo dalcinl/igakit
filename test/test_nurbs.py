@@ -129,14 +129,14 @@ def test_vol_degelv_kntins(plot=False):
         plt.title('Deg Elev + Knt Ref')
     return nrb
 
-def test_evaluate():
+def test_call():
     crv = make_crv()
     srf = make_srf()
     vol = make_vol()
     for nrb in (crv, srf, vol):
-        C = nrb.evaluate(*nrb.knots)
-        C2, D2 = nrb.evaluate(*nrb.knots, **dict(fields=nrb.points))
-        C3, D3 = nrb.evaluate(*nrb.knots, **dict(fields=nrb.weights))
+        C = nrb(*nrb.knots)
+        C2, D2 = nrb(*nrb.knots, **dict(fields=nrb.points))
+        C3, D3 = nrb(*nrb.knots, **dict(fields=nrb.weights))
         assert np.allclose(C, C2)
         assert np.allclose(C, C3)
         assert np.allclose(C, D2)
@@ -159,5 +159,5 @@ if __name__ == '__main__':
     test_vol_degelv(PLOT)
     test_vol_kntins(PLOT)
     test_vol_degelv_kntins(PLOT)
-    test_evaluate()
+    test_call()
     plt.show()

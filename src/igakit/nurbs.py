@@ -1379,7 +1379,7 @@ class NURBS(object):
         arglist.append(array)
         arglist.extend(uvw)
         #
-        Evaluate = getattr(_bsp, 'Evaluate%d' % self.dim)
+        Evaluate = getattr(_bsp, 'Evaluate%d' % dim)
         CwF = Evaluate(*arglist)
         w = CwF[...,3,np.newaxis]
         C = CwF[...,:3] / w
@@ -1400,27 +1400,12 @@ class NURBS(object):
         else:
             return C
 
-    def evaluate(self, u=None, v=None, w=None, fields=None):
+    def evaluate(self, fields=None, u=None, v=None, w=None):
         """
-        Evaluate the NURBS object at the given parametric values.
-
         Parameters
         ----------
+        fields : array_like, optional
         u, v, w : float or array_like
-        fields : bool or array_like, optional
-
-        Examples
-        --------
-
-        >>> C = [[-1,0],[0,1],[1,0]]
-        >>> U = [0,0,0,1,1,1]
-        >>> crv = NURBS([U], C)
-        >>> crv.evaluate(0.5).tolist()
-        [0.0, 0.5, 0.0]
-        >>> crv.evaluate([0.5]).tolist()
-        [[0.0, 0.5, 0.0]]
-        >>> crv.evaluate([0,1]).tolist()
-        [[-1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]
 
         """
         def Arg(p, U, u):
@@ -1433,52 +1418,46 @@ class NURBS(object):
         uvw = [u,v,w][:dim]
         for i, a in enumerate(uvw):
             if a is None:
-                uvw[i] = self.breaks(i)
+                uvw[i] = self.greville(i)
             else:
                 U = self.knots[i]
                 p = self.degree[i]
                 uvw[i] = Arg(p, U, a)
         #
-        if fields is None or isinstance(fields, bool):
-            F = None
+        squeeze = False
+        if fields is None:
+            wF = self.array[...,3:]
         else:
             F = np.asarray(fields, dtype='d')
             shape = self.shape
             if F.shape == shape:
                 F = F[...,np.newaxis]
+                squeeze = True
             else:
                 assert F.ndim-1 == len(shape)
                 assert F.shape[:-1] == shape
-            fields = True
+            w = self.weights[...,np.newaxis]
+            wF = np.concatenate([w, F*w], axis=-1)
+            wF = np.ascontiguousarray(wF)
         #
-        if F is not None:
-            Cw = self.control
-            w = Cw[...,3,np.newaxis]
-            CwF = np.concatenate([Cw, F*w], axis=-1)
-            array = np.ascontiguousarray(CwF)
-        else:
-            array = self.array
         arglist = []
         for p, U in zip(self.degree, self.knots):
             arglist.extend([p, U])
-        arglist.append(array)
+        arglist.append(wF)
         arglist.extend(uvw)
         #
-        Evaluate = getattr(_bsp, 'Evaluate%d' % self.dim)
-        CwF = Evaluate(*arglist)
-        w = CwF[...,3,np.newaxis]
-        C = CwF[...,:3] / w
-        F = CwF[...,4:] / w
+        Evaluate = getattr(_bsp, 'Evaluate%d' % dim)
+        wF = Evaluate(*arglist)
+        w = wF[...,0,np.newaxis]
+        F = wF[...,1:] / w
         #
-        shape = list(C.shape[:-1])
+        shape = list(F.shape)
+        if squeeze: del shape[dim]
         remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
         for i in reversed(remove): del shape[i]
-        C.shape = F.shape = shape + [-1]
+        F.shape = shape
         #
-        if fields is False: return C
-        if fields is True:  return C, F
-        if F.shape[-1]==0:  return C
-        else:               return C, F
+        return F
 
     #
 

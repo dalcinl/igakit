@@ -655,6 +655,149 @@ end module bspline
 ! ----------
 !
 
+module bspeval
+contains
+subroutine TensorProd1(ina,iN,N0,N1)
+  implicit none
+  integer(kind=4), intent(in)  :: ina
+  real   (kind=8), intent(in)  :: iN(ina,0:1)
+  real   (kind=8), intent(out) :: N0(  ina)
+  real   (kind=8), intent(out) :: N1(1,ina)
+  integer(kind=4)  :: ia
+  do ia=1,ina
+     N0(ia) = iN(ia,0)
+  end do
+  do ia=1,ina
+     N1(1,ia) = iN(ia,1)
+  end do
+end subroutine TensorProd1
+subroutine TensorProd2(ina,jna,iN,jN,N0,N1)
+  implicit none
+  integer(kind=4), intent(in)  :: ina, jna
+  real   (kind=8), intent(in)  :: iN(ina,0:1)
+  real   (kind=8), intent(in)  :: jN(jna,0:1)
+  real   (kind=8), intent(out) :: N0(  ina,jna)
+  real   (kind=8), intent(out) :: N1(2,ina,jna)
+  integer(kind=4)  :: ia, ja
+   do ja=1,jna; do ia=1,ina
+     N0(ia,ja) = iN(ia,0) * jN(ja,0)
+  end do; end do
+  do ja=1,jna; do ia=1,ina
+     N1(1,ia,ja) = iN(ia,1) * jN(ja,0)
+     N1(2,ia,ja) = iN(ia,0) * jN(ja,1)
+  end do; end do
+end subroutine TensorProd2
+subroutine TensorProd3(ina,jna,kna,iN,jN,kN,N0,N1)
+  implicit none
+  integer(kind=4), intent(in)  :: ina, jna, kna
+  real   (kind=8), intent(in)  :: iN(ina,0:1)
+  real   (kind=8), intent(in)  :: jN(jna,0:1)
+  real   (kind=8), intent(in)  :: kN(kna,0:1)
+  real   (kind=8), intent(out) :: N0(  ina,jna,kna)
+  real   (kind=8), intent(out) :: N1(3,ina,jna,kna)
+  integer(kind=4)  :: ia, ja, ka
+   do ja=1,jna; do ia=1,ina; do ka=1,kna
+     N0(ia,ja,ka) = iN(ia,0) * jN(ja,0) * kN(ka,0)
+  end do; end do; end do
+  do ja=1,jna; do ia=1,ina; do ka=1,kna
+     N1(1,ia,ja,ka) = iN(ia,1) * jN(ja,0) * kN(ka,0)
+     N1(2,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,0)
+     N1(3,ia,ja,ka) = iN(ia,0) * jN(ja,0) * kN(ka,1)
+  end do; end do; end do
+end subroutine TensorProd3
+subroutine Rationalize(nen,dim,W,R0,R1)
+  implicit none
+  integer(kind=4), intent(in)    :: dim
+  integer(kind=4), intent(in)    :: nen
+  real   (kind=8), intent(in)    :: W(nen)
+  real   (kind=8), intent(inout) :: R0(nen)
+  real   (kind=8), intent(inout) :: R1(dim,nen)
+  integer(kind=4)  :: a, i
+  real   (kind=8)  :: W0, W1(dim)
+  do a=1,nen
+     R0(a) = W(a) * R0(a)
+  end do
+  W0 = sum(R0)
+  R0 = R0 / W0
+  do i=1,dim
+     W1(i) = sum(W*R1(i,:))
+     R1(i,:) = W*R1(i,:) - R0(:) * W1(i)
+  end do
+  R1 = R1 / W0
+end subroutine Rationalize
+subroutine GeometryMap(nen,dim,dof,N1,X,G)
+  implicit none
+  integer(kind=4), intent(in)    :: nen
+  integer(kind=4), intent(in)    :: dim
+  integer(kind=4), intent(in)    :: dof
+  real   (kind=8), intent(in)    :: N1(dim,nen)
+  real   (kind=8), intent(in)    :: X (dim,nen)
+  real   (kind=8), intent(inout) :: G (dim,dof)
+  real   (kind=8)  :: X1(dim,dim)
+  real   (kind=8)  :: E1(dim,dim)
+  X1 = matmul(X,transpose(N1))
+  E1 = Inverse(dim,X1)
+  G = matmul(transpose(E1),G)
+end subroutine GeometryMap
+subroutine Interpolate(nen,dim,dof,N,U,V)
+  implicit none
+  integer(kind=4), intent(in)  :: nen,dim,dof
+  real   (kind=8), intent(in)  :: N(dim,nen)
+  real   (kind=8), intent(in)  :: U(dof,nen)
+  real   (kind=8), intent(out) :: V(dim,dof)
+  V = matmul(N,transpose(U))
+end subroutine Interpolate
+function Determinant(dim,A) result (detA)
+  implicit none
+  integer(kind=4), intent(in) :: dim
+  real   (kind=8), intent(in) :: A(dim,dim)
+  real   (kind=8)  :: detA
+  select case (dim)
+  case (1)
+     detA = A(1,1)
+  case (2)
+     detA = + A(1,1)*A(2,2) - A(2,1)*A(1,2)
+  case (3)
+     detA = + A(1,1) * ( A(2,2)*A(3,3) - A(3,2)*A(2,3) ) &
+            - A(2,1) * ( A(1,2)*A(3,3) - A(3,2)*A(1,3) ) &
+            + A(3,1) * ( A(1,2)*A(2,3) - A(2,2)*A(1,3) )
+  case default
+     detA = 0
+  end select
+end function Determinant
+function Inverse(dim,A) result (invA)
+  implicit none
+  integer(kind=4), intent(in) :: dim
+  real   (kind=8), intent(in) :: A(dim,dim)
+  real   (kind=8)  :: invA(dim,dim)
+  real   (kind=8)  :: detA
+  detA = Determinant(dim,A)
+  select case (dim)
+  case (1)
+     invA = 1/detA
+  case (2)
+     invA(1,1) = + A(2,2)
+     invA(2,1) = - A(2,1)
+     invA(1,2) = - A(1,2)
+     invA(2,2) = + A(1,1)
+     invA = invA/detA
+  case (3)
+     invA(1,1) = + A(2,2)*A(3,3) - A(2,3)*A(3,2)
+     invA(2,1) = - A(2,1)*A(3,3) + A(2,3)*A(3,1)
+     invA(3,1) = + A(2,1)*A(3,2) - A(2,2)*A(3,1)
+     invA(1,2) = - A(1,2)*A(3,3) + A(1,3)*A(3,2)
+     invA(2,2) = + A(1,1)*A(3,3) - A(1,3)*A(3,1)
+     invA(3,2) = - A(1,1)*A(3,2) + A(1,2)*A(3,1)
+     invA(1,3) = + A(1,2)*A(2,3) - A(1,3)*A(2,2)
+     invA(2,3) = - A(1,1)*A(2,3) + A(1,3)*A(2,1)
+     invA(3,3) = + A(1,1)*A(2,2) - A(1,2)*A(2,1)
+     invA = invA/detA
+  case default
+     invA = 0
+  end select
+end function Inverse
+end module bspeval
+
 module BSp
 contains
 
@@ -996,6 +1139,201 @@ subroutine Evaluate3(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,rx,X,ry,Y,rz,Z,Cw)
   end do
   !
 end subroutine Evaluate3
+
+subroutine Gradient1(map,d,nx,px,Ux,Pw,F,rx,X,G)
+  use bspline
+  use bspeval
+  implicit none
+  integer(kind=4), intent(in)  :: map
+  integer(kind=4), parameter   :: dim = 1
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx
+  integer(kind=4), intent(in)  :: px
+  integer(kind=4), intent(in)  :: rx
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Pw(4,0:nx)
+  real   (kind=8), intent(in)  :: F (d,0:nx)
+  real   (kind=8), intent(out) :: G (1,d,0:rx)
+  real   (kind=8), intent(in)  :: X(0:rx)
+  integer(kind=4)  :: ix, jx, ox, spanx(0:rx)
+  real   (kind=8)  :: Mx(0:px,0:1,0:rx)
+  real   (kind=8)  :: N0(  0:px)
+  real   (kind=8)  :: N1(1,0:px)
+  real   (kind=8)  :: WW(  0:px)
+  real   (kind=8)  :: XX(1,0:px)
+  real   (kind=8)  :: FF(d,0:px)
+  real   (kind=8)  :: GG(1,d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call DersBasisFuns(spanx(ix),X(ix),px,1,Ux,Mx(:,:,ix))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     ! ---
+     do jx = 0, px
+        FF(:,jx) = F (:,ox+jx)
+        WW(  jx) = Pw(4,ox+jx)
+        if (map/=0) then
+           XX(1,jx) = Pw(1,ox+jx) / WW(jx)
+        end if
+     end do
+     ! ---
+     call TensorProd1((px+1),Mx(:,:,ix),N0,N1)
+     call Rationalize((px+1),dim,WW,N0,N1)
+     call Interpolate((px+1),dim,d,N1,FF,GG)
+     if (map/=0) call GeometryMap((px+1),dim,d,N1,XX,GG)
+     ! --
+     G(:,:,ix) = GG
+     ! ---
+  end do
+  !
+end subroutine Gradient1
+
+subroutine Gradient2(map,d,nx,px,Ux,ny,py,Uy,Pw,F,rx,X,ry,Y,G)
+  use bspline
+  use bspeval
+  implicit none
+  integer(kind=4), intent(in)  :: map
+  integer(kind=4), parameter   :: dim = 2
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx, ny
+  integer(kind=4), intent(in)  :: px, py
+  integer(kind=4), intent(in)  :: rx, ry
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Uy(0:ny+py+1)
+  real   (kind=8), intent(in)  :: Pw(4,0:ny,0:nx)
+  real   (kind=8), intent(in)  :: F (d,0:ny,0:nx)
+  real   (kind=8), intent(out) :: G (2,d,0:ry,0:rx)
+  real   (kind=8), intent(in)  :: X(0:rx)
+  real   (kind=8), intent(in)  :: Y(0:ry)
+  integer(kind=4)  :: ix, jx, ox, spanx(0:rx)
+  integer(kind=4)  :: iy, jy, oy, spany(0:ry)
+  real   (kind=8)  :: Mx(0:px,0:1,0:rx)
+  real   (kind=8)  :: My(0:py,0:1,0:ry)
+  real   (kind=8)  :: N0(  0:px,0:py)
+  real   (kind=8)  :: N1(2,0:px,0:py)
+  real   (kind=8)  :: WW(  0:px,0:py)
+  real   (kind=8)  :: XX(2,0:px,0:py)
+  real   (kind=8)  :: FF(d,0:px,0:py)
+  real   (kind=8)  :: GG(2,d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call DersBasisFuns(spanx(ix),X(ix),px,1,Ux,Mx(:,:,ix))
+  end do
+  do iy = 0, ry
+     spany(iy) = FindSpan(ny,py,Y(iy),Uy)
+     call DersBasisFuns(spany(iy),Y(iy),py,1,Uy,My(:,:,iy))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     do iy = 0, ry
+        oy = spany(iy) - py
+        ! ---
+        do jx = 0, px
+           do jy = 0, py
+              FF(:,jx,jy) = F (:,oy+jy,ox+jx)
+              WW(  jx,jy) = Pw(4,oy+jy,ox+jx)
+              if (map/=0) then
+                 XX(1,jx,jy) = Pw(1,oy+jy,ox+jx) / WW(jx,jy)
+                 XX(2,jx,jy) = Pw(2,oy+jy,ox+jx) / WW(jx,jy)
+              end if
+           end do
+        end do
+        ! ---
+        call TensorProd2((px+1),(py+1),Mx(:,:,ix),My(:,:,iy),N0,N1)
+        call Rationalize((px+1)*(py+1),dim,WW,N0,N1)
+        call Interpolate((px+1)*(py+1),dim,d,N1,FF,GG)
+        if (map/=0) call GeometryMap((px+1)*(py+1),dim,d,N1,XX,GG)
+        ! --
+        G(:,:,iy,ix) = GG
+        ! ---
+     end do
+  end do
+  !
+end subroutine Gradient2
+
+subroutine Gradient3(map,d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,F,rx,X,ry,Y,rz,Z,G)
+  use bspline
+  use bspeval
+  implicit none
+  integer(kind=4), parameter   :: dim = 3
+  integer(kind=4), intent(in)  :: map
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx, ny, nz
+  integer(kind=4), intent(in)  :: px, py, pz
+  integer(kind=4), intent(in)  :: rx, ry, rz
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Uy(0:ny+py+1)
+  real   (kind=8), intent(in)  :: Uz(0:nz+pz+1)
+  real   (kind=8), intent(in)  :: Pw(4,0:nz,0:ny,0:nx)
+  real   (kind=8), intent(in)  :: F (d,0:nz,0:ny,0:nx)
+  real   (kind=8), intent(out) :: G (3,d,0:rz,0:ry,0:rx)
+  real   (kind=8), intent(in)  :: X(0:rx)
+  real   (kind=8), intent(in)  :: Y(0:ry)
+  real   (kind=8), intent(in)  :: Z(0:rz)
+  integer(kind=4)  :: ix, jx, ox, spanx(0:rx)
+  integer(kind=4)  :: iy, jy, oy, spany(0:ry)
+  integer(kind=4)  :: iz, jz, oz, spanz(0:rz)
+  real   (kind=8)  :: Mx(0:px,0:1,0:rx)
+  real   (kind=8)  :: My(0:py,0:1,0:ry)
+  real   (kind=8)  :: Mz(0:pz,0:1,0:rz)
+  real   (kind=8)  :: N0(  0:px,0:py,0:pz)
+  real   (kind=8)  :: N1(3,0:px,0:py,0:pz)
+  real   (kind=8)  :: WW(  0:px,0:py,0:pz)
+  real   (kind=8)  :: XX(3,0:px,0:py,0:pz)
+  real   (kind=8)  :: FF(d,0:px,0:py,0:pz)
+  real   (kind=8)  :: GG(3,d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call DersBasisFuns(spanx(ix),X(ix),px,1,Ux,Mx(:,:,ix))
+  end do
+  do iy = 0, ry
+     spany(iy) = FindSpan(ny,py,Y(iy),Uy)
+     call DersBasisFuns(spany(iy),Y(iy),py,1,Uy,My(:,:,iy))
+  end do
+  do iz = 0, rz
+     spanz(iz) = FindSpan(nz,pz,Z(iz),Uz)
+     call DersBasisFuns(spanz(iz),Z(iz),pz,1,Uz,Mz(:,:,iz))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     do iy = 0, ry
+        oy = spany(iy) - py
+        do iz = 0, rz
+           oz = spanz(iz) - pz
+           ! ---
+           do jx = 0, px
+              do jy = 0, py
+                 do jz = 0, pz
+                    FF(:,jx,jy,jz) = F (:,oz+jz,oy+jy,ox+jx)
+                    WW(  jx,jy,jz) = Pw(4,oz+jz,oy+jy,ox+jx)
+                    if (map/=0) then
+                       XX(1,jx,jy,jz) = Pw(1,oz+jz,oy+jy,ox+jx) / WW(jx,jy,jz)
+                       XX(2,jx,jy,jz) = Pw(2,oz+jz,oy+jy,ox+jx) / WW(jx,jy,jz)
+                       XX(3,jx,jy,jz) = Pw(3,oz+jz,oy+jy,ox+jx) / WW(jx,jy,jz)
+                    end if
+                 end do
+              end do
+           end do
+           ! ---
+           call TensorProd3((px+1),(py+1),(pz+1),Mx(:,:,ix),My(:,:,iy),Mz(:,:,iz),N0,N1)
+           call Rationalize((px+1)*(py+1)*(pz+1),dim,WW,N0,N1)
+           call Interpolate((px+1)*(py+1)*(pz+1),dim,d,N1,FF,GG)
+           if (map/=0) call GeometryMap((px+1)*(py+1)*(pz+1),dim,d,N1,XX,GG)
+           ! --
+           G(:,:,iz,iy,ix) = GG
+           ! ---
+        end do
+     end do
+  end do
+  !
+end subroutine Gradient3
 
 end module BSp
 

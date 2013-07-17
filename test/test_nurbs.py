@@ -142,10 +142,30 @@ def test_call():
         assert np.allclose(C, D2)
         assert D3.shape[:-1] == C3.shape[:-1]
 
+def test_gradient():
+    crv = make_crv()
+    srf = make_srf()
+    vol = make_vol()
+    for nrb in (crv, srf, vol):
+        X = nrb.points
+        G = nrb.gradient(X)
+        assert G.shape == X.shape + (nrb.dim,)
+        Y = np.ones_like(X)
+        G = nrb.gradient(Y)
+        assert np.allclose(G, 0)
+        dim = nrb.dim
+        G = nrb.gradient(X[...,:dim], mapped=True)
+        for i in range(dim):
+            for j in range(dim):
+                if i == j: val = 1.0
+                else:      val = 0.0
+                assert np.allclose(G[...,i,j], val)
+
 # ---
 
 if __name__ == '__main__':
     try:
+        raise ImportError
         from matplotlib import pylab as plt
         from mpl_toolkits.mplot3d import Axes3D
         PLOT=1
@@ -160,4 +180,5 @@ if __name__ == '__main__':
     test_vol_kntins(PLOT)
     test_vol_degelv_kntins(PLOT)
     test_call()
-    plt.show()
+    test_gradient()
+    if PLOT: plt.show()

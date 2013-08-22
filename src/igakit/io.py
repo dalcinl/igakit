@@ -183,7 +183,7 @@ class PetIGA(object):
         if fields:
             shape = [npd] + sizes
             D = D.reshape(shape, order='f')
-            D = np.rollaxis(Cw, 0, Cw.ndim)
+            D = np.rollaxis(D, 0, D.ndim)
             fields = D
         else:
             fields = None

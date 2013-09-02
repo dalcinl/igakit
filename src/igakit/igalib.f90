@@ -38,7 +38,7 @@ function FindMult(i,uu,p,U) result (mult)
   integer(kind=4) :: j
   mult = 0
   do j = -p, p+1
-     if (uu == U(i+j)) mult = mult + 1
+     if (abs(uu - U(i+j))<epsilon(uu)) mult = mult + 1
   end do
 end function FindMult
 
@@ -483,7 +483,7 @@ subroutine RefineKnotVector(d,n,p,U,Pw,r,X,Ubar,Qw)
      do l = 1, p
         idx = k - p + l
         alpha = Ubar(k+l) - X(j)
-        if (abs(alpha) == 0.0) then
+        if (abs(alpha) < epsilon(alpha)) then
            Qw(:,idx-1) = Qw(:,idx)
         else
            alpha = alpha / (Ubar(k+l) - U(i-p+l))
@@ -545,7 +545,7 @@ subroutine DegreeElevate(d,n,p,U,Pw,t,nh,Uh,Qw)
   do while (b < m)
      i = b
      do while (b < m)
-        if (U(b) /= U(b+1)) exit
+        if (abs(U(b) - U(b+1))>epsilon(U)) exit
         b = b + 1
      end do
      mul = b - i + 1
@@ -873,7 +873,7 @@ subroutine SpanIndex(p,m,U,r,I)
   integer(kind=4) :: k, s
   s = 1
   do k = p, m-(p+1)
-     if (U(k) /= U(k+1)) then
+     if (abs(U(k) - U(k+1))>epsilon(U)) then
         I(s) = k; s = s + 1
         if (s > r) exit
      end if
@@ -1524,7 +1524,7 @@ subroutine BasisData(p,m,U,d,q,r,O,J,W,X,N)
 
   ir = 1
   do i = p, m-(p+1)
-     if (U(i) /= U(i+1)) then
+     if (abs(U(i) - U(i+1))>epsilon(U)) then
         O(ir) = i - p
         ir = ir + 1
      end if

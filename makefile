@@ -23,8 +23,8 @@ doctest:
 	$(PYTHON) -m doctest src/igakit/transform.py
 	$(PYTHON) -m doctest src/igakit/nurbs.py
 	$(PYTHON) -m doctest src/igakit/cad.py
-	-@$(RM) -r src/igakit/*.py[co]
 	-@$(RM) -r src/igakit/__pycache__
+	-@$(RM) -r src/igakit/*.py[co]
 .PHONY: unittest
 unittest:
 	$(PYTHON) test/runtests.py
@@ -34,20 +34,14 @@ test: unittest
 testall: test testdemo
 
 
-.PHONY: install install_home install_user
-install: install_user
-install_user:
+.PHONY: install
+install:
 	$(PYTHON) setup.py install --user
-install_home:
-	$(PYTHON) setup.py install --home=${HOME}
 
-.PHONY: uninstall uninstall_home uninstall_user
-uninstall: uninstall_user
-uninstall_user:
-	-$(RM) -r `$(PYTHON) -m site --user-site`/$(PACKAGE)*
-uninstall_home:
-	-$(RM) -r $(HOME)/lib/python/$(PACKAGE)*
-	-$(RM) -r $(HOME)/lib64/python/$(PACKAGE)*
+.PHONY: uninstall
+uninstall:
+	-$(RM) -r $(shell $(PYTHON) -m site --user-site)/$(PACKAGE)
+	-$(RM) -r $(shell $(PYTHON) -m site --user-site)/$(PACKAGE)-*-py*.egg-info
 
 
 .PHONY: clean distclean

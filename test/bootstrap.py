@@ -5,9 +5,7 @@ import unittest
 def getbuilddir():
     from distutils.util import get_platform
     s = os.path.join("build", "lib.%s-%.3s" % (get_platform(), sys.version))
-    if (sys.version[:3] >= '2.6' and
-        hasattr(sys, 'gettotalrefcount')):
-        s += '-pydebug'
+    if hasattr(sys, 'gettotalrefcount'): s += '-pydebug'
     return s
 
 def bootstrap():

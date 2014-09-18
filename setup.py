@@ -3,35 +3,39 @@
 Toolkit for IsoGeometric Analysis (IGA)
 """
 
-NAME    = 'igakit'
-VERSION = '0.1'
-AUTHOR  = 'Lisandro Dalcin'
-EMAIL   = 'dalcinl@gmail.com'
-DESCR   = __doc__.strip()
-URL     = 'https://bitbucket.org/dalcinl/igakit'
-DLURL   = URL + '/get/default.tar.gz'
+url = 'https://bitbucket.org/dalcinl/igakit'
+
+setup_args = dict(
+    name             = 'igakit',
+    version          = '0.1',
+    description      = __doc__.strip(),
+    long_description = __doc__.strip(),
+    author           = 'Lisandro Dalcin',
+    author_email     = 'dalcinl@gmail.com',
+    license          = 'BSD',
+    keywords         = ['FEM', 'IGA'],
+    url              = url,
+    download_url     = url+'/get/default.tar.gz',
+)
 
 def setup_package():
     from numpy.distutils.core import setup
     from numpy.distutils.core import Extension
-    setup(name=NAME, version=VERSION,
-          author=AUTHOR, author_email=EMAIL,
-          description=DESCR, long_description=DESCR,
-          url=URL, download_url=DLURL,
-          packages = ['igakit'],
+    setup(packages = ['igakit'],
           package_dir = {'igakit' : 'src/igakit'},
           ext_modules  = [
-            Extension('igakit.igalib',
-                      sources = ['src/igakit/igalib.pyf',
-                                 'src/igakit/igalib.f90',
-                                 ],
-                      f2py_options = ['--quiet'],
-                      define_macros = [#('F2PY_REPORT_ON_ARRAY_COPY', 0),
-                                       #('F2PY_REPORT_ATEXIT', 0),
-                                       ]
-                      ),
-            ],
-          )
+              Extension('igakit.igalib',
+                        sources = [
+                            'src/igakit/igalib.pyf',
+                            'src/igakit/igalib.f90',
+                        ],
+                        define_macros = [
+                            #('F2PY_REPORT_ATEXIT', 0),
+                            #('F2PY_REPORT_ON_ARRAY_COPY', 0),
+                        ],
+              ),
+          ],
+          **setup_args)
 
 if __name__ == "__main__":
     setup_package()

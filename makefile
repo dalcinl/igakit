@@ -18,17 +18,9 @@ testdemo:
 	$(PYTHON) demo/ruled.py    $(BACKEND)
 	$(PYTHON) demo/revolve.py  $(BACKEND)
 	$(PYTHON) demo/refine.py   $(BACKEND)
-.PHONY: doctest
-doctest:
-	$(PYTHON) -m doctest igakit/transform.py
-	$(PYTHON) -m doctest igakit/nurbs.py
-	$(PYTHON) -m doctest igakit/cad.py
-	-@$(RM) -r $(PACKAGE)/__pycache__
-	-@$(RM) -r $(PACKAGE)/*.py[co]
 .PHONY: unittest
 unittest:
 	$(PYTHON) test/runtests.py
-
 .PHONY: test testall
 test: unittest
 testall: test testdemo
@@ -36,7 +28,7 @@ testall: test testdemo
 
 .PHONY: install
 install:
-	$(PYTHON) setup.py install --user
+	$(PYTHON) setup.py install --prefix='' --user
 
 .PHONY: uninstall
 uninstall:

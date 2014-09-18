@@ -19,8 +19,11 @@ setup_args = dict(
 )
 
 def setup_package():
+    import sys
     from numpy.distutils.core import setup
     from numpy.distutils.core import Extension
+    if 'setuptools' in sys.modules:
+        setup_args['install_requires'] = ['numpy']
     setup(packages = ['igakit'],
           package_dir = {'igakit' : 'src/igakit'},
           ext_modules  = [

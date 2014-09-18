@@ -10,18 +10,16 @@ XXX To be written ...
 Installation
 ------------
 
-Clone the `Mercurial <http://mercurial.selenic.com/>`_ repository
-hosted at `Bitbucket <https://bitbucket.org/dalcinl/igakit>`_ ::
+Quick installation::
+
+  $ pip install https://bitbucket.org/dalcinl/igakit/get/default.tar.gz
+
+Alternatively, clone the 
+`Mercurial <http://mercurial.selenic.com/>`_
+repository hosted at `Bitbucket
+<https://bitbucket.org/dalcinl/igakit>`_::
 
   $ hg clone https://bitbucket.org/dalcinl/igakit
-
-Alternatively, download_ the code as a tarball and unpack it::
-
-  $ curl -O https://bitbucket.org/dalcinl/igakit/get/default.tar.gz
-  $ tar -zxf default.tar.gz
-  $ mv dalcinl-igakit-XXXXXXXXXXXX igakit
-
-.. _download: https://bitbucket.org/dalcinl/igakit/get/default.tar.gz
 
 Enter the top level directory, next build and install the package
 using the standard distutils's ``setup.py`` script::

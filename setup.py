@@ -25,12 +25,11 @@ def setup_package():
     if 'setuptools' in sys.modules:
         setup_args['install_requires'] = ['numpy']
     setup(packages = ['igakit'],
-          package_dir = {'igakit' : 'src/igakit'},
           ext_modules  = [
               Extension('igakit.igalib',
                         sources = [
-                            'src/igakit/igalib.pyf',
-                            'src/igakit/igalib.f90',
+                            'igakit/igalib.pyf',
+                            'igakit/igalib.f90',
                         ],
                         define_macros = [
                             #('F2PY_REPORT_ATEXIT', 0),

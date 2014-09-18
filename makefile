@@ -20,11 +20,11 @@ testdemo:
 	$(PYTHON) demo/refine.py   $(BACKEND)
 .PHONY: doctest
 doctest:
-	$(PYTHON) -m doctest src/igakit/transform.py
-	$(PYTHON) -m doctest src/igakit/nurbs.py
-	$(PYTHON) -m doctest src/igakit/cad.py
-	-@$(RM) -r src/igakit/__pycache__
-	-@$(RM) -r src/igakit/*.py[co]
+	$(PYTHON) -m doctest igakit/transform.py
+	$(PYTHON) -m doctest igakit/nurbs.py
+	$(PYTHON) -m doctest igakit/cad.py
+	-@$(RM) -r $(PACKAGE)/__pycache__
+	-@$(RM) -r $(PACKAGE)/*.py[co]
 .PHONY: unittest
 unittest:
 	$(PYTHON) test/runtests.py
@@ -52,4 +52,4 @@ distclean: clean
 	-$(RM) -r build dist MANIFEST *.py[co]
 	-$(RM) -r __pycache__ */__pycache__
 	-find test -name '*.py[co]' -exec rm -f {} ';'
-	-find src  -name '*.py[co]' -exec rm -f {} ';'
+	-find $(PACKAGE) -name '*.py[co]' -exec rm -f {} ';'

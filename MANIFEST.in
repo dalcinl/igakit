@@ -1,5 +1,5 @@
 include setup*.py *.rst *.cfg tox.ini
 
-recursive-include demo *.py
-recursive-include src  *.py *.pyf *.f90
-recursive-include test *.py
+recursive-include igakit *.py *.pyf *.f90
+recursive-include demo   *.py
+recursive-include test   *.py

@@ -86,12 +86,12 @@ interface
        integer(kind=4), intent(in),   check(p>=1) :: p
        real   (kind=8), intent(c,in)  :: U(0:n+p+1)
        real   (kind=8), intent(c,in)  :: Pw(0:n,d)
-       !f2py depend(U), check(u>=U[p]&&u<=U[n+1]) :: u
-       !f2py depend(p), check(r>=0&&r<=p)         :: r
        real   (kind=8), intent(in),   :: u
        integer(kind=4), optional      :: r = 1
        real   (kind=8), intent(c,out) :: V(0:n+p+1+r)
        real   (kind=8), intent(c,out) :: Qw(0:n+r,d)
+       !f2py real(8),    depend(U), check(u>=U[p]&&u<=U[n+1]) :: u
+       !f2py integer(4), depend(p), check(r>=0&&r<=p) :: r
      end subroutine InsertKnot
 
      subroutine RemoveKnot(d,n,p,U,Pw,u,r,t,V,Qw,TOL)
@@ -101,14 +101,14 @@ interface
        integer(kind=4), intent(in),   check(p>=1) :: p
        real   (kind=8), intent(c,in)  :: U(0:n+p+1)
        real   (kind=8), intent(c,in)  :: Pw(0:n,d)
-       !f2py depend(U), check(u>=U[p]&&u<=U[n+1]) :: u
-       !f2py depend(p), check(r>=0&&r<=p) :: r
        real   (kind=8), intent(in)    :: u
        real   (kind=8), intent(in)    :: TOL
        integer(kind=4), optional,     :: r = 1
        integer(kind=4), intent(out)   :: t
        real   (kind=8), intent(c,out) :: V(0:n+p+1)
        real   (kind=8), intent(c,out) :: Qw(0:n,d)
+       !f2py real(8),    depend(U), check(u>=U[p]&&u<=U[n+1]) :: u
+       !f2py integer(4), depend(p), check(r>=0&&r<=p) :: r
      end subroutine RemoveKnot
 
      subroutine Clamp(d,n,p,U,Pw,l,r,V,Qw)

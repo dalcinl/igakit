@@ -17,6 +17,9 @@ class transform(object):
     def __call__(self, xyzw):
         return np.dot(xyzw, self.matrix.T)
 
+    def __array__(self, dtype='d'):
+        return self.matrix.astype(dtype)
+
     def copy(self):
         trans = transform.__new__(type(self))
         trans.matrix = self.matrix.copy()
@@ -36,7 +39,7 @@ class transform(object):
 
     def compose(self, matrix):
         if isinstance(matrix, transform):
-            M = transform.matrix
+            M = matrix.matrix
         else:
             matrix = np.asarray(matrix, dtype='d')
             if matrix.shape == (3, 3):

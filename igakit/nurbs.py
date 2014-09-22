@@ -355,6 +355,29 @@ class NURBS(object):
         u = Greville(p, U)
         return u
 
+    def lagrange(self, axis=None):
+        """
+        Lagrange abscissae.
+        """
+        try: np_unique = np.lib.arraysetops.unique
+        except AttributeError: np_unique = np.unique1d
+        axes = range(self.dim)
+        if axis is None:
+            return [self.lagrange(i) for i in axes]
+        i = axes[axis]
+        p = self.degree[i]
+        U = self.knots[i]
+        ub = np_unique(U[p:-p])
+        if p < 2: return ub
+        du = np.diff(ub)/p
+        u = np.empty(len(du)*p+1, dtype='d')
+        u[::p] = ub
+        view = u[:-1].reshape(-1, p)
+        for j in range(1, p):
+            view[:,j] = view[:,j-1]
+            view[:,j] += du
+        return u
+
     #
 
     def copy(self):

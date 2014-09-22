@@ -25,8 +25,7 @@ class Plotter(object):
         if 'mode' not in options:
             options['mode'] = 'sphere'
         #
-        backend = self.get_backend()
-        pts = backend.points3d(x, y, z, **options)
+        pts = self.backend.points3d(x, y, z, **options)
         return pts
 
     def quiver(self, points, vectors, **kwargs):
@@ -59,8 +58,7 @@ class Plotter(object):
         if 'mode' not in options:
             options['mode'] = 'arrow'
         #
-        backend = self.get_backend()
-        vcs = backend.quiver3d(x, y, z, u, v, w, **options)
+        vcs = self.backend.quiver3d(x, y, z, u, v, w, **options)
         return vcs
 
     # ----------
@@ -75,8 +73,7 @@ class Plotter(object):
         if 'mode' not in options:
             options['mode'] = 'sphere'
         #
-        backend = self.get_backend()
-        pts = backend.points3d(x, y, z, **options)
+        pts = self.backend.points3d(x, y, z, **options)
         if 'scale_factor' not in options:
             try:
                 pts.glyph.glyph.scale_factor *= 0.125
@@ -100,8 +97,7 @@ class Plotter(object):
             options['representation'] = 'surface'
         #
         lines = [(x, y, z)]
-        backend = self.get_backend()
-        grd = backend.line3d(lines=lines, **options)
+        grd = self.backend.line3d(lines=lines, **options)
         return grd
 
     def kpoint(self, nurbs, **kwargs):
@@ -115,8 +111,7 @@ class Plotter(object):
         if 'mode' not in options:
             options['mode'] = 'cube'
         #
-        backend = self.get_backend()
-        pts = backend.points3d(x, y, z, **options)
+        pts = self.backend.points3d(x, y, z, **options)
         if 'scale_factor' not in options:
             try:
                 pts.glyph.glyph.scale_factor *= 0.1
@@ -155,8 +150,7 @@ class Plotter(object):
             options['representation'] = 'surface'
         #
         lines = [tuple(C.T) for C in lines]
-        backend = self.get_backend()
-        wire = backend.line3d(lines=lines, **options)
+        wire = self.backend.line3d(lines=lines, **options)
         return wire
 
     def ksurf(self, nurbs, axes=None, **kwargs):
@@ -181,8 +175,7 @@ class Plotter(object):
         options['representation'] = 'surface'
         #
         surfs = [tuple(C.T) for C in surfs]
-        backend = self.get_backend()
-        surf = backend.surf3d(surfs=surfs, **options)
+        surf = self.backend.surf3d(surfs=surfs, **options)
         return surf
 
     # ----------
@@ -217,8 +210,7 @@ class Plotter(object):
             options['representation'] = 'surface'
         #
         lines = [(x, y, z)]
-        backend = self.get_backend()
-        crv = backend.line3d(lines=lines, **options)
+        crv = self.backend.line3d(lines=lines, **options)
         return crv
 
     def surface(self, nurbs, **kwargs):
@@ -247,8 +239,7 @@ class Plotter(object):
         options['representation'] = 'surface'
         #
         surfs = [tuple(C.T) for C in surfs]
-        backend = self.get_backend()
-        srf = backend.surf3d(surfs=surfs, **options)
+        srf = self.backend.surf3d(surfs=surfs, **options)
         return srf
 
     def volume(self, nurbs, **kwargs):
@@ -305,7 +296,7 @@ class Plotter(object):
     _backend = None
 
     def use(self, backend):
-        self.set_backend(backend)
+        self.backend = backend
 
     def set_backend(self, backend):
         name = self._alias.get(backend, backend)

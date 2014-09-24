@@ -680,14 +680,13 @@ def refine(nrb, factor=None, degree=None, continuity=None):
     try: np_unique = np.lib.arraysetops.unique
     except AttributeError: np_unique = np.unique1d
     def Arg(arg, defval):
-        defval = tuple(defval)
-        dim = len(defval)
         if arg is None:
-            return defval
+            return list(defval)
+        dim = len(defval)
         arg = np.asarray(arg, dtype=object)
         if arg.ndim == 0:
             return arg.repeat(dim)
-        assert arg.shape == (dim,)
+        assert arg.shape[0] == dim
         for i, val in enumerate(arg):
             if val is None:
                 arg[i] = defval[i]
@@ -710,7 +709,7 @@ def refine(nrb, factor=None, degree=None, continuity=None):
         p = nrb.degree[axis]
         degree[axis] = p
     # knot refinement
-    factor = Arg(factor, np.ones(dim, 'i'))
+    factor = Arg(factor, [1]*dim)
     for i, fact in enumerate(factor):
         factor[i] = np.asarray(fact, dtype='i')
         assert np.all(factor[i] > 0)

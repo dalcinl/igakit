@@ -302,11 +302,17 @@ interface
        real   (kind=8), intent(out)  :: U(0:m)
      end subroutine KnotVector
 
-     subroutine GaussRule(q,X,W)
+     subroutine GaussLegendreRule(q,X,W)
        integer(kind=4), intent(in), check(q>=1&&q<=10) :: q
        real   (kind=8), intent(out) :: X(q)
        real   (kind=8), intent(out) :: W(q)
-     end subroutine GaussRule
+     end subroutine GaussLegendreRule
+
+     subroutine GaussLobattoRule(q,X,W)
+       integer(kind=4), intent(in), check(q>=2&&q<=10) :: q
+       real   (kind=8), intent(out) :: X(q)
+       real   (kind=8), intent(out) :: W(q)
+     end subroutine GaussLegendreRule
 
      subroutine BasisData(p,m,U,d,q,r,O,J,W,X,N)
        integer(kind=4), intent(in),   check(p>=1)     :: p

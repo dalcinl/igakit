@@ -359,23 +359,45 @@ class NURBS(object):
         """
         Lagrange abscissae.
         """
-        try: np_unique = np.lib.arraysetops.unique
-        except AttributeError: np_unique = np.unique1d
         axes = range(self.dim)
         if axis is None:
             return [self.lagrange(i) for i in axes]
         i = axes[axis]
         p = self.degree[i]
-        U = self.knots[i]
-        ub = np_unique(U[p:-p])
+        ub = self.breaks(i)
         if p < 2: return ub
-        du = np.diff(ub)/p
+        x = np.linspace(-1, 1, p+1)
+        x = (x + 1)/2
+        u0 = ub[:-1]
+        du = np.diff(ub)
         u = np.empty(len(du)*p+1, dtype='d')
         u[::p] = ub
         view = u[:-1].reshape(-1, p)
-        for j in range(1, p):
-            view[:,j] = view[:,j-1]
-            view[:,j] += du
+        for k in range(1, p):
+            view[:,k] = u0 + du*x[k]
+        return u
+
+    def lobatto(self, axis=None):
+        """
+        Lobatto abscissae.
+        """
+        axes = range(self.dim)
+        if axis is None:
+            return [self.lobatto(i) for i in axes]
+        i = axes[axis]
+        p = self.degree[i]
+        ub = self.breaks(i)
+        if p < 2: return ub
+        GaussLobattoRule = _igalib.iga.GaussLobattoRule
+        x = GaussLobattoRule(p+1)[0]
+        x = (x + 1)/2
+        u0 = ub[:-1]
+        du = np.diff(ub)
+        u = np.empty(len(du)*p+1, dtype='d')
+        u[::p] = ub
+        view = u[:-1].reshape(-1, p)
+        for k in range(1, p):
+            view[:,k] = u0 + du*x[k]
         return u
 
     #

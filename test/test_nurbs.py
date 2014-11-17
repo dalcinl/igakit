@@ -161,6 +161,31 @@ def test_gradient():
                 else:      val = 0.0
                 assert np.allclose(G[...,i,j], val)
 
+def test_hessian():
+    crv = make_crv()
+    srf = make_srf()
+    vol = make_vol()
+    for nrb in (srf, ):
+        X = nrb.points
+        H = nrb.hessian(X)
+        assert H.shape == X.shape + (nrb.dim, nrb.dim)
+        Y = np.ones_like(X)
+        H = nrb.hessian(Y)
+        assert np.allclose(H, 0)
+        dim = nrb.dim
+        #H = nrb.hessian(X[...,:dim], mapped=True)
+        #assert np.allclose(H, 0)
+    #
+    from igakit.cad import bilinear
+    nrb = bilinear()
+    nrb.elevate(0,3); nrb.insert(0, 0.5)
+    nrb.elevate(1,4); nrb.insert(1, 0.5)
+    nrb.rotate(0.6)
+    X = nrb.points
+    H = nrb.hessian(X)
+    assert H.shape == X.shape + (nrb.dim, nrb.dim)
+    assert np.allclose(H, 0)
+
 # ---
 
 if __name__ == '__main__':
@@ -181,4 +206,5 @@ if __name__ == '__main__':
     test_vol_degelv_kntins(PLOT)
     test_call()
     test_gradient()
+    test_hessian()
     if PLOT: plt.show()

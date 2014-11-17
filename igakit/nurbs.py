@@ -1572,6 +1572,74 @@ class NURBS(object):
         #
         return G
 
+    def hessian(self, fields=None, u=None, v=None, w=None,
+                mapped=False):
+        """
+
+        Parameters
+        ----------
+        u, v, w : float or array_like, optional
+        fields : array_like, optional
+        mapped : bool, optional
+
+        Examples
+        --------
+
+        """
+        def Arg(p, U, u):
+            u = np.asarray(u, dtype='d')
+            assert u.min() >= U[p]
+            assert u.max() <= U[-p-1]
+            return u
+        #
+        dim = self.dim
+        uvw = [u,v,w][:dim]
+        for i, a in enumerate(uvw):
+            if a is None:
+                uvw[i] = self.greville(i)
+            else:
+                U = self.knots[i]
+                p = self.degree[i]
+                uvw[i] = Arg(p, U, a)
+        #
+        if fields is None:
+            fields = self.fields
+        if fields is None:
+            fields = self.points
+        F = np.asarray(fields, dtype='d')
+        shape = self.shape
+        if F.shape == shape:
+            F = F[...,np.newaxis]
+            squeeze = True
+        else:
+            assert F.ndim-1 == len(shape)
+            assert F.shape[:-1] == shape
+            squeeze = False
+        #
+        m  = int(bool(mapped))
+        Cw = self.control
+        Cw = np.ascontiguousarray(Cw)
+        F  = np.ascontiguousarray(F)
+        #
+        arglist = []
+        arglist.append(m)
+        for p, U in zip(self.degree, self.knots):
+            arglist.extend([p, U])
+        arglist.append(Cw)
+        arglist.append(F)
+        arglist.extend(uvw)
+        #
+        Hessian = getattr(_bsp, 'Hessian%d' % self.dim)
+        H = Hessian(*arglist)
+        #
+        shape = list(H.shape)
+        if squeeze: del shape[dim]
+        remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
+        for i in reversed(remove): del shape[i]
+        H.shape = shape
+        #
+        return H
+
     #
 
     def plot(self):

@@ -284,6 +284,20 @@ interface
        real   (kind=8), intent(c,out) :: G(0:rx,0:ry,0:rz,d,3)
      end subroutine Gradient3
 
+     subroutine Hessian1(map,d,nx,px,Ux,Pw,F,rx,X,H)
+       !f2py threadsafe
+       integer(kind=4), intent(hide), check(d>=1)  :: d
+       integer(kind=4), intent(hide), check(nx>=1) :: nx
+       integer(kind=4), intent(in),   check(px>=1) :: px
+       integer(kind=4), intent(hide), check(rx>=0) :: rx
+       real   (kind=8), intent(c,in)  :: Ux(0:nx+px+1)
+       real   (kind=8), intent(c,in)  :: Pw(0:nx,4)
+       integer(kind=4), intent(in)    :: map
+       real   (kind=8), intent(c,in)  :: F (0:nx,d)
+       real   (kind=8), intent(c,in)  :: X(0:rx)
+       real   (kind=8), intent(c,out) :: H(0:rx,d,1,1)
+     end subroutine Hessian1
+
      subroutine Hessian2(map,d,nx,px,Ux,ny,py,Uy,Pw,F,rx,X,ry,Y,H)
        !f2py threadsafe
        integer(kind=4), intent(hide), check(d>=1)  :: d

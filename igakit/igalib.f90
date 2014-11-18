@@ -657,18 +657,23 @@ end module bspline
 
 module bspeval
 contains
-subroutine TensorProd1(ina,iN,N0,N1)
+subroutine TensorProd1(ina,iN,N0,N1,N2)
   implicit none
   integer(kind=4), intent(in)  :: ina
-  real   (kind=8), intent(in)  :: iN(ina,0:1)
+  real   (kind=8), intent(in)  :: iN(ina,0:2)
   real   (kind=8), intent(out) :: N0(  ina)
   real   (kind=8), intent(out) :: N1(1,ina)
+  real   (kind=8), intent(out), optional :: N2(1,1,ina)
   integer(kind=4)  :: ia
   do ia=1,ina
      N0(ia) = iN(ia,0)
   end do
   do ia=1,ina
      N1(1,ia) = iN(ia,1)
+  end do
+  if (.not. present(N2)) return
+  do ia=1,ina
+     N2(1,1,ia) = iN(ia,2)
   end do
 end subroutine TensorProd1
 subroutine TensorProd2(ina,jna,iN,jN,N0,N1,N2)
@@ -1351,6 +1356,59 @@ subroutine Gradient3(map,d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,F,rx,X,ry,Y,rz,Z,G)
   end do
   !
 end subroutine Gradient3
+
+subroutine Hessian1(map,d,nx,px,Ux,Pw,F,rx,X,H)
+  use bspline
+  use bspeval
+  implicit none
+  integer(kind=4), intent(in)  :: map
+  integer(kind=4), parameter   :: dim = 1
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx
+  integer(kind=4), intent(in)  :: px
+  integer(kind=4), intent(in)  :: rx
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Pw(4,0:nx)
+  real   (kind=8), intent(in)  :: F (d,0:nx)
+  real   (kind=8), intent(out) :: H (1,1,d,0:rx)
+  real   (kind=8), intent(in)  :: X(0:rx)
+  integer(kind=4)  :: ix, jx, ox, spanx(0:rx)
+  real   (kind=8)  :: Mx(0:px,0:2,0:rx)
+  real   (kind=8)  :: N0(  0:px)
+  real   (kind=8)  :: N1(1,0:px)
+  real   (kind=8)  :: N2(1,0:px)
+  real   (kind=8)  :: WW(  0:px)
+  real   (kind=8)  :: XX(1,0:px)
+  real   (kind=8)  :: FF(d,0:px)
+  real   (kind=8)  :: HH(1,1,d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call DersBasisFuns(spanx(ix),X(ix),px,2,Ux,Mx(:,:,ix))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     ! ---
+     do jx = 0, px
+        FF(:,jx) = F (:,ox+jx)
+        WW(  jx) = Pw(4,ox+jx)
+        if (map/=0) then
+           XX(1,jx) = Pw(1,ox+jx) / WW(jx)
+        end if
+     end do
+     ! ---
+     call TensorProd1((px+1),Mx(:,:,ix),N0,N1,N2)
+     call Rationalize((px+1),dim,WW,N0,N1,N2)
+     call Interpolate((px+1),dim*dim,d,N2,FF,HH)
+     !if (map/=0) call GeometryMap((px+1),dim,d,N1,XX,GG)
+     if (map/=0) stop "Geometry mapping not supported"
+     ! --
+     H(:,:,:,ix) = HH
+     ! ---
+  end do
+  !
+end subroutine Hessian1
 
 subroutine Hessian2(map,d,nx,px,Ux,ny,py,Uy,Pw,F,rx,X,ry,Y,H)
   use bspline

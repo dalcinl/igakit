@@ -165,7 +165,7 @@ def test_hessian():
     crv = make_crv()
     srf = make_srf()
     vol = make_vol()
-    for nrb in (srf, ):
+    for nrb in (crv, srf, ):
         X = nrb.points
         H = nrb.hessian(X)
         assert H.shape == X.shape + (nrb.dim, nrb.dim)

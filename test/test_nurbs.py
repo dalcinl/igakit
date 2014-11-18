@@ -165,7 +165,7 @@ def test_hessian():
     crv = make_crv()
     srf = make_srf()
     vol = make_vol()
-    for nrb in (crv, srf, ):
+    for nrb in (crv, srf, vol):
         X = nrb.points
         H = nrb.hessian(X)
         assert H.shape == X.shape + (nrb.dim, nrb.dim)
@@ -176,16 +176,24 @@ def test_hessian():
         #H = nrb.hessian(X[...,:dim], mapped=True)
         #assert np.allclose(H, 0)
     #
-    from igakit.cad import bilinear
-    nrb = bilinear()
-    nrb.elevate(0,3); nrb.insert(0, 0.5)
-    nrb.elevate(1,4); nrb.insert(1, 0.5)
-    nrb.rotate(0.6)
-    X = nrb.points
-    H = nrb.hessian(X)
-    assert H.shape == X.shape + (nrb.dim, nrb.dim)
-    assert np.allclose(H, 0)
-
+    from igakit.cad import linear, bilinear, trilinear
+    crv = linear()
+    srf.elevate(0,5); srf.insert(0, 0.5)
+    srf.rotate(-0.6)
+    srf = bilinear()
+    srf.elevate(0,3); srf.insert(0, 0.5)
+    srf.elevate(1,4); srf.insert(1, 0.5)
+    srf.rotate(0.6)
+    vol = trilinear()
+    vol.elevate(0,3); vol.insert(0, 0.5)
+    vol.elevate(1,4); vol.insert(1, 0.5)
+    vol.elevate(2,5); vol.insert(2, 0.5)
+    vol.rotate(0.6, [1,1,1])
+    for nrb in (crv, srf, vol):
+        X = nrb.points
+        H = nrb.hessian(X)
+        assert H.shape == X.shape + (nrb.dim, nrb.dim)
+        assert np.allclose(H, 0)
 # ---
 
 if __name__ == '__main__':

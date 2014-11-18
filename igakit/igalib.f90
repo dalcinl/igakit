@@ -699,16 +699,16 @@ subroutine TensorProd2(ina,jna,iN,jN,N0,N1,N2)
      N2(1,2,ia,ja) = iN(ia,1) * jN(ja,1)
      N2(2,2,ia,ja) = iN(ia,0) * jN(ja,2)
   end do; end do
-  
-end subroutine TensorProd2
-subroutine TensorProd3(ina,jna,kna,iN,jN,kN,N0,N1)
+  end subroutine TensorProd2
+subroutine TensorProd3(ina,jna,kna,iN,jN,kN,N0,N1,N2)
   implicit none
   integer(kind=4), intent(in)  :: ina, jna, kna
-  real   (kind=8), intent(in)  :: iN(ina,0:1)
-  real   (kind=8), intent(in)  :: jN(jna,0:1)
-  real   (kind=8), intent(in)  :: kN(kna,0:1)
+  real   (kind=8), intent(in)  :: iN(ina,0:2)
+  real   (kind=8), intent(in)  :: jN(jna,0:2)
+  real   (kind=8), intent(in)  :: kN(kna,0:2)
   real   (kind=8), intent(out) :: N0(  ina,jna,kna)
   real   (kind=8), intent(out) :: N1(3,ina,jna,kna)
+  real   (kind=8), intent(out), optional :: N2(3,3,ina,jna,kna)
   integer(kind=4)  :: ia, ja, ka
    do ja=1,jna; do ia=1,ina; do ka=1,kna
      N0(ia,ja,ka) = iN(ia,0) * jN(ja,0) * kN(ka,0)
@@ -717,6 +717,18 @@ subroutine TensorProd3(ina,jna,kna,iN,jN,kN,N0,N1)
      N1(1,ia,ja,ka) = iN(ia,1) * jN(ja,0) * kN(ka,0)
      N1(2,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,0)
      N1(3,ia,ja,ka) = iN(ia,0) * jN(ja,0) * kN(ka,1)
+  end do; end do; end do
+  if (.not. present(N2)) return
+  do ja=1,jna; do ia=1,ina; do ka=1,kna
+     N2(1,1,ia,ja,ka) = iN(ia,2) * jN(ja,0) * kN(ka,0)
+     N2(2,1,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,0)
+     N2(3,1,ia,ja,ka) = iN(ia,1) * jN(ja,0) * kN(ka,1)
+     N2(1,2,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,0)
+     N2(2,2,ia,ja,ka) = iN(ia,0) * jN(ja,2) * kN(ka,0)
+     N2(3,2,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,1)
+     N2(1,3,ia,ja,ka) = iN(ia,1) * jN(ja,0) * kN(ka,1)
+     N2(2,3,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,1)
+     N2(3,3,ia,ja,ka) = iN(ia,0) * jN(ja,0) * kN(ka,2)
   end do; end do; end do
 end subroutine TensorProd3
 subroutine Rationalize(nen,dim,W,R0,R1,R2)
@@ -1374,9 +1386,9 @@ subroutine Hessian1(map,d,nx,px,Ux,Pw,F,rx,X,H)
   real   (kind=8), intent(in)  :: X(0:rx)
   integer(kind=4)  :: ix, jx, ox, spanx(0:rx)
   real   (kind=8)  :: Mx(0:px,0:2,0:rx)
-  real   (kind=8)  :: N0(  0:px)
-  real   (kind=8)  :: N1(1,0:px)
-  real   (kind=8)  :: N2(1,0:px)
+  real   (kind=8)  :: N0(    0:px)
+  real   (kind=8)  :: N1(  1,0:px)
+  real   (kind=8)  :: N2(1,1,0:px)
   real   (kind=8)  :: WW(  0:px)
   real   (kind=8)  :: XX(1,0:px)
   real   (kind=8)  :: FF(d,0:px)
@@ -1400,7 +1412,7 @@ subroutine Hessian1(map,d,nx,px,Ux,Pw,F,rx,X,H)
      ! ---
      call TensorProd1((px+1),Mx(:,:,ix),N0,N1,N2)
      call Rationalize((px+1),dim,WW,N0,N1,N2)
-     call Interpolate((px+1),dim*dim,d,N2,FF,HH)
+     call Interpolate((px+1),dim**2,d,N2,FF,HH)
      !if (map/=0) call GeometryMap((px+1),dim,d,N1,XX,GG)
      if (map/=0) stop "Geometry mapping not supported"
      ! --
@@ -1466,7 +1478,7 @@ subroutine Hessian2(map,d,nx,px,Ux,ny,py,Uy,Pw,F,rx,X,ry,Y,H)
         ! ---
         call TensorProd2((px+1),(py+1),Mx(:,:,ix),My(:,:,iy),N0,N1,N2)
         call Rationalize((px+1)*(py+1),dim,WW,N0,N1,N2)
-        call Interpolate((px+1)*(py+1),dim*dim,d,N2,FF,HH)
+        call Interpolate((px+1)*(py+1),dim**2,d,N2,FF,HH)
         !if (map/=0) call GeometryMap((px+1)*(py+1),dim,d,N1,XX,HH)
         if (map/=0) stop "Geometry mapping not supported"
         ! --
@@ -1476,6 +1488,87 @@ subroutine Hessian2(map,d,nx,px,Ux,ny,py,Uy,Pw,F,rx,X,ry,Y,H)
   end do
   !
 end subroutine Hessian2
+
+subroutine Hessian3(map,d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,F,rx,X,ry,Y,rz,Z,H)
+  use bspline
+  use bspeval
+  implicit none
+  integer(kind=4), parameter   :: dim = 3
+  integer(kind=4), intent(in)  :: map
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx, ny, nz
+  integer(kind=4), intent(in)  :: px, py, pz
+  integer(kind=4), intent(in)  :: rx, ry, rz
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Uy(0:ny+py+1)
+  real   (kind=8), intent(in)  :: Uz(0:nz+pz+1)
+  real   (kind=8), intent(in)  :: Pw(4,0:nz,0:ny,0:nx)
+  real   (kind=8), intent(in)  :: F (d,0:nz,0:ny,0:nx)
+  real   (kind=8), intent(out) :: H (3,3,d,0:rz,0:ry,0:rx)
+  real   (kind=8), intent(in)  :: X(0:rx)
+  real   (kind=8), intent(in)  :: Y(0:ry)
+  real   (kind=8), intent(in)  :: Z(0:rz)
+  integer(kind=4)  :: ix, jx, ox, spanx(0:rx)
+  integer(kind=4)  :: iy, jy, oy, spany(0:ry)
+  integer(kind=4)  :: iz, jz, oz, spanz(0:rz)
+  real   (kind=8)  :: Mx(0:px,0:2,0:rx)
+  real   (kind=8)  :: My(0:py,0:2,0:ry)
+  real   (kind=8)  :: Mz(0:pz,0:2,0:rz)
+  real   (kind=8)  :: N0(    0:px,0:py,0:pz)
+  real   (kind=8)  :: N1(  3,0:px,0:py,0:pz)
+  real   (kind=8)  :: N2(3,3,0:px,0:py,0:pz)
+  real   (kind=8)  :: WW(  0:px,0:py,0:pz)
+  real   (kind=8)  :: XX(3,0:px,0:py,0:pz)
+  real   (kind=8)  :: FF(d,0:px,0:py,0:pz)
+  real   (kind=8)  :: HH(3,3,d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call DersBasisFuns(spanx(ix),X(ix),px,2,Ux,Mx(:,:,ix))
+  end do
+  do iy = 0, ry
+     spany(iy) = FindSpan(ny,py,Y(iy),Uy)
+     call DersBasisFuns(spany(iy),Y(iy),py,2,Uy,My(:,:,iy))
+  end do
+  do iz = 0, rz
+     spanz(iz) = FindSpan(nz,pz,Z(iz),Uz)
+     call DersBasisFuns(spanz(iz),Z(iz),pz,2,Uz,Mz(:,:,iz))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     do iy = 0, ry
+        oy = spany(iy) - py
+        do iz = 0, rz
+           oz = spanz(iz) - pz
+           ! ---
+           do jx = 0, px
+              do jy = 0, py
+                 do jz = 0, pz
+                    FF(:,jx,jy,jz) = F (:,oz+jz,oy+jy,ox+jx)
+                    WW(  jx,jy,jz) = Pw(4,oz+jz,oy+jy,ox+jx)
+                    if (map/=0) then
+                       XX(1,jx,jy,jz) = Pw(1,oz+jz,oy+jy,ox+jx) / WW(jx,jy,jz)
+                       XX(2,jx,jy,jz) = Pw(2,oz+jz,oy+jy,ox+jx) / WW(jx,jy,jz)
+                       XX(3,jx,jy,jz) = Pw(3,oz+jz,oy+jy,ox+jx) / WW(jx,jy,jz)
+                    end if
+                 end do
+              end do
+           end do
+           ! ---
+           call TensorProd3((px+1),(py+1),(pz+1),Mx(:,:,ix),My(:,:,iy),Mz(:,:,iz),N0,N1,N2)
+           call Rationalize((px+1)*(py+1)*(pz+1),dim,WW,N0,N1,N2)
+           call Interpolate((px+1)*(py+1)*(pz+1),dim**2,d,N2,FF,HH)
+           !if (map/=0) call GeometryMap((px+1)*(py+1)*(pz+1),dim,d,N1,XX,HH)
+           if (map/=0) stop "Geometry mapping not supported"
+           ! --
+           H(:,:,:,iz,iy,ix) = HH
+           ! ---
+        end do
+     end do
+  end do
+  !
+end subroutine Hessian3
 
 end module BSp
 

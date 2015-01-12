@@ -596,7 +596,7 @@ subroutine DegreeElevate(d,n,p,U,Pw,t,nh,Uh,Qw)
            do while (j-i > tr)
               if (i < cind) then
                  alf = (ub-Uh(i))/(ua-Uh(i))
-                 Qw(:,i) = alf*Qw(:,i) + (1.0-alf)*alf*Qw(:,i-1)
+                 Qw(:,i) = alf*Qw(:,i) + (1.0-alf)*Qw(:,i-1)
               end if
               if (j >= lbz) then
                  if (j-tr <= kind-ph+oldr) then

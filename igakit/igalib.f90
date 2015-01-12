@@ -58,11 +58,11 @@ subroutine BasisFuns(i,uu,p,U,N)
   real   (kind=8), intent(out):: N(0:p)
   integer(kind=4) :: j, r
   real   (kind=8) :: left(p), right(p), saved, temp
-  N(0) = 1.0
+  N(0) = 1
   do j = 1, p
      left(j)  = uu - U(i+1-j)
      right(j) = U(i+j) - uu
-     saved = 0.0
+     saved = 0
      do r = 0, j-1
         temp = N(r) / (right(r+1) + left(j-r))
         N(r) = saved + right(r+1) * temp
@@ -81,11 +81,11 @@ subroutine DersBasisFuns(i,uu,p,n,U,ders)
   real   (kind=8) :: saved, temp, d
   real   (kind=8) :: left(p), right(p)
   real   (kind=8) :: ndu(0:p,0:p), a(0:1,0:p)
-  ndu(0,0) = 1.0
+  ndu(0,0) = 1
   do j = 1, p
      left(j)  = uu - U(i+1-j)
      right(j) = U(i+j) - uu
-     saved = 0.0
+     saved = 0
      do r = 0, j-1
         ndu(j,r) = right(r+1) + left(j-r)
         temp = ndu(r,j-1) / ndu(j,r)
@@ -97,9 +97,9 @@ subroutine DersBasisFuns(i,uu,p,n,U,ders)
   ders(:,0) = ndu(:,p)
   do r = 0, p
      s1 = 0; s2 = 1;
-     a(0,0) = 1.0
+     a(0,0) = 1
      do k = 1, n
-        d = 0.0
+        d = 0
         rk = r-k; pk = p-k;
         if (r >= k) then
            a(s2,0) = a(s1,0) / ndu(pk+1,rk)
@@ -146,7 +146,7 @@ subroutine CurvePoint(d,n,p,U,Pw,uu,C)
   real   (kind=8) :: basis(0:p)
   span = FindSpan(n,p,uu,U)
   call BasisFuns(span,uu,p,U,basis)
-  C = 0.0
+  C = 0
   do j = 0, p
      C = C + basis(j)*Pw(:,span-p+j)
   end do
@@ -168,7 +168,7 @@ subroutine SurfacePoint(d,n,p,U,m,q,V,Pw,uu,vv,S)
   call BasisFuns(uspan,uu,p,U,ubasis)
   vspan = FindSpan(m,q,vv,V)
   call BasisFuns(vspan,vv,q,V,vbasis)
-  S = 0.0
+  S = 0
   do uj = 0, p
      do vj = 0, q
         S = S + ubasis(uj)*vbasis(vj)*Pw(:,vspan-q+vj,uspan-p+uj)
@@ -293,8 +293,8 @@ subroutine RemoveKnot(d,n,p,U,Pw,uu,r,s,num,t,TOL)
      do while (j-i > t)
         alfi = (uu-U(i))/(U(i+ord+t)-U(i))
         alfj = (uu-U(j-t))/(U(j+ord)-U(j-t))
-        temp(:,ii) = (Pw(:,i)-(1.0-alfi)*temp(:,ii-1))/alfi
-        temp(:,jj) = (Pw(:,j)-alfj*temp(:,jj+1))/(1.0-alfj)
+        temp(:,ii) = (Pw(:,i)-(1-alfi)*temp(:,ii-1))/alfi
+        temp(:,jj) = (Pw(:,j)-alfj*temp(:,jj+1))/(1-alfj)
         i = i + 1; ii = ii + 1
         j = j - 1; jj = jj - 1
      end do
@@ -347,7 +347,7 @@ contains
     real   (kind=8), intent(in) :: P1(d),P2(d)
     integer(kind=4) :: i
     real   (kind=8) :: dist
-    dist = 0.0
+    dist = 0
     do i = 1,d
        dist = dist + (P1(i)-P2(i))*(P1(i)-P2(i))
     end do
@@ -395,7 +395,7 @@ contains
          idx = k-p+j
          do i = 0, r-j
             alpha = (uu-U(idx+i))/(U(k+i+1)-U(idx+i))
-            Rw(:,i) = alpha*Rw(:,i+1)+(1.0-alpha)*Rw(:,i)
+            Rw(:,i) = alpha*Rw(:,i+1)+(1-alpha)*Rw(:,i)
          end do
          Qw(:,j)     = Rw(:,0)
          Qw(:,r+r-j) = Rw(:,r-j)
@@ -521,11 +521,12 @@ subroutine DegreeElevate(d,n,p,U,Pw,t,nh,Uh,Qw)
   m = n + p + 1
   ph = p + t
   ! Bezier coefficients
-  bezalfs(0,0)  = 1.0
-  bezalfs(ph,p) = 1.0
+  bezalfs(0,0)  = 1
+  bezalfs(ph,p) = 1
   do i = 1, ph/2
+     den = Bin(ph,i)
      do j = max(0,i-t), min(p,i)
-        bezalfs(i,j) = Bin(p,j)*Bin(t,i-j)*(1.0d+0/Bin(ph,i))
+        bezalfs(i,j) = Bin(p,j)*Bin(t,i-j)/den
      end do
   end do
   do i = ph/2+1, ph-1
@@ -571,14 +572,14 @@ subroutine DegreeElevate(d,n,p,U,Pw,t,nh,Uh,Qw)
            s = mul + j
            do k = p, s, -1
               bpts(:,k) = alfs(k-s)  * bpts(:,k) + &
-                     (1.0-alfs(k-s)) * bpts(:,k-1)
+                       (1-alfs(k-s)) * bpts(:,k-1)
            end do
            nextbpts(:,r-j) = bpts(:,p)
         end do
      end if
      ! degree elevate
      do i = lbz, ph
-        ebpts(:,i) = 0.0
+        ebpts(:,i) = 0
         do j = max(0,i-t), min(p,i)
            ebpts(:,i) = ebpts(:,i) + bezalfs(i,j)*bpts(:,j)
         end do
@@ -596,14 +597,14 @@ subroutine DegreeElevate(d,n,p,U,Pw,t,nh,Uh,Qw)
            do while (j-i > tr)
               if (i < cind) then
                  alf = (ub-Uh(i))/(ua-Uh(i))
-                 Qw(:,i) = alf*Qw(:,i) + (1.0-alf)*Qw(:,i-1)
+                 Qw(:,i) = alf*Qw(:,i) + (1-alf)*Qw(:,i-1)
               end if
               if (j >= lbz) then
                  if (j-tr <= kind-ph+oldr) then
                     gam = (ub-Uh(j-tr))/den
-                    ebpts(:,kj) = gam*ebpts(:,kj) + (1.0-gam)*ebpts(:,kj+1)
+                    ebpts(:,kj) = gam*ebpts(:,kj) + (1-gam)*ebpts(:,kj+1)
                  else
-                    ebpts(:,kj) = bet*ebpts(:,kj) + (1.0-bet)*ebpts(:,kj+1)
+                    ebpts(:,kj) = bet*ebpts(:,kj) + (1-bet)*ebpts(:,kj+1)
                  end if
               end if
               i = i+1
@@ -1064,7 +1065,7 @@ subroutine Evaluate1(d,n,p,U,Pw,r,X,Cw)
      span = FindSpan(n,p,X(i),U)
      call BasisFuns(span,X(i),p,U,basis)
      !
-     C = 0.0
+     C = 0
      do j = 0, p
         C = C + basis(j)*Pw(:,span-p+j)
      end do
@@ -1105,7 +1106,7 @@ subroutine Evaluate2(d,nx,px,Ux,ny,py,Uy,Pw,rx,X,ry,Y,Cw)
      do iy = 0, ry
         oy = spany(iy) - py
         ! ---
-        C = 0.0
+        C = 0
         do jx = 0, px
            do jy = 0, py
               M = basisx(jx,ix) * basisy(jy,iy)
@@ -1157,7 +1158,7 @@ subroutine Evaluate3(d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,rx,X,ry,Y,rz,Z,Cw)
         do iz = 0, rz
            oz = spanz(iz) - pz
            ! ---
-           C = 0.0
+           C = 0
            do jx = 0, px
               do jy = 0, py
                  do jz = 0, pz
@@ -1806,7 +1807,7 @@ subroutine GaussLobattoRule(q,X,W)
      W(1) =  0.276826047361565948010700406290066293_rk
      W(2) =  0.431745381209862623417871022281362278_rk
      W(3) =  0.487619047619047619047619047619047619_rk
-     W(4) =  W(2) 
+     W(4) =  W(2)
      W(5) =  W(1)
      W(6) =  W(0)
   case (8) ! p <= 13
@@ -1898,8 +1899,8 @@ subroutine BasisData(p,m,U,d,q,r,O,J,W,X,N)
   call GaussLegendreRule(q,Xg,W)
   do ir = 1, r
      i = O(ir) + p
-     J(ir) = (U(i+1)-U(i))/2.0
-     X(:,ir) = (Xg + 1.0) * J(ir) + U(i)
+     J(ir) = (U(i+1)-U(i))/2
+     X(:,ir) = (Xg + 1) * J(ir) + U(i)
      do iq = 1, q
         uu = X(iq,ir)
         call DersBasisFuns(i,uu,p,d,U,basis)

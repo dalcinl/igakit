@@ -144,6 +144,8 @@ class PetIGA(object):
                 n  = _read(fh, I)
                 Cw = _read(fh, S, n)
                 assert len(Cw) == n
+                if R != S:
+                    Cw = np.real(Cw)
             else:
                 Cw = None
             if fields:

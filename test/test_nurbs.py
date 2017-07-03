@@ -160,6 +160,9 @@ def test_gradient():
                 if i == j: val = 1.0
                 else:      val = 0.0
                 assert np.allclose(G[...,i,j], val)
+        G = nrb.gradient(X)
+        D1 = nrb.derivative(1, X)
+        assert np.allclose(G, D1)
 
 def test_hessian():
     crv = make_crv()
@@ -175,6 +178,9 @@ def test_hessian():
         dim = nrb.dim
         #H = nrb.hessian(X[...,:dim], mapped=True)
         #assert np.allclose(H, 0)
+        H = nrb.hessian(X)
+        D2 = nrb.derivative(2, X)
+        assert np.allclose(H, D2)
     #
     from igakit.cad import linear, bilinear, trilinear
     crv = linear()

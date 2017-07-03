@@ -658,13 +658,14 @@ end module bspline
 
 module bspeval
 contains
-subroutine TensorProd1(ina,iN,N0,N1,N2)
+subroutine TensorProd1(ina,iN,N0,N1,N2,N3)
   implicit none
   integer(kind=4), intent(in)  :: ina
-  real   (kind=8), intent(in)  :: iN(ina,0:2)
+  real   (kind=8), intent(in)  :: iN(ina,0:3)
   real   (kind=8), intent(out) :: N0(  ina)
   real   (kind=8), intent(out) :: N1(1,ina)
-  real   (kind=8), intent(out), optional :: N2(1,1,ina)
+  real   (kind=8), intent(out), optional :: N2(  1,1,ina)
+  real   (kind=8), intent(out), optional :: N3(1,1,1,ina)
   integer(kind=4)  :: ia
   do ia=1,ina
      N0(ia) = iN(ia,0)
@@ -676,15 +677,20 @@ subroutine TensorProd1(ina,iN,N0,N1,N2)
   do ia=1,ina
      N2(1,1,ia) = iN(ia,2)
   end do
+  if (.not. present(N3)) return
+  do ia=1,ina
+     N3(1,1,1,ia) = iN(ia,3)
+  end do
 end subroutine TensorProd1
-subroutine TensorProd2(ina,jna,iN,jN,N0,N1,N2)
+subroutine TensorProd2(ina,jna,iN,jN,N0,N1,N2,N3)
   implicit none
   integer(kind=4), intent(in)  :: ina, jna
-  real   (kind=8), intent(in)  :: iN(ina,0:2)
-  real   (kind=8), intent(in)  :: jN(jna,0:2)
+  real   (kind=8), intent(in)  :: iN(ina,0:3)
+  real   (kind=8), intent(in)  :: jN(jna,0:3)
   real   (kind=8), intent(out) :: N0(  ina,jna)
   real   (kind=8), intent(out) :: N1(2,ina,jna)
-  real   (kind=8), intent(out), optional :: N2(2,2,ina,jna)
+  real   (kind=8), intent(out), optional :: N2(  2,2,ina,jna)
+  real   (kind=8), intent(out), optional :: N3(2,2,2,ina,jna)
   integer(kind=4)  :: ia, ja
    do ja=1,jna; do ia=1,ina
      N0(ia,ja) = iN(ia,0) * jN(ja,0)
@@ -700,16 +706,28 @@ subroutine TensorProd2(ina,jna,iN,jN,N0,N1,N2)
      N2(1,2,ia,ja) = iN(ia,1) * jN(ja,1)
      N2(2,2,ia,ja) = iN(ia,0) * jN(ja,2)
   end do; end do
-  end subroutine TensorProd2
-subroutine TensorProd3(ina,jna,kna,iN,jN,kN,N0,N1,N2)
+  if (.not. present(N3)) return
+  do ja=1,jna; do ia=1,ina
+     N3(1,1,1,ia,ja) = iN(ia,3) * jN(ja,0)
+     N3(2,1,1,ia,ja) = iN(ia,2) * jN(ja,1)
+     N3(1,2,1,ia,ja) = iN(ia,2) * jN(ja,1)
+     N3(2,2,1,ia,ja) = iN(ia,1) * jN(ja,2)
+     N3(1,1,2,ia,ja) = iN(ia,2) * jN(ja,1)
+     N3(2,1,2,ia,ja) = iN(ia,1) * jN(ja,2)
+     N3(1,2,2,ia,ja) = iN(ia,1) * jN(ja,2)
+     N3(2,2,2,ia,ja) = iN(ia,0) * jN(ja,3)
+  end do; end do
+end subroutine TensorProd2
+subroutine TensorProd3(ina,jna,kna,iN,jN,kN,N0,N1,N2,N3)
   implicit none
   integer(kind=4), intent(in)  :: ina, jna, kna
-  real   (kind=8), intent(in)  :: iN(ina,0:2)
-  real   (kind=8), intent(in)  :: jN(jna,0:2)
-  real   (kind=8), intent(in)  :: kN(kna,0:2)
+  real   (kind=8), intent(in)  :: iN(ina,0:3)
+  real   (kind=8), intent(in)  :: jN(jna,0:3)
+  real   (kind=8), intent(in)  :: kN(kna,0:3)
   real   (kind=8), intent(out) :: N0(  ina,jna,kna)
   real   (kind=8), intent(out) :: N1(3,ina,jna,kna)
-  real   (kind=8), intent(out), optional :: N2(3,3,ina,jna,kna)
+  real   (kind=8), intent(out), optional :: N2(  3,3,ina,jna,kna)
+  real   (kind=8), intent(out), optional :: N3(3,3,3,ina,jna,kna)
   integer(kind=4)  :: ia, ja, ka
    do ja=1,jna; do ia=1,ina; do ka=1,kna
      N0(ia,ja,ka) = iN(ia,0) * jN(ja,0) * kN(ka,0)
@@ -731,17 +749,48 @@ subroutine TensorProd3(ina,jna,kna,iN,jN,kN,N0,N1,N2)
      N2(2,3,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,1)
      N2(3,3,ia,ja,ka) = iN(ia,0) * jN(ja,0) * kN(ka,2)
   end do; end do; end do
+  if (.not. present(N3)) return
+  do ja=1,jna; do ia=1,ina; do ka=1,kna
+     N3(1,1,1,ia,ja,ka) = iN(ia,3) * jN(ja,0) * kN(ka,0)
+     N3(2,1,1,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,0)
+     N3(3,1,1,ia,ja,ka) = iN(ia,2) * jN(ja,0) * kN(ka,1)
+     N3(1,2,1,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,0)
+     N3(2,2,1,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,0)
+     N3(3,2,1,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,1)
+     N3(1,3,1,ia,ja,ka) = iN(ia,2) * jN(ja,0) * kN(ka,1)
+     N3(2,3,1,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,1)
+     N3(3,3,1,ia,ja,ka) = iN(ia,1) * jN(ja,0) * kN(ka,2)
+     N3(1,1,2,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,0)
+     N3(2,1,2,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,0)
+     N3(3,1,2,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,1)
+     N3(1,2,2,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,0)
+     N3(2,2,2,ia,ja,ka) = iN(ia,0) * jN(ja,3) * kN(ka,0)
+     N3(3,2,2,ia,ja,ka) = iN(ia,0) * jN(ja,2) * kN(ka,1)
+     N3(1,3,2,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,1)
+     N3(2,3,2,ia,ja,ka) = iN(ia,0) * jN(ja,2) * kN(ka,1)
+     N3(3,3,2,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,2)
+     N3(1,1,3,ia,ja,ka) = iN(ia,2) * jN(ja,0) * kN(ka,1)
+     N3(2,1,3,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,1)
+     N3(3,1,3,ia,ja,ka) = iN(ia,1) * jN(ja,0) * kN(ka,2)
+     N3(1,2,3,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,1)
+     N3(2,2,3,ia,ja,ka) = iN(ia,0) * jN(ja,2) * kN(ka,1)
+     N3(3,2,3,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,2)
+     N3(1,3,3,ia,ja,ka) = iN(ia,1) * jN(ja,0) * kN(ka,2)
+     N3(2,3,3,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,2)
+     N3(3,3,3,ia,ja,ka) = iN(ia,0) * jN(ja,0) * kN(ka,3)
+  end do; end do; end do
 end subroutine TensorProd3
-subroutine Rationalize(nen,dim,W,R0,R1,R2)
+subroutine Rationalize(nen,dim,W,R0,R1,R2,R3)
   implicit none
   integer(kind=4), intent(in)    :: dim
   integer(kind=4), intent(in)    :: nen
   real   (kind=8), intent(in)    :: W(nen)
   real   (kind=8), intent(inout) :: R0(nen)
   real   (kind=8), intent(inout) :: R1(dim,nen)
-  real   (kind=8), intent(inout), optional :: R2(dim,dim,nen)
-  integer(kind=4)  :: a, i, j
-  real   (kind=8)  :: W0, W1(dim), W2(dim,dim)
+  real   (kind=8), intent(inout), optional :: R2(    dim,dim,nen)
+  real   (kind=8), intent(inout), optional :: R3(dim,dim,dim,nen)
+  integer(kind=4)  :: a, i, j, k
+  real   (kind=8)  :: W0, W1(dim), W2(dim,dim), W3(dim,dim,dim)
   do a=1,nen
      R0(a) = W(a) * R0(a)
   end do
@@ -759,6 +808,14 @@ subroutine Rationalize(nen,dim,W,R0,R1,R2)
                - R1(i,:)*W1(j) - R1(j,:)*W1(i)
   end do; end do
   R2 = R2 / W0
+  if (.not. present(R3)) return
+  do k=1,dim; do j=1,dim; do i=1,dim
+     W3(i,j,k) = sum(W*R3(i,j,k,:))
+     R3(i,j,k,:) = W*R3(i,j,k,:)   - R0(:)*W3(i,j,k) &
+                 - R1(i,:)*W2(j,k) - R1(j,:)*W2(i,k) - R1(k,:)*W2(i,j) &
+                 - R2(j,k,:)*W1(i) - R2(i,k,:)*W1(j) - R2(i,j,:)*W1(k)
+  end do; end do; end do
+  R3 = R3 / W0
 end subroutine Rationalize
 subroutine GeometryMap(nen,dim,dof,N1,X,G)
   implicit none
@@ -1570,6 +1627,210 @@ subroutine Hessian3(map,d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,F,rx,X,ry,Y,rz,Z,H)
   end do
   !
 end subroutine Hessian3
+
+subroutine ThirdDer1(map,d,nx,px,Ux,Pw,F,rx,X,D3)
+  use bspline
+  use bspeval
+  implicit none
+  integer(kind=4), intent(in)  :: map
+  integer(kind=4), parameter   :: dim = 1
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx
+  integer(kind=4), intent(in)  :: px
+  integer(kind=4), intent(in)  :: rx
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Pw(4,0:nx)
+  real   (kind=8), intent(in)  :: F (d,0:nx)
+  real   (kind=8), intent(out) :: D3(1,1,1,d,0:rx)
+  real   (kind=8), intent(in)  :: X(0:rx)
+  integer(kind=4)  :: ix, jx, ox, spanx(0:rx)
+  real   (kind=8)  :: Mx(0:px,0:3,0:rx)
+  real   (kind=8)  :: N0(      0:px)
+  real   (kind=8)  :: N1(    1,0:px)
+  real   (kind=8)  :: N2(  1,1,0:px)
+  real   (kind=8)  :: N3(1,1,1,0:px)
+  real   (kind=8)  :: WW(  0:px)
+  real   (kind=8)  :: XX(1,0:px)
+  real   (kind=8)  :: FF(d,0:px)
+  real   (kind=8)  :: DD(1,1,1,d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call DersBasisFuns(spanx(ix),X(ix),px,3,Ux,Mx(:,:,ix))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     ! ---
+     do jx = 0, px
+        FF(:,jx) = F (:,ox+jx)
+        WW(  jx) = Pw(4,ox+jx)
+        if (map/=0) then
+           XX(1,jx) = Pw(1,ox+jx) / WW(jx)
+        end if
+     end do
+     ! ---
+     call TensorProd1((px+1),Mx(:,:,ix),N0,N1,N2,N3)
+     call Rationalize((px+1),dim,WW,N0,N1,N2,N3)
+     call Interpolate((px+1),dim**3,d,N3,FF,DD)
+     !if (map/=0) call GeometryMap((px+1),dim,d,N1,XX,GG)
+     if (map/=0) stop "Geometry mapping not supported"
+     ! --
+     D3(:,:,:,:,ix) = DD
+     ! ---
+  end do
+  !
+end subroutine ThirdDer1
+
+subroutine ThirdDer2(map,d,nx,px,Ux,ny,py,Uy,Pw,F,rx,X,ry,Y,D3)
+  use bspline
+  use bspeval
+  implicit none
+  integer(kind=4), intent(in)  :: map
+  integer(kind=4), parameter   :: dim = 2
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx, ny
+  integer(kind=4), intent(in)  :: px, py
+  integer(kind=4), intent(in)  :: rx, ry
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Uy(0:ny+py+1)
+  real   (kind=8), intent(in)  :: Pw(4,0:ny,0:nx)
+  real   (kind=8), intent(in)  :: F (d,0:ny,0:nx)
+  real   (kind=8), intent(out) :: D3(2,2,2,d,0:ry,0:rx)
+  real   (kind=8), intent(in)  :: X(0:rx)
+  real   (kind=8), intent(in)  :: Y(0:ry)
+  integer(kind=4)  :: ix, jx, ox, spanx(0:rx)
+  integer(kind=4)  :: iy, jy, oy, spany(0:ry)
+  real   (kind=8)  :: Mx(0:px,0:3,0:rx)
+  real   (kind=8)  :: My(0:py,0:3,0:ry)
+  real   (kind=8)  :: N0(      0:px,0:py)
+  real   (kind=8)  :: N1(    2,0:px,0:py)
+  real   (kind=8)  :: N2(  2,2,0:px,0:py)
+  real   (kind=8)  :: N3(2,2,2,0:px,0:py)
+  real   (kind=8)  :: WW(  0:px,0:py)
+  real   (kind=8)  :: XX(2,0:px,0:py)
+  real   (kind=8)  :: FF(d,0:px,0:py)
+  real   (kind=8)  :: DD(2,2,2,d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call DersBasisFuns(spanx(ix),X(ix),px,3,Ux,Mx(:,:,ix))
+  end do
+  do iy = 0, ry
+     spany(iy) = FindSpan(ny,py,Y(iy),Uy)
+     call DersBasisFuns(spany(iy),Y(iy),py,3,Uy,My(:,:,iy))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     do iy = 0, ry
+        oy = spany(iy) - py
+        ! ---
+        do jx = 0, px
+           do jy = 0, py
+              FF(:,jx,jy) = F (:,oy+jy,ox+jx)
+              WW(  jx,jy) = Pw(4,oy+jy,ox+jx)
+              if (map/=0) then
+                 XX(1,jx,jy) = Pw(1,oy+jy,ox+jx) / WW(jx,jy)
+                 XX(2,jx,jy) = Pw(2,oy+jy,ox+jx) / WW(jx,jy)
+              end if
+           end do
+        end do
+        ! ---
+        call TensorProd2((px+1),(py+1),Mx(:,:,ix),My(:,:,iy),N0,N1,N2,N3)
+        call Rationalize((px+1)*(py+1),dim,WW,N0,N1,N2,N3)
+        call Interpolate((px+1)*(py+1),dim**3,d,N3,FF,DD)
+        !if (map/=0) call GeometryMap((px+1)*(py+1),dim,d,N1,XX,DD)
+        if (map/=0) stop "Geometry mapping not supported"
+        ! --
+        D3(:,:,:,:,iy,ix) = DD
+        ! ---
+     end do
+  end do
+  !
+end subroutine ThirdDer2
+
+subroutine ThirdDer3(map,d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,F,rx,X,ry,Y,rz,Z,D3)
+  use bspline
+  use bspeval
+  implicit none
+  integer(kind=4), parameter   :: dim = 3
+  integer(kind=4), intent(in)  :: map
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx, ny, nz
+  integer(kind=4), intent(in)  :: px, py, pz
+  integer(kind=4), intent(in)  :: rx, ry, rz
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Uy(0:ny+py+1)
+  real   (kind=8), intent(in)  :: Uz(0:nz+pz+1)
+  real   (kind=8), intent(in)  :: Pw(4,0:nz,0:ny,0:nx)
+  real   (kind=8), intent(in)  :: F (d,0:nz,0:ny,0:nx)
+  real   (kind=8), intent(out) :: D3(3,3,3,d,0:rz,0:ry,0:rx)
+  real   (kind=8), intent(in)  :: X(0:rx)
+  real   (kind=8), intent(in)  :: Y(0:ry)
+  real   (kind=8), intent(in)  :: Z(0:rz)
+  integer(kind=4)  :: ix, jx, ox, spanx(0:rx)
+  integer(kind=4)  :: iy, jy, oy, spany(0:ry)
+  integer(kind=4)  :: iz, jz, oz, spanz(0:rz)
+  real   (kind=8)  :: Mx(0:px,0:3,0:rx)
+  real   (kind=8)  :: My(0:py,0:3,0:ry)
+  real   (kind=8)  :: Mz(0:pz,0:3,0:rz)
+  real   (kind=8)  :: N0(      0:px,0:py,0:pz)
+  real   (kind=8)  :: N1(    3,0:px,0:py,0:pz)
+  real   (kind=8)  :: N2(  3,3,0:px,0:py,0:pz)
+  real   (kind=8)  :: N3(3,3,3,0:px,0:py,0:pz)
+  real   (kind=8)  :: WW(  0:px,0:py,0:pz)
+  real   (kind=8)  :: XX(3,0:px,0:py,0:pz)
+  real   (kind=8)  :: FF(d,0:px,0:py,0:pz)
+  real   (kind=8)  :: DD(3,3,3,d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call DersBasisFuns(spanx(ix),X(ix),px,3,Ux,Mx(:,:,ix))
+  end do
+  do iy = 0, ry
+     spany(iy) = FindSpan(ny,py,Y(iy),Uy)
+     call DersBasisFuns(spany(iy),Y(iy),py,3,Uy,My(:,:,iy))
+  end do
+  do iz = 0, rz
+     spanz(iz) = FindSpan(nz,pz,Z(iz),Uz)
+     call DersBasisFuns(spanz(iz),Z(iz),pz,3,Uz,Mz(:,:,iz))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     do iy = 0, ry
+        oy = spany(iy) - py
+        do iz = 0, rz
+           oz = spanz(iz) - pz
+           ! ---
+           do jx = 0, px
+              do jy = 0, py
+                 do jz = 0, pz
+                    FF(:,jx,jy,jz) = F (:,oz+jz,oy+jy,ox+jx)
+                    WW(  jx,jy,jz) = Pw(4,oz+jz,oy+jy,ox+jx)
+                    if (map/=0) then
+                       XX(1,jx,jy,jz) = Pw(1,oz+jz,oy+jy,ox+jx) / WW(jx,jy,jz)
+                       XX(2,jx,jy,jz) = Pw(2,oz+jz,oy+jy,ox+jx) / WW(jx,jy,jz)
+                       XX(3,jx,jy,jz) = Pw(3,oz+jz,oy+jy,ox+jx) / WW(jx,jy,jz)
+                    end if
+                 end do
+              end do
+           end do
+           ! ---
+           call TensorProd3((px+1),(py+1),(pz+1),Mx(:,:,ix),My(:,:,iy),Mz(:,:,iz),N0,N1,N2,N3)
+           call Rationalize((px+1)*(py+1)*(pz+1),dim,WW,N0,N1,N2,N3)
+           call Interpolate((px+1)*(py+1)*(pz+1),dim**3,d,N3,FF,DD)
+           !if (map/=0) call GeometryMap((px+1)*(py+1)*(pz+1),dim,d,N1,XX,DD)
+           if (map/=0) stop "Geometry mapping not supported"
+           ! --
+           D3(:,:,:,:,iz,iy,ix) = DD
+           ! ---
+        end do
+     end do
+  end do
+  !
+end subroutine ThirdDer3
 
 end module BSp
 

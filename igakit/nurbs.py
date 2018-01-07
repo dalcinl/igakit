@@ -1698,8 +1698,8 @@ class NURBS(object):
         arglist.append(F)
         arglist.extend(uvw)
         #
-        assert order >= 1 and order <= 3
-        fn = ['Gradient', 'Hessian', 'ThirdDer'][order-1]
+        assert order >= 1 and order <= 4
+        fn = ['Gradient', 'Hessian', 'ThirdDer', 'FourthDer'][order-1]
         Derivative = getattr(_bsp, '%s%d' % (fn, self.dim))
         D = Derivative(*arglist)
         #

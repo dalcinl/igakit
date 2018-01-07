@@ -658,14 +658,15 @@ end module bspline
 
 module bspeval
 contains
-subroutine TensorProd1(ina,iN,N0,N1,N2,N3)
+subroutine TensorProd1(ina,iN,N0,N1,N2,N3,N4)
   implicit none
   integer(kind=4), intent(in)  :: ina
-  real   (kind=8), intent(in)  :: iN(ina,0:3)
+  real   (kind=8), intent(in)  :: iN(ina,0:4)
   real   (kind=8), intent(out) :: N0(  ina)
   real   (kind=8), intent(out) :: N1(1,ina)
-  real   (kind=8), intent(out), optional :: N2(  1,1,ina)
-  real   (kind=8), intent(out), optional :: N3(1,1,1,ina)
+  real   (kind=8), intent(out), optional :: N2(    1,1,ina)
+  real   (kind=8), intent(out), optional :: N3(  1,1,1,ina)
+  real   (kind=8), intent(out), optional :: N4(1,1,1,1,ina)
   integer(kind=4)  :: ia
   do ia=1,ina
      N0(ia) = iN(ia,0)
@@ -681,16 +682,21 @@ subroutine TensorProd1(ina,iN,N0,N1,N2,N3)
   do ia=1,ina
      N3(1,1,1,ia) = iN(ia,3)
   end do
+  if (.not. present(N4)) return
+  do ia=1,ina
+     N4(1,1,1,1,ia) = iN(ia,3)
+  end do
 end subroutine TensorProd1
-subroutine TensorProd2(ina,jna,iN,jN,N0,N1,N2,N3)
+subroutine TensorProd2(ina,jna,iN,jN,N0,N1,N2,N3,N4)
   implicit none
   integer(kind=4), intent(in)  :: ina, jna
-  real   (kind=8), intent(in)  :: iN(ina,0:3)
-  real   (kind=8), intent(in)  :: jN(jna,0:3)
+  real   (kind=8), intent(in)  :: iN(ina,0:4)
+  real   (kind=8), intent(in)  :: jN(jna,0:4)
   real   (kind=8), intent(out) :: N0(  ina,jna)
   real   (kind=8), intent(out) :: N1(2,ina,jna)
-  real   (kind=8), intent(out), optional :: N2(  2,2,ina,jna)
-  real   (kind=8), intent(out), optional :: N3(2,2,2,ina,jna)
+  real   (kind=8), intent(out), optional :: N2(    2,2,ina,jna)
+  real   (kind=8), intent(out), optional :: N3(  2,2,2,ina,jna)
+  real   (kind=8), intent(out), optional :: N4(2,2,2,2,ina,jna)
   integer(kind=4)  :: ia, ja
    do ja=1,jna; do ia=1,ina
      N0(ia,ja) = iN(ia,0) * jN(ja,0)
@@ -717,17 +723,37 @@ subroutine TensorProd2(ina,jna,iN,jN,N0,N1,N2,N3)
      N3(1,2,2,ia,ja) = iN(ia,1) * jN(ja,2)
      N3(2,2,2,ia,ja) = iN(ia,0) * jN(ja,3)
   end do; end do
+  if (.not. present(N4)) return
+  do ja=1,jna; do ia=1,ina
+     N4(1,1,1,1,ia,ja) = iN(ia,4) * jN(ja,0)
+     N4(2,1,1,1,ia,ja) = iN(ia,3) * jN(ja,1)
+     N4(1,2,1,1,ia,ja) = iN(ia,3) * jN(ja,1)
+     N4(2,2,1,1,ia,ja) = iN(ia,2) * jN(ja,2)
+     N4(1,1,2,1,ia,ja) = iN(ia,3) * jN(ja,1)
+     N4(2,1,2,1,ia,ja) = iN(ia,2) * jN(ja,2)
+     N4(1,2,2,1,ia,ja) = iN(ia,2) * jN(ja,2)
+     N4(2,2,2,1,ia,ja) = iN(ia,1) * jN(ja,3)
+     N4(1,1,1,2,ia,ja) = iN(ia,3) * jN(ja,1)
+     N4(2,1,1,2,ia,ja) = iN(ia,2) * jN(ja,2)
+     N4(1,2,1,2,ia,ja) = iN(ia,2) * jN(ja,2)
+     N4(2,2,1,2,ia,ja) = iN(ia,1) * jN(ja,3)
+     N4(1,1,2,2,ia,ja) = iN(ia,2) * jN(ja,2)
+     N4(2,1,2,2,ia,ja) = iN(ia,1) * jN(ja,3)
+     N4(1,2,2,2,ia,ja) = iN(ia,1) * jN(ja,3)
+     N4(2,2,2,2,ia,ja) = iN(ia,0) * jN(ja,4)
+  end do; end do
 end subroutine TensorProd2
-subroutine TensorProd3(ina,jna,kna,iN,jN,kN,N0,N1,N2,N3)
+subroutine TensorProd3(ina,jna,kna,iN,jN,kN,N0,N1,N2,N3,N4)
   implicit none
   integer(kind=4), intent(in)  :: ina, jna, kna
-  real   (kind=8), intent(in)  :: iN(ina,0:3)
-  real   (kind=8), intent(in)  :: jN(jna,0:3)
-  real   (kind=8), intent(in)  :: kN(kna,0:3)
+  real   (kind=8), intent(in)  :: iN(ina,0:4)
+  real   (kind=8), intent(in)  :: jN(jna,0:4)
+  real   (kind=8), intent(in)  :: kN(kna,0:4)
   real   (kind=8), intent(out) :: N0(  ina,jna,kna)
   real   (kind=8), intent(out) :: N1(3,ina,jna,kna)
-  real   (kind=8), intent(out), optional :: N2(  3,3,ina,jna,kna)
-  real   (kind=8), intent(out), optional :: N3(3,3,3,ina,jna,kna)
+  real   (kind=8), intent(out), optional :: N2(    3,3,ina,jna,kna)
+  real   (kind=8), intent(out), optional :: N3(  3,3,3,ina,jna,kna)
+  real   (kind=8), intent(out), optional :: N4(3,3,3,3,ina,jna,kna)
   integer(kind=4)  :: ia, ja, ka
    do ja=1,jna; do ia=1,ina; do ka=1,kna
      N0(ia,ja,ka) = iN(ia,0) * jN(ja,0) * kN(ka,0)
@@ -779,18 +805,104 @@ subroutine TensorProd3(ina,jna,kna,iN,jN,kN,N0,N1,N2,N3)
      N3(2,3,3,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,2)
      N3(3,3,3,ia,ja,ka) = iN(ia,0) * jN(ja,0) * kN(ka,3)
   end do; end do; end do
+  if (.not. present(N4)) return
+  do ka=1,kna; do ja=1,jna; do ia=1,ina
+     N4(1,1,1,1,ia,ja,ka) = iN(ia,4) * jN(ja,0) * kN(ka,0)
+     N4(2,1,1,1,ia,ja,ka) = iN(ia,3) * jN(ja,1) * kN(ka,0)
+     N4(3,1,1,1,ia,ja,ka) = iN(ia,3) * jN(ja,0) * kN(ka,1)
+     N4(1,2,1,1,ia,ja,ka) = iN(ia,3) * jN(ja,1) * kN(ka,0)
+     N4(2,2,1,1,ia,ja,ka) = iN(ia,2) * jN(ja,2) * kN(ka,0)
+     N4(3,2,1,1,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,1)
+     N4(1,3,1,1,ia,ja,ka) = iN(ia,3) * jN(ja,0) * kN(ka,1)
+     N4(2,3,1,1,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,1)
+     N4(3,3,1,1,ia,ja,ka) = iN(ia,2) * jN(ja,0) * kN(ka,2)
+     N4(1,1,2,1,ia,ja,ka) = iN(ia,3) * jN(ja,1) * kN(ka,0)
+     N4(2,1,2,1,ia,ja,ka) = iN(ia,2) * jN(ja,2) * kN(ka,0)
+     N4(3,1,2,1,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,1)
+     N4(1,2,2,1,ia,ja,ka) = iN(ia,2) * jN(ja,2) * kN(ka,0)
+     N4(2,2,2,1,ia,ja,ka) = iN(ia,1) * jN(ja,3) * kN(ka,0)
+     N4(3,2,2,1,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,1)
+     N4(1,3,2,1,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,1)
+     N4(2,3,2,1,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,1)
+     N4(3,3,2,1,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,2)
+     N4(1,1,3,1,ia,ja,ka) = iN(ia,3) * jN(ja,0) * kN(ka,1)
+     N4(2,1,3,1,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,1)
+     N4(3,1,3,1,ia,ja,ka) = iN(ia,2) * jN(ja,0) * kN(ka,2)
+     N4(1,2,3,1,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,1)
+     N4(2,2,3,1,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,1)
+     N4(3,2,3,1,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,2)
+     N4(1,3,3,1,ia,ja,ka) = iN(ia,2) * jN(ja,0) * kN(ka,2)
+     N4(2,3,3,1,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,2)
+     N4(3,3,3,1,ia,ja,ka) = iN(ia,1) * jN(ja,0) * kN(ka,3)
+     N4(1,1,1,2,ia,ja,ka) = iN(ia,3) * jN(ja,1) * kN(ka,0)
+     N4(2,1,1,2,ia,ja,ka) = iN(ia,2) * jN(ja,2) * kN(ka,0)
+     N4(3,1,1,2,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,1)
+     N4(1,2,1,2,ia,ja,ka) = iN(ia,2) * jN(ja,2) * kN(ka,0)
+     N4(2,2,1,2,ia,ja,ka) = iN(ia,1) * jN(ja,3) * kN(ka,0)
+     N4(3,2,1,2,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,1)
+     N4(1,3,1,2,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,1)
+     N4(2,3,1,2,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,1)
+     N4(3,3,1,2,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,2)
+     N4(1,1,2,2,ia,ja,ka) = iN(ia,2) * jN(ja,2) * kN(ka,0)
+     N4(2,1,2,2,ia,ja,ka) = iN(ia,1) * jN(ja,3) * kN(ka,0)
+     N4(3,1,2,2,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,1)
+     N4(1,2,2,2,ia,ja,ka) = iN(ia,1) * jN(ja,3) * kN(ka,0)
+     N4(2,2,2,2,ia,ja,ka) = iN(ia,0) * jN(ja,4) * kN(ka,0)
+     N4(3,2,2,2,ia,ja,ka) = iN(ia,0) * jN(ja,3) * kN(ka,1)
+     N4(1,3,2,2,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,1)
+     N4(2,3,2,2,ia,ja,ka) = iN(ia,0) * jN(ja,3) * kN(ka,1)
+     N4(3,3,2,2,ia,ja,ka) = iN(ia,0) * jN(ja,2) * kN(ka,2)
+     N4(1,1,3,2,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,1)
+     N4(2,1,3,2,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,1)
+     N4(3,1,3,2,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,2)
+     N4(1,2,3,2,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,1)
+     N4(2,2,3,2,ia,ja,ka) = iN(ia,0) * jN(ja,3) * kN(ka,1)
+     N4(3,2,3,2,ia,ja,ka) = iN(ia,0) * jN(ja,2) * kN(ka,2)
+     N4(1,3,3,2,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,2)
+     N4(2,3,3,2,ia,ja,ka) = iN(ia,0) * jN(ja,2) * kN(ka,2)
+     N4(3,3,3,2,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,3)
+     N4(1,1,1,3,ia,ja,ka) = iN(ia,3) * jN(ja,0) * kN(ka,1)
+     N4(2,1,1,3,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,1)
+     N4(3,1,1,3,ia,ja,ka) = iN(ia,2) * jN(ja,0) * kN(ka,2)
+     N4(1,2,1,3,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,1)
+     N4(2,2,1,3,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,1)
+     N4(3,2,1,3,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,2)
+     N4(1,3,1,3,ia,ja,ka) = iN(ia,2) * jN(ja,0) * kN(ka,2)
+     N4(2,3,1,3,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,2)
+     N4(3,3,1,3,ia,ja,ka) = iN(ia,1) * jN(ja,0) * kN(ka,3)
+     N4(1,1,2,3,ia,ja,ka) = iN(ia,2) * jN(ja,1) * kN(ka,1)
+     N4(2,1,2,3,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,1)
+     N4(3,1,2,3,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,2)
+     N4(1,2,2,3,ia,ja,ka) = iN(ia,1) * jN(ja,2) * kN(ka,1)
+     N4(2,2,2,3,ia,ja,ka) = iN(ia,0) * jN(ja,3) * kN(ka,1)
+     N4(3,2,2,3,ia,ja,ka) = iN(ia,0) * jN(ja,2) * kN(ka,2)
+     N4(1,3,2,3,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,2)
+     N4(2,3,2,3,ia,ja,ka) = iN(ia,0) * jN(ja,2) * kN(ka,2)
+     N4(3,3,2,3,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,3)
+     N4(1,1,3,3,ia,ja,ka) = iN(ia,2) * jN(ja,0) * kN(ka,2)
+     N4(2,1,3,3,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,2)
+     N4(3,1,3,3,ia,ja,ka) = iN(ia,1) * jN(ja,0) * kN(ka,3)
+     N4(1,2,3,3,ia,ja,ka) = iN(ia,1) * jN(ja,1) * kN(ka,2)
+     N4(2,2,3,3,ia,ja,ka) = iN(ia,0) * jN(ja,2) * kN(ka,2)
+     N4(3,2,3,3,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,3)
+     N4(1,3,3,3,ia,ja,ka) = iN(ia,1) * jN(ja,0) * kN(ka,3)
+     N4(2,3,3,3,ia,ja,ka) = iN(ia,0) * jN(ja,1) * kN(ka,3)
+     N4(3,3,3,3,ia,ja,ka) = iN(ia,0) * jN(ja,0) * kN(ka,4)
+  end do; end do; end do
 end subroutine TensorProd3
-subroutine Rationalize(nen,dim,W,R0,R1,R2,R3)
+subroutine Rationalize(nen,dim,W,R0,R1,R2,R3,R4)
   implicit none
   integer(kind=4), intent(in)    :: dim
   integer(kind=4), intent(in)    :: nen
   real   (kind=8), intent(in)    :: W(nen)
   real   (kind=8), intent(inout) :: R0(nen)
   real   (kind=8), intent(inout) :: R1(dim,nen)
-  real   (kind=8), intent(inout), optional :: R2(    dim,dim,nen)
-  real   (kind=8), intent(inout), optional :: R3(dim,dim,dim,nen)
-  integer(kind=4)  :: a, i, j, k
-  real   (kind=8)  :: W0, W1(dim), W2(dim,dim), W3(dim,dim,dim)
+  real   (kind=8), intent(inout), optional :: R2(        dim,dim,nen)
+  real   (kind=8), intent(inout), optional :: R3(    dim,dim,dim,nen)
+  real   (kind=8), intent(inout), optional :: R4(dim,dim,dim,dim,nen)
+  integer(kind=4)  :: a, i, j, k, l
+  real   (kind=8)  :: W0, W1(dim), W2(dim,dim)
+  real   (kind=8)  :: W3(dim,dim,dim), W4(dim,dim,dim,dim)
   do a=1,nen
      R0(a) = W(a) * R0(a)
   end do
@@ -816,6 +928,19 @@ subroutine Rationalize(nen,dim,W,R0,R1,R2,R3)
                  - R2(j,k,:)*W1(i) - R2(i,k,:)*W1(j) - R2(i,j,:)*W1(k)
   end do; end do; end do
   R3 = R3 / W0
+  if (.not. present(R4)) return
+  do l=1,dim; do k=1,dim; do j=1,dim; do i=1,dim
+     W4(i,j,k,l) = sum(W*R4(i,j,k,l,:))
+     R4(i,j,k,l,:) = W*R4(i,j,k,l,:) &
+                   - R0(:)*W4(i,j,k,l) - R1(l,:)*W3(i,j,k) &
+                   - R1(k,:)*W3(i,j,l) - R2(k,l,:)*W2(i,j) &
+                   - R1(j,:)*W3(i,k,l) - R2(j,l,:)*W2(i,k) &
+                   - R2(j,k,:)*W2(i,l) - R3(j,k,l,:)*W1(i) &
+                   - R1(i,:)*W3(j,k,l) - R2(i,l,:)*W2(j,k) &
+                   - R2(i,k,:)*W2(j,l) - R3(i,k,l,:)*W1(j) &
+                   - R2(i,j,:)*W2(k,l) - R3(i,j,l,:)*W1(k)
+  end do; end do; end do; end do
+  R4 = R4 / W0
 end subroutine Rationalize
 subroutine GeometryMap(nen,dim,dof,N1,X,G)
   implicit none
@@ -1831,6 +1956,210 @@ subroutine ThirdDer3(map,d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,F,rx,X,ry,Y,rz,Z,D3)
   end do
   !
 end subroutine ThirdDer3
+
+subroutine FourthDer1(map,d,nx,px,Ux,Pw,F,rx,X,D4)
+  use bspline
+  use bspeval
+  implicit none
+  integer(kind=4), intent(in)  :: map
+  integer(kind=4), parameter   :: dim = 1
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx
+  integer(kind=4), intent(in)  :: px
+  integer(kind=4), intent(in)  :: rx
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Pw(4,0:nx)
+  real   (kind=8), intent(in)  :: F (d,0:nx)
+  real   (kind=8), intent(out) :: D4(dim**4,d,0:rx)
+  real   (kind=8), intent(in)  :: X(0:rx)
+  integer(kind=4)  :: ix, jx, ox, spanx(0:rx)
+  real   (kind=8)  :: Mx(0:px,0:4,0:rx)
+  real   (kind=8)  :: N0(        0:px)
+  real   (kind=8)  :: N1(      1,0:px)
+  real   (kind=8)  :: N2(    1,1,0:px)
+  real   (kind=8)  :: N3(  1,1,1,0:px)
+  real   (kind=8)  :: N4(1,1,1,1,0:px)
+  real   (kind=8)  :: WW(  0:px)
+  real   (kind=8)  :: XX(1,0:px)
+  real   (kind=8)  :: FF(d,0:px)
+  real   (kind=8)  :: DD(dim**4,d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call DersBasisFuns(spanx(ix),X(ix),px,4,Ux,Mx(:,:,ix))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     ! ---
+     do jx = 0, px
+        FF(:,jx) = F (:,ox+jx)
+        WW(  jx) = Pw(4,ox+jx)
+        if (map/=0) then
+           XX(1,jx) = Pw(1,ox+jx) / WW(jx)
+        end if
+     end do
+     ! ---
+     call TensorProd1((px+1),Mx(:,:,ix),N0,N1,N2,N3,N4)
+     call Rationalize((px+1),dim,WW,N0,N1,N2,N3,N4)
+     call Interpolate((px+1),dim**4,d,N4,FF,DD)
+     if (map/=0) stop "Geometry mapping not supported"
+     ! --
+     D4(:,:,ix) = DD
+     ! ---
+  end do
+  !
+end subroutine FourthDer1
+
+subroutine FourthDer2(map,d,nx,px,Ux,ny,py,Uy,Pw,F,rx,X,ry,Y,D4)
+  use bspline
+  use bspeval
+  implicit none
+  integer(kind=4), intent(in)  :: map
+  integer(kind=4), parameter   :: dim = 2
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx, ny
+  integer(kind=4), intent(in)  :: px, py
+  integer(kind=4), intent(in)  :: rx, ry
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Uy(0:ny+py+1)
+  real   (kind=8), intent(in)  :: Pw(4,0:ny,0:nx)
+  real   (kind=8), intent(in)  :: F (d,0:ny,0:nx)
+  real   (kind=8), intent(out) :: D4(dim**4,d,0:ry,0:rx)
+  real   (kind=8), intent(in)  :: X(0:rx)
+  real   (kind=8), intent(in)  :: Y(0:ry)
+  integer(kind=4)  :: ix, jx, ox, spanx(0:rx)
+  integer(kind=4)  :: iy, jy, oy, spany(0:ry)
+  real   (kind=8)  :: Mx(0:px,0:4,0:rx)
+  real   (kind=8)  :: My(0:py,0:4,0:ry)
+  real   (kind=8)  :: N0(        0:px,0:py)
+  real   (kind=8)  :: N1(      2,0:px,0:py)
+  real   (kind=8)  :: N2(    2,2,0:px,0:py)
+  real   (kind=8)  :: N3(  2,2,2,0:px,0:py)
+  real   (kind=8)  :: N4(2,2,2,2,0:px,0:py)
+  real   (kind=8)  :: WW(  0:px,0:py)
+  real   (kind=8)  :: XX(2,0:px,0:py)
+  real   (kind=8)  :: FF(d,0:px,0:py)
+  real   (kind=8)  :: DD(dim**4,d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call DersBasisFuns(spanx(ix),X(ix),px,4,Ux,Mx(:,:,ix))
+  end do
+  do iy = 0, ry
+     spany(iy) = FindSpan(ny,py,Y(iy),Uy)
+     call DersBasisFuns(spany(iy),Y(iy),py,4,Uy,My(:,:,iy))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     do iy = 0, ry
+        oy = spany(iy) - py
+        ! ---
+        do jx = 0, px
+           do jy = 0, py
+              FF(:,jx,jy) = F (:,oy+jy,ox+jx)
+              WW(  jx,jy) = Pw(4,oy+jy,ox+jx)
+              if (map/=0) then
+                 XX(1,jx,jy) = Pw(1,oy+jy,ox+jx) / WW(jx,jy)
+                 XX(2,jx,jy) = Pw(2,oy+jy,ox+jx) / WW(jx,jy)
+              end if
+           end do
+        end do
+        ! ---
+        call TensorProd2((px+1),(py+1),Mx(:,:,ix),My(:,:,iy),N0,N1,N2,N3,N4)
+        call Rationalize((px+1)*(py+1),dim,WW,N0,N1,N2,N3,N4)
+        call Interpolate((px+1)*(py+1),dim**4,d,N4,FF,DD)
+        if (map/=0) stop "Geometry mapping not supported"
+        ! --
+        D4(:,:,iy,ix) = DD
+        ! ---
+     end do
+  end do
+  !
+end subroutine FourthDer2
+
+subroutine FourthDer3(map,d,nx,px,Ux,ny,py,Uy,nz,pz,Uz,Pw,F,rx,X,ry,Y,rz,Z,D4)
+  use bspline
+  use bspeval
+  implicit none
+  integer(kind=4), parameter   :: dim = 3
+  integer(kind=4), intent(in)  :: map
+  integer(kind=4), intent(in)  :: d
+  integer(kind=4), intent(in)  :: nx, ny, nz
+  integer(kind=4), intent(in)  :: px, py, pz
+  integer(kind=4), intent(in)  :: rx, ry, rz
+  real   (kind=8), intent(in)  :: Ux(0:nx+px+1)
+  real   (kind=8), intent(in)  :: Uy(0:ny+py+1)
+  real   (kind=8), intent(in)  :: Uz(0:nz+pz+1)
+  real   (kind=8), intent(in)  :: Pw(4,0:nz,0:ny,0:nx)
+  real   (kind=8), intent(in)  :: F (d,0:nz,0:ny,0:nx)
+  real   (kind=8), intent(out) :: D4(dim**4,d,0:rz,0:ry,0:rx)
+  real   (kind=8), intent(in)  :: X(0:rx)
+  real   (kind=8), intent(in)  :: Y(0:ry)
+  real   (kind=8), intent(in)  :: Z(0:rz)
+  integer(kind=4)  :: ix, jx, ox, spanx(0:rx)
+  integer(kind=4)  :: iy, jy, oy, spany(0:ry)
+  integer(kind=4)  :: iz, jz, oz, spanz(0:rz)
+  real   (kind=8)  :: Mx(0:px,0:4,0:rx)
+  real   (kind=8)  :: My(0:py,0:4,0:ry)
+  real   (kind=8)  :: Mz(0:pz,0:4,0:rz)
+  real   (kind=8)  :: N0(        0:px,0:py,0:pz)
+  real   (kind=8)  :: N1(      3,0:px,0:py,0:pz)
+  real   (kind=8)  :: N2(    3,3,0:px,0:py,0:pz)
+  real   (kind=8)  :: N3(  3,3,3,0:px,0:py,0:pz)
+  real   (kind=8)  :: N4(3,3,3,3,0:px,0:py,0:pz)
+  real   (kind=8)  :: WW(  0:px,0:py,0:pz)
+  real   (kind=8)  :: XX(3,0:px,0:py,0:pz)
+  real   (kind=8)  :: FF(d,0:px,0:py,0:pz)
+  real   (kind=8)  :: DD(dim**4,d)
+  !
+  do ix = 0, rx
+     spanx(ix) = FindSpan(nx,px,X(ix),Ux)
+     call DersBasisFuns(spanx(ix),X(ix),px,4,Ux,Mx(:,:,ix))
+  end do
+  do iy = 0, ry
+     spany(iy) = FindSpan(ny,py,Y(iy),Uy)
+     call DersBasisFuns(spany(iy),Y(iy),py,4,Uy,My(:,:,iy))
+  end do
+  do iz = 0, rz
+     spanz(iz) = FindSpan(nz,pz,Z(iz),Uz)
+     call DersBasisFuns(spanz(iz),Z(iz),pz,4,Uz,Mz(:,:,iz))
+  end do
+  !
+  do ix = 0, rx
+     ox = spanx(ix) - px
+     do iy = 0, ry
+        oy = spany(iy) - py
+        do iz = 0, rz
+           oz = spanz(iz) - pz
+           ! ---
+           do jx = 0, px
+              do jy = 0, py
+                 do jz = 0, pz
+                    FF(:,jx,jy,jz) = F (:,oz+jz,oy+jy,ox+jx)
+                    WW(  jx,jy,jz) = Pw(4,oz+jz,oy+jy,ox+jx)
+                    if (map/=0) then
+                       XX(1,jx,jy,jz) = Pw(1,oz+jz,oy+jy,ox+jx) / WW(jx,jy,jz)
+                       XX(2,jx,jy,jz) = Pw(2,oz+jz,oy+jy,ox+jx) / WW(jx,jy,jz)
+                       XX(3,jx,jy,jz) = Pw(3,oz+jz,oy+jy,ox+jx) / WW(jx,jy,jz)
+                    end if
+                 end do
+              end do
+           end do
+           ! ---
+           call TensorProd3((px+1),(py+1),(pz+1),Mx(:,:,ix),My(:,:,iy),Mz(:,:,iz),N0,N1,N2,N3,N4)
+           call Rationalize((px+1)*(py+1)*(pz+1),dim,WW,N0,N1,N2,N3,N4)
+           call Interpolate((px+1)*(py+1)*(pz+1),dim**4,d,N4,FF,DD)
+           if (map/=0) stop "Geometry mapping not supported"
+           ! --
+           D4(:,:,iz,iy,ix) = DD
+           ! ---
+        end do
+     end do
+  end do
+  !
+end subroutine FourthDer3
 
 end module BSp
 

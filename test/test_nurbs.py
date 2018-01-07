@@ -208,7 +208,7 @@ def test_derivative():
     for nrb in (crv, srf, vol):
         X = nrb.points
         Y = np.ones_like(X)
-        for order in (1, 2, 3):
+        for order in (1, 2, 3, 4):
             D = nrb.derivative(order, X)
             assert not np.allclose(D, 0)
             D = nrb.derivative(order, Y)
@@ -216,22 +216,23 @@ def test_derivative():
     #
     from igakit.cad import linear, bilinear, trilinear
     crv = linear()
-    srf.elevate(0,5); srf.insert(0, 0.5)
-    srf.rotate(-0.6)
+    crv.elevate(0,5); crv.insert(0, 0.5)
+    crv.rotate(-0.6)
     srf = bilinear()
-    srf.elevate(0,3); srf.insert(0, 0.5)
-    srf.elevate(1,4); srf.insert(1, 0.5)
+    srf.elevate(0,4); srf.insert(0, 0.5)
+    srf.elevate(1,5); srf.insert(1, 0.5)
     srf.rotate(0.6)
     vol = trilinear()
-    vol.elevate(0,3); vol.insert(0, 0.5)
-    vol.elevate(1,4); vol.insert(1, 0.5)
-    vol.elevate(2,5); vol.insert(2, 0.5)
+    vol.elevate(0,4); vol.insert(0, 0.5)
+    vol.elevate(1,5); vol.insert(1, 0.5)
+    vol.elevate(2,6); vol.insert(2, 0.5)
     vol.rotate(0.6, [1,1,1])
     for nrb in (crv, srf, vol):
         X = nrb.points
-        D = nrb.derivative(3, X)
-        assert D.shape == X.shape + (nrb.dim, nrb.dim, nrb.dim)
-        assert np.allclose(D, 0)
+        for order in (2, 3, 4):
+            D = nrb.derivative(order, X)
+            assert D.shape == X.shape + (nrb.dim,)*order
+            assert np.allclose(D, 0)
         
 # ---
 

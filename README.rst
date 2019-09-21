@@ -5,21 +5,23 @@ igakit: Toolkit for IsoGeometric Analysis (IGA)
 Overview
 --------
 
-XXX To be written ...
+This package implements many of the NURBS routines in Piegl's book
+using Fortran. It provides Python bindings for these functions using
+``f2py``. Finally we provide a NURBS class which uses this
+functionality for the simplified, manually creation of geometry for
+use in isogeometric analysis.
 
 Installation
 ------------
 
 Quick installation::
 
-  $ pip install https://bitbucket.org/dalcinl/igakit/get/default.tar.gz
+  $ pip install https://bitbucket.org/dalcinl/igakit/get/master.tar.gz
 
-Alternatively, clone the 
-`Mercurial <http://mercurial.selenic.com/>`_
-repository hosted at `Bitbucket
-<https://bitbucket.org/dalcinl/igakit>`_::
+Alternatively, clone the repository hosted at
+`Bitbucket <https://bitbucket.org/dalcinl/igakit>`_::
 
-  $ hg clone https://bitbucket.org/dalcinl/igakit
+  $ git clone https://bitbucket.org/dalcinl/igakit
 
 Enter the top level directory, next build and install the package
 using the standard distutils's ``setup.py`` script::

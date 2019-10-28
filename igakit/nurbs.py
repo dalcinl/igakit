@@ -1248,7 +1248,7 @@ class NURBS(object):
         i1 = U.searchsorted(u1, 'l')
         index = [slice(None)] * dim
         index[axis] = slice(i0-p, i1)
-        array = array[index].copy()
+        array = array[tuple(index)].copy()
         Ul = U[i0].repeat(p)
         Uc = U[i0:i1+1]
         Ur = U[i1].repeat(p)

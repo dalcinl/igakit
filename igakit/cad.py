@@ -638,14 +638,14 @@ def join(nrb1, nrb2, axis):
     I2 = [slice(None)] * (dim+1)
     I1[axis] = slice(0,-1)
     I2[axis] = slice(1,None)
-    Al = A1[I1]
-    Ar = A2[I2]
+    Al = A1[tuple(I1)]
+    Ar = A2[tuple(I2)]
     I1[axis] = -1
     I2[axis] = +0
-    Ac = (A1[I1]+A2[I2])/2.0
+    Ac = (A1[tuple(I1)]+A2[tuple(I2)])/2.0
     Ic = [slice(None)] * (dim+1)
     Ic[axis] = np.newaxis
-    Ac = Ac[Ic]
+    Ac = Ac[tuple(Ic)]
     A = np.concatenate([Al, Ac, Ar], axis)
 
     U1 = nrb1.knots[axis]

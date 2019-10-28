@@ -1,5 +1,5 @@
-PYTHON=python
-PACKAGE=igakit
+PYTHON  = python$(py)
+PACKAGE = igakit
 
 .PHONY: build
 build:

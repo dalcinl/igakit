@@ -3,7 +3,7 @@
 Toolkit for IsoGeometric Analysis (IGA)
 """
 
-url = 'https://bitbucket.org/dalcinl/igakit'
+url = 'https://github.com/dalcinl/igakit'
 
 setup_args = dict(
     name             = 'igakit',
@@ -15,7 +15,7 @@ setup_args = dict(
     license          = 'BSD',
     keywords         = ['FEM', 'IGA'],
     url              = url,
-    download_url     = url+'/get/default.tar.gz',
+    download_url     = url+'/archive/refs/heads/master.zip',
 )
 
 def setup_package():
@@ -24,20 +24,24 @@ def setup_package():
     from numpy.distutils.core import Extension
     if 'setuptools' in sys.modules:
         setup_args['install_requires'] = ['numpy']
-    setup(packages = ['igakit'],
-          ext_modules  = [
-              Extension('igakit.igalib',
-                        sources = [
-                            'igakit/igalib.pyf',
-                            'igakit/igalib.f90',
-                        ],
-                        define_macros = [
-                            #('F2PY_REPORT_ATEXIT', 0),
-                            #('F2PY_REPORT_ON_ARRAY_COPY', 0),
-                        ],
-              ),
-          ],
-          **setup_args)
+    setup(
+        packages = ['igakit'],
+        ext_modules  = [
+            Extension(
+                'igakit.igalib',
+                sources = [
+                    'igakit/igalib.pyf',
+                    'igakit/igalib.f90',
+                ],
+                define_macros = [
+                    ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')
+                    #('F2PY_REPORT_ATEXIT', 0),
+                    #('F2PY_REPORT_ON_ARRAY_COPY', 0),
+                ],
+            ),
+        ],
+        **setup_args,
+    )
 
 if __name__ == "__main__":
     setup_package()

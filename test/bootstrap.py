@@ -4,9 +4,15 @@ import unittest
 
 def getbuilddir():
     from distutils.util import get_platform
-    s = os.path.join("build", "lib.%s-%.3s" % (get_platform(), sys.version))
-    if hasattr(sys, 'gettotalrefcount'): s += '-pydebug'
-    return s
+    plat_name = get_platform()
+    x, y = sys.version_info[:2]
+    buildlib = f"lib.{plat_name}-{x}.{y}"
+    if hasattr(sys, 'pyston_version_info'):
+        x, y = sys.pyston_version_info[:2]
+        buildlib = f"{buildlib}-pyston{x}.{y}"
+    if hasattr(sys, 'gettotalrefcount'):
+        buildlib = f"{buildlib}-pydebug"
+    return os.path.join("build", buildlib)
 
 def bootstrap():
     try:

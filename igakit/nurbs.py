@@ -820,7 +820,7 @@ class NURBS(object):
         (5,)
         >>> c4 = c3.clone().insert(0, 0.75, 3) \
         ...                .remove(0, 0.75, 1) \
-        ...                .remove(0, 0.75, 2) \
+        ...                .remove(0, 0.75, 2)
         >>> c3.shape
         (5,)
         >>> u = np.linspace(0,1,100)

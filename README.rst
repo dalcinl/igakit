@@ -11,17 +11,18 @@ using Fortran. It provides Python bindings for these functions using
 functionality for the simplified, manually creation of geometry for
 use in isogeometric analysis.
 
+
 Installation
 ------------
 
 Quick installation::
 
-  $ pip install https://bitbucket.org/dalcinl/igakit/get/master.tar.gz
+  $ pip install https://github.com/dalcinl/igakit/archive/refs/heads/master.zip
 
 Alternatively, clone the repository hosted at
-`Bitbucket <https://bitbucket.org/dalcinl/igakit>`_::
+`Bitbucket <https://github.com/dalcinl/igakit>`_::
 
-  $ git clone https://bitbucket.org/dalcinl/igakit
+  $ git clone https://github.com/dalcinl/igakit
 
 Enter the top level directory, next build and install the package
 using the standard distutils's ``setup.py`` script::
@@ -29,11 +30,15 @@ using the standard distutils's ``setup.py`` script::
   $ cd igakit
   $ python setup.py install --user
 
+
 Acknowledgments
 ---------------
 
-This project was partially supported by the Center for Numerical
-Porous Media, Division of Computer, Electrical, and Mathematical
-Sciences & Engineering (`CEMSE <http://cemse.kaust.edu.sa/>`_),
-King Abdullah University of Science and Technology (`KAUST
-<http://www.kaust.edu.sa/>`_).
+This project was partially supported by the
+Extreme Computing Research Center
+(`ECRC <https://cemse.kaust.edu.sa/ecrc>`_),
+Division of Computer, Electrical, and
+Mathematical Sciences & Engineering
+(`CEMSE <https://cemse.kaust.edu.sa>`_),
+King Abdullah University of Science and Technology
+(`KAUST <http://www.kaust.edu.sa>`_).

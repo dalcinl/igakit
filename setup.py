@@ -23,7 +23,7 @@ def setup_package():
     from numpy.distutils.core import setup
     from numpy.distutils.core import Extension
     if 'setuptools' in sys.modules:
-        setup_args['install_requires'] = ['numpy<1.22']
+        setup_args['install_requires'] = ['numpy']
     setup(
         packages = ['igakit'],
         ext_modules  = [

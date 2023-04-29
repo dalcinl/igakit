@@ -16,7 +16,9 @@ save = mpl.savefig
 show = mpl.show
 
 def gca(**kwargs):
-    return gcf().gca(projection='3d', **kwargs)
+    if not gcf().axes:
+        gcf().add_subplot(projection='3d', **kwargs)
+    return gcf().gca()
 
 def title(*args, **kwargs):
     gca().set_title(*args, **kwargs)

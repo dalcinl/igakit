@@ -8,7 +8,7 @@ class PetIGA(object):
     """
     PetIGA_ Reader/Writer
 
-    .. _PetIGA: https://bitbucket.org/dalcinl/petiga
+    .. _PetIGA: https://github.com/dalcinl/petiga
 
     """
 

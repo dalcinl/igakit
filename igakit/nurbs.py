@@ -4,6 +4,15 @@ from igakit import igalib as _igalib
 
 _bsp = _igalib.bsp
 
+try:
+    _np_unique = np.unique
+except AttributeError:
+    try:
+        _np_unique = np.lib.arraysetops.unique
+    except AttributeError:
+        _np_unique = np.unique1d
+
+
 __all__ = ['NURBS', 'transform']
 
 class NURBS(object):
@@ -322,8 +331,6 @@ class NURBS(object):
         """
         Breaks (unique knot values) and multiplicities.
         """
-        try: np_unique = np.lib.arraysetops.unique
-        except AttributeError: np_unique = np.unique1d
         axes = range(self.dim)
         if axis is None:
             return [self.breaks(i, mults) for i in axes]
@@ -331,8 +338,8 @@ class NURBS(object):
         p = self.degree[i]
         U = self.knots[i]
         if not mults:
-            return np_unique(U[p:-p])
-        u, idx = np_unique(U[p:-p], return_inverse=True)
+            return _np_unique(U[p:-p])
+        u, idx = _np_unique(U[p:-p], return_inverse=True)
         s = np.bincount(idx).astype('i')
         FindMult = _bsp.FindMult
         m = len(U)-1; n = m-p-1;
@@ -422,7 +429,7 @@ class NURBS(object):
         >>> c1 = NURBS([U], C)
         >>> c2 = c1.copy()
         >>> c2.control[2,:] = [1.0,1.0,0.0,1.0]
-        >>> (abs(c2.control-c1.control)).max() < 1.0e-15
+        >>> np.allclose(c1.control, c2.control, rtol=0, atol=1.0e-15)
         False
 
         """
@@ -451,7 +458,7 @@ class NURBS(object):
         >>> c1 = NURBS([U], C)
         >>> c2 = c1.clone()
         >>> c2.control[2,:] = [1.0,1.0,0.0,1.0]
-        >>> (abs(c2.control-c1.control)).max() < 1.0e-15
+        >>> np.allclose(c1.control, c2.control, rtol=0, atol=1.0e-15)
         True
 
         """
@@ -624,7 +631,7 @@ class NURBS(object):
         >>> c2 = c1.copy()
         >>> c2 = c2.reverse()
         >>> u = 0.3
-        >>> (abs(c1(u)-c2(1.0-u))).max() < 1.0e-15
+        >>> np.allclose(c1(u), c2(1.0-u), rtol=0, atol=1.0e-15)
         True
 
         """
@@ -1051,9 +1058,7 @@ class NURBS(object):
             assert u[ 0] >= U[p]
             assert u[-1] <= U[-p-1]
             tmp = np.concatenate((u, U[1:-1]))
-            try: np_unique = np.lib.arraysetops.unique
-            except AttributeError: np_unique = np.unique1d
-            _, i = np_unique(tmp, return_inverse=True)
+            _, i = _np_unique(tmp, return_inverse=True)
             mult = np.bincount(i)
             assert mult.max() <= p
             return u

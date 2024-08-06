@@ -64,12 +64,12 @@ interface
        real   (kind=8), intent(out,c) :: dN(0:d,0:p)
      end subroutine EvalBasisFunsDers
 
-     subroutine SpanIndex(p,m,U,r,I)
+     subroutine SpanIndex(p,m,U,r,ID)
        integer(kind=4), intent(in),   check(p>=1)     :: p
        integer(kind=4), intent(hide), check(m>=2*p+1) :: m
        real   (kind=8), intent(in)  :: U(0:m)
        integer(kind=4), intent(hide):: r=CountSpans(m-p-1,p,U)
-       integer(kind=4), intent(out) :: I(r)
+       integer(kind=4), intent(out) :: ID(r)
      end subroutine SpanIndex
 
      subroutine Greville(p,m,U,X)

@@ -14,6 +14,21 @@ except AttributeError:
     deg2rad = np.radians
     rad2deg = np.degrees
 
+try:
+    _np_unique = np.unique
+except AttributeError:
+    try:
+        _np_unique = np.lib.arraysetops.unique
+    except AttributeError:
+        _np_unique = np.unique1d
+try:
+    _np_in1d = np.in1d
+except AttributeError:
+    try:
+        _np_in1d = np.lib.arraysetops.in1d
+    except AttributeError:
+        _np_in1d = np.setmember1d
+
 # -----
 
 def line(p0=(0,0), p1=(1,0)):
@@ -320,10 +335,6 @@ def compat(*nurbs, **kargs):
                 nrb.elevate(axis, t)
     #
     def MergeKnots(nurbs, axes):
-        try: np_unique = np.lib.arraysetops.unique
-        except AttributeError: np_unique = np.unique1d
-        try: np_in1d = np.lib.arraysetops.in1d
-        except AttributeError: np_in1d = np.setmember1d
         m, n = len(nurbs), len(axes)
         insert = np.empty((m, n), dtype=object)
         for j, axis in enumerate(axes):
@@ -335,10 +346,10 @@ def compat(*nurbs, **kargs):
                 mults .append(s[1:-1])
             # Merge breaks and multiplicities
             masks = []
-            u = np_unique(np.concatenate(breaks))
+            u = _np_unique(np.concatenate(breaks))
             s = np.zeros(u.size, dtype='i')
             for (ui, si) in zip(breaks, mults):
-                mask = np_in1d(u, ui)
+                mask = _np_in1d(u, ui)
                 s[mask] = np.maximum(s[mask], si)
                 masks.append(mask)
             # Compute knots to insert
@@ -677,8 +688,6 @@ def refine(nrb, factor=None, degree=None, continuity=None):
     continuity : int or sequence of int, optional
 
     """
-    try: np_unique = np.lib.arraysetops.unique
-    except AttributeError: np_unique = np.unique1d
     def Arg(arg, defval):
         if arg is None:
             return list(defval)

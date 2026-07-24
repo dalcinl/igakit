@@ -21,13 +21,17 @@ except AttributeError:
         _np_unique = np.lib.arraysetops.unique
     except AttributeError:
         _np_unique = np.unique1d
+
 try:
-    _np_in1d = np.in1d
+    _np_isin = np.isin
 except AttributeError:
     try:
-        _np_in1d = np.lib.arraysetops.in1d
+        _np_isin = np.in1d
     except AttributeError:
-        _np_in1d = np.setmember1d
+        try:
+            _np_isin = np.lib.arraysetops.in1d
+        except AttributeError:
+            _np_isin = np.setmember1d
 
 # -----
 
@@ -263,7 +267,7 @@ def grid(shape, degree=2, continuity=None,
     limits = np.asarray(limits, dtype='d')
     if limits.ndim == 1:
         assert limits.shape[0] == 2
-        limits = np.row_stack([limits]*dim)
+        limits = np.vstack([limits]*dim)
     assert limits.shape == (dim, 2)
     #
     wrap = np.asarray(wrap, dtype='?')
@@ -325,7 +329,7 @@ def compat(*nurbs, **kargs):
     def SameDegree(nurbs, axes):
         # Ensure same degree by degree elevation
         degree = [nrb.degree for nrb in nurbs]
-        degree = np.row_stack(degree)
+        degree = np.vstack(degree)
         degree = degree[:,axes]
         degmax = degree.max(axis=0)
         elevate = degmax - degree
@@ -349,7 +353,7 @@ def compat(*nurbs, **kargs):
             u = _np_unique(np.concatenate(breaks))
             s = np.zeros(u.size, dtype='i')
             for (ui, si) in zip(breaks, mults):
-                mask = _np_in1d(u, ui)
+                mask = _np_isin(u, ui)
                 s[mask] = np.maximum(s[mask], si)
                 masks.append(mask)
             # Compute knots to insert

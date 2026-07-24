@@ -1249,8 +1249,8 @@ class NURBS(object):
         knots = nrb.knots
         #
         U = knots[axis]
-        i0 = U.searchsorted(u0, 'r') - 1
-        i1 = U.searchsorted(u1, 'l')
+        i0 = U.searchsorted(u0, 'right') - 1
+        i1 = U.searchsorted(u1, 'left')
         index = [slice(None)] * dim
         index[axis] = slice(i0-p, i1)
         array = array[tuple(index)].copy()

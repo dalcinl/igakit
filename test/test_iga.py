@@ -172,17 +172,17 @@ def test_fem_2d(VERB=0, PLOT=0):
             F[Ax,Ay] = 0
 
     # solve linear system
-    K.shape = (nx*ny,nx*ny)
-    F.shape = (nx*ny,)
+    K = K.reshape((nx*ny,nx*ny))
+    F = F.reshape((nx*ny,))
     X = np.linalg.solve(K,F)
-    X.shape = (nx,ny)
+    X = X.reshape((nx,ny))
 
     # interpolate solution
     x = np.linspace(Ux[0],Ux[-1],25)
     y = np.linspace(Uy[0],Uy[-1],25)
     z = bsp.Evaluate2(px,Ux,py,Uy,X,x,y)
     x, y = np.meshgrid(x,y)
-    z.shape = z.shape[:-1]
+    z = z.reshape(z.shape[:-1])
 
     # surface plot solution
     if not PLOT: return
@@ -259,17 +259,17 @@ def test_col_2d(VERB=0, PLOT=0):
             F[Ax,Ay] = 0
 
     # solve linear system
-    K.shape = (nx*ny,nx*ny)
-    F.shape = (nx*ny,)
+    K = K.reshape((nx*ny,nx*ny))
+    F = F.reshape((nx*ny,))
     X = np.linalg.solve(K,F)
-    X.shape = (nx,ny)
+    X = X.reshape((nx,ny))
 
     # interpolate solution
     x = np.linspace(Ux[0],Ux[-1],25)
     y = np.linspace(Uy[0],Uy[-1],25)
     z = bsp.Evaluate2(px,Ux,py,Uy,X,x,y)
     x, y = np.meshgrid(x,y)
-    z.shape = z.shape[:-1]
+    z = z.reshape(z.shape[:-1])
 
     # surface plot solution
     if not PLOT: return

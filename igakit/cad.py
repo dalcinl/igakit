@@ -242,7 +242,7 @@ def grid(shape, degree=2, continuity=None,
     shape = np.asarray(shape, dtype='i')
     if shape.ndim == 0:
         dim = 1
-        shape.shape = (1,)
+        shape = shape.reshape((1,))
     else:
         assert shape.ndim == 1
         dim = shape.shape[0]

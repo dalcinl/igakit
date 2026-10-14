@@ -786,7 +786,7 @@ class NURBS(object):
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
         V, Qw = InsertKnot(p, U, Pw, value, times)
-        Qw.shape = (Qw.shape[0], ) + shape[1:]
+        Qw = Qw.reshape((Qw.shape[0], ) + shape[1:])
         array = np.rollaxis(Qw, 0, axis+1)
         knots[axis] = V
         #
@@ -876,7 +876,7 @@ class NURBS(object):
         t, V, Qw = RemoveKnot(p, U, Pw, value, TOL, times)
         if t > 0: V = V[:-t].copy()
         if t > 0: Qw = Qw[:-t,:].copy()
-        Qw.shape = (Qw.shape[0], ) + shape[1:]
+        Qw = Qw.reshape((Qw.shape[0], ) + shape[1:])
         array = np.rollaxis(Qw, 0, axis+1)
         knots[axis] = V
         #
@@ -929,9 +929,9 @@ class NURBS(object):
         Clamp = _bsp.Clamp
         Pw = np.rollaxis(array, axis, 0).copy()
         shape = Pw.shape
-        Pw.shape = (shape[0], -1)
+        Pw = Pw.reshape((shape[0], -1))
         V, Qw = Clamp(p, U, Pw, l, r)
-        Qw.shape = shape
+        Qw = Qw.reshape(shape)
         array = np.rollaxis(Qw, 0, axis+1)
         knots[axis] = V
         #
@@ -1000,9 +1000,9 @@ class NURBS(object):
         Unclamp = _bsp.Unclamp
         Pw = np.rollaxis(array, axis, 0).copy()
         shape = Pw.shape
-        Pw.shape = (shape[0], -1)
+        Pw = Pw.reshape((shape[0], -1))
         V, Qw = Unclamp(p, U, Pw, C, l, r)
-        Qw.shape = shape
+        Qw = Qw.reshape(shape)
         array = np.rollaxis(Qw, 0, axis+1)
         knots[axis] = V
         #
@@ -1078,7 +1078,7 @@ class NURBS(object):
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
         V, Qw = RefineKnotVector(p, U, Pw, u)
-        Qw.shape = Qw.shape[:1] + shape[1:]
+        Qw = Qw.reshape(Qw.shape[:1] + shape[1:])
         array = np.rollaxis(Qw, 0, axis+1)
         knots[axis] = V
         #
@@ -1155,7 +1155,7 @@ class NURBS(object):
         shape = Pw.shape
         Pw = Pw.reshape((shape[0], -1))
         V, Qw = DegreeElevate(p, U, Pw, t)
-        Qw.shape = Qw.shape[:1] + shape[1:]
+        Qw = Qw.reshape(Qw.shape[:1] + shape[1:])
         array = np.rollaxis(Qw, 0, axis+1)
         knots[axis] = V
         #
@@ -1441,9 +1441,9 @@ class NURBS(object):
         shape = list(C.shape[:-1])
         remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
         for i in reversed(remove): del shape[i]
-        C.shape = shape + [-1]
+        C = C.reshape(shape + [-1])
         if fields:
-            F.shape = shape + [-1]
+            F = F.reshape(shape + [-1])
         #
         if fields:
             return C, F
@@ -1505,7 +1505,7 @@ class NURBS(object):
         if squeeze: del shape[dim]
         remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
         for i in reversed(remove): del shape[i]
-        F.shape = shape
+        F = F.reshape(shape)
         #
         return F
 
@@ -1573,7 +1573,7 @@ class NURBS(object):
         if squeeze: del shape[dim]
         remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
         for i in reversed(remove): del shape[i]
-        G.shape = shape
+        G = G.reshape(shape)
         #
         return G
 
@@ -1641,7 +1641,7 @@ class NURBS(object):
         if squeeze: del shape[dim]
         remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
         for i in reversed(remove): del shape[i]
-        H.shape = shape
+        H = H.reshape(shape)
         #
         return H
 
@@ -1712,7 +1712,7 @@ class NURBS(object):
         if squeeze: del shape[dim]
         remove = [i for (i, a) in enumerate(uvw) if not a.ndim]
         for i in reversed(remove): del shape[i]
-        D.shape = shape
+        D = D.reshape(shape)
         #
         return D
 

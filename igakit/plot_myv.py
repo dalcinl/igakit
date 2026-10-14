@@ -90,7 +90,7 @@ def _extract_grid_lines(LINES):
         #
         xyz = [x.ravel(), y.ravel(), z.ravel()]
         points = np.column_stack(xyz).ravel()
-        points.shape = (-1, 3)
+        points = points.reshape((-1, 3))
         lines = np.zeros((0, 2), dtype='l')
         #
         grid = np.arange(x.size, dtype='l').reshape(x.shape)
@@ -99,7 +99,7 @@ def _extract_grid_lines(LINES):
             p1 = grid[+1:].ravel()
             verts = [p0,p1]
             lines = np.column_stack(verts).ravel()
-            lines.shape = (-1, 2)
+            lines = lines.reshape((-1, 2))
         elif x.ndim == 2:
             p0 = grid[:-1, :-1].ravel()
             p1 = grid[+1:, :-1].ravel()
@@ -107,9 +107,9 @@ def _extract_grid_lines(LINES):
             p3 = grid[:-1, +1:].ravel()
             verts = [p0,p1,p2,p3]
             polys = np.column_stack(verts).ravel()
-            polys.shape = (-1, 4)
+            polys = polys.reshape((-1, 4))
             lines = polys[:,[0,1,1,2,2,3,3,0]].ravel()
-            lines.shape = (-1, 2)
+            lines = lines.reshape((-1, 2))
         elif x.ndim == 3:
             p0 = grid[:-1, :-1, :-1].ravel()
             p1 = grid[+1:, :-1, :-1].ravel()
@@ -126,9 +126,9 @@ def _extract_grid_lines(LINES):
                      p0,p3,p7,p4,
                      p1,p2,p6,p5]
             polys = np.column_stack(verts).ravel()
-            polys.shape = (-1, 4)
+            polys = polys.reshape((-1, 4))
             lines = polys[:,[0,1,1,2,2,3,3,0]].ravel()
-            lines.shape = (-1, 2)
+            lines = lines.reshape((-1, 2))
         point_list.append(points)
         line_list.append(lines)
     offset = 0
@@ -148,7 +148,7 @@ def _extract_grid_polys(SURFS):
         #
         xyz = [x.ravel(), y.ravel(), z.ravel()]
         points = np.column_stack(xyz).ravel()
-        points.shape = (-1, 3)
+        points = points.reshape((-1, 3))
         polys = np.zeros((0, 4), dtype='l')
         #
         grid = np.arange(x.size, dtype='l').reshape(x.shape)
@@ -159,7 +159,7 @@ def _extract_grid_polys(SURFS):
             p3 = grid[:-1, +1:].ravel()
             verts = [p0,p1,p2,p3]
             polys = np.column_stack(verts).ravel()
-            polys.shape = (-1, 4)
+            polys = polys.reshape((-1, 4))
         elif x.ndim == 3:
             p0 = grid[:-1, :-1, :-1].ravel()
             p1 = grid[+1:, :-1, :-1].ravel()
@@ -176,7 +176,7 @@ def _extract_grid_polys(SURFS):
                      p0,p3,p7,p4,
                      p1,p2,p6,p5]
             polys = np.column_stack(verts).ravel()
-            polys.shape = (-1, 4)
+            polys = polys.reshape((-1, 4))
         point_list.append(points)
         poly_list.append(polys)
     offset = 0

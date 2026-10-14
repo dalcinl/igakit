@@ -303,9 +303,9 @@ class VTK(object):
         dimensions = C.shape[:-1] + (1,)*(3-dim)
         coordinates = uvw + [np.zeros(1)]*(3-dim)
         points = np.rollaxis(C, -1).ravel('f')
-        points.shape = (-1, 3)
+        points = points.reshape((-1, 3))
         fields = np.rollaxis(F, -1).ravel('f')
-        fields.shape = (len(points), -1)
+        fields = fields.reshape((len(points), -1))
 
         if isinstance(scalars, dict):
             keys = sorted(scalars.keys())
